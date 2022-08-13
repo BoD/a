@@ -37,6 +37,12 @@ import kotlinx.coroutines.flow.map
 import org.jraf.android.a.data.Data
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+    private val DIFFERENT = object : Any() {
+        override fun equals(other: Any?): Boolean {
+            return false
+        }
+    }
+
     private val launcherApps: LauncherApps = application.getSystemService(LauncherApps::class.java)
     private val allApps: List<App> = launcherApps.getActivityList(null, launcherApps.profiles[0])
         .map { launcherActivityInfo ->
@@ -64,11 +70,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
     }
     val intentToStart = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
-    val scrollUp = MutableStateFlow(0)
+    val scrollUp: MutableStateFlow<Any> = MutableStateFlow(DIFFERENT)
 
     fun onSearchQueryChange(query: String) {
         searchQuery.value = query
-        scrollUp.value++
+        scrollUp.value = DIFFERENT
     }
 
     fun onAppClick(app: App) {

@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val searchQuery: String by viewModel.searchQuery.collectAsState(initial = "")
             val apps: List<App> by viewModel.filteredApps.collectAsState(initial = emptyList())
-            val scrollUp: Int by viewModel.scrollUp.collectAsState(initial = 0)
+            val scrollUp: Any by viewModel.scrollUp.collectAsState(initial = Unit)
 
             val listState = rememberLazyListState()
 
