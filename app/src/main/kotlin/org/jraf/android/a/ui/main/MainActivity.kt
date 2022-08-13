@@ -39,10 +39,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.OutlinedTextField
@@ -57,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
@@ -74,11 +76,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Force showing the keyboard, supposedly
-        val imm: InputMethodManager = getSystemService(InputMethodManager::class.java)
-        imm.hideSoftInputFromWindow(window.decorView.windowToken, 0)
-        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
-
         lifecycleScope.launch {
             viewModel.intentToStart.collect { intent ->
                 startActivity(intent)
@@ -90,11 +87,11 @@ class MainActivity : ComponentActivity() {
             val apps: List<App> by viewModel.filteredApps.collectAsState(initial = emptyList())
             val scrollUp: Any by viewModel.scrollUp.collectAsState(initial = Unit)
 
-            val listState = rememberLazyListState()
+            val gridState = rememberLazyGridState()
 
             LaunchedEffect(scrollUp) {
                 logd("Scroll up scrollUp=$scrollUp")
-                listState.scrollToItem(0)
+                gridState.scrollToItem(0)
             }
 
             MainScreen(
@@ -102,7 +99,7 @@ class MainActivity : ComponentActivity() {
                 apps = apps,
                 onSearchQueryChange = viewModel::onSearchQueryChange,
                 onAppClick = viewModel::onAppClick,
-                listState = listState,
+                gridState = gridState,
             )
         }
     }
@@ -110,6 +107,11 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         viewModel.resetSearchQuery()
+
+        // Force showing the keyboard, supposedly
+        val imm: InputMethodManager = getSystemService(InputMethodManager::class.java)
+        imm.hideSoftInputFromWindow(window.decorView.windowToken, 0)
+        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
     }
 
     override fun onBackPressed() {}
@@ -120,7 +122,7 @@ class MainActivity : ComponentActivity() {
         apps: List<App>,
         onSearchQueryChange: (String) -> Unit,
         onAppClick: (App) -> Unit,
-        listState: LazyListState,
+        gridState: LazyGridState,
     ) {
         ATheme {
             Surface {
@@ -130,7 +132,7 @@ class MainActivity : ComponentActivity() {
                         .padding(8.dp)
                 ) {
                     SearchTextField(searchQuery, onSearchQueryChange)
-                    AppList(apps = apps, onAppClick = onAppClick, listState = listState)
+                    AppList(apps = apps, onAppClick = onAppClick, gridState = gridState)
                 }
             }
         }
@@ -166,13 +168,14 @@ class MainActivity : ComponentActivity() {
     private fun AppList(
         apps: List<App>,
         onAppClick: (App) -> Unit,
-        listState: LazyListState,
+        gridState: LazyGridState,
     ) {
-        LazyColumn(
+        LazyVerticalGrid(
             modifier = Modifier
                 .padding(top = 8.dp)
                 .fillMaxSize(),
-            state = listState,
+            columns = GridCells.Fixed(2),
+            state = gridState,
         ) {
             items(apps, key = { it.packageName + it.activityName }) { app ->
                 ListItem(
@@ -185,7 +188,7 @@ class MainActivity : ComponentActivity() {
                         )
                     },
                     headlineText = {
-                        Text(text = app.label)
+                        Text(text = app.label, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                 )
             }
@@ -200,7 +203,7 @@ class MainActivity : ComponentActivity() {
             apps = listOf(),
             onSearchQueryChange = {},
             onAppClick = {},
-            listState = rememberLazyListState(),
+            gridState = rememberLazyGridState(),
         )
     }
 }
