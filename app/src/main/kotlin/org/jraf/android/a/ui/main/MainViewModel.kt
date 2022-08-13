@@ -28,12 +28,15 @@ import android.app.Application
 import android.content.Intent
 import android.content.pm.LauncherApps
 import android.graphics.drawable.Drawable
+import android.os.UserHandle
 import android.util.DisplayMetrics
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.jraf.android.a.data.Data
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -44,29 +47,61 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private val launcherApps: LauncherApps = application.getSystemService(LauncherApps::class.java)
-    private val allApps: List<App> = launcherApps.getActivityList(null, launcherApps.profiles[0])
-        .map { launcherActivityInfo ->
-            App(
-                label = launcherActivityInfo.label.toString(),
-                packageName = launcherActivityInfo.applicationInfo.packageName,
-                activityName = launcherActivityInfo.name,
-                drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH),
-            )
+    private var allApps: List<App> = emptyList()
 
-        }
     private val data = Data(application)
-    private var counters: Map<String, Int> = data.counters
+
+    private val counters: MutableStateFlow<Map<String, Int>> = MutableStateFlow(emptyMap())
+
+    init {
+        viewModelScope.launch {
+            data.counters.collect {
+                counters.value = it
+            }
+        }
+
+        launcherApps.registerCallback(object : LauncherApps.Callback() {
+            override fun onPackageRemoved(packageName: String?, user: UserHandle?) {
+                allApps = getAllApps()
+            }
+
+            override fun onPackageAdded(packageName: String?, user: UserHandle?) {
+                allApps = getAllApps()
+            }
+
+            override fun onPackageChanged(packageName: String?, user: UserHandle?) {
+                allApps = getAllApps()
+            }
+
+            override fun onPackagesAvailable(
+                packageNames: Array<out String>?,
+                user: UserHandle?,
+                replacing: Boolean
+            ) {
+                allApps = getAllApps()
+            }
+
+            override fun onPackagesUnavailable(
+                packageNames: Array<out String>?,
+                user: UserHandle?,
+                replacing: Boolean
+            ) {
+                allApps = getAllApps()
+            }
+        })
+    }
 
     val searchQuery = MutableStateFlow("")
     val filteredApps: Flow<List<App>> = searchQuery.map { verbatimQuery ->
         val query = verbatimQuery.trim()
+        if (allApps.isEmpty()) allApps = getAllApps()
         allApps
             .filter { app ->
                 app.label.contains(query, true) ||
                         app.packageName.contains(query, true)
             }
             .sortedByDescending {
-                counters[it.packageName + "/" + it.activityName] ?: 0
+                counters.value[it.packageName + "/" + it.activityName] ?: 0
             }
     }
     val intentToStart = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
@@ -80,15 +115,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onAppClick(app: App) {
         val intent = Intent()
             .apply { setClassName(app.packageName, app.activityName) }
+            .addCategory(Intent.CATEGORY_LAUNCHER)
+            .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
 //            .setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
         intentToStart.tryEmit(intent)
-        data.incrementCounter(app.packageName + "/" + app.activityName)
-        counters = data.counters
+        viewModelScope.launch {
+            data.incrementCounter(app.packageName + "/" + app.activityName)
+        }
     }
 
     fun resetSearchQuery() {
         onSearchQueryChange("")
     }
+
+    private fun getAllApps() = launcherApps.getActivityList(null, launcherApps.profiles[0])
+        .map { launcherActivityInfo ->
+            App(
+                label = launcherActivityInfo.label.toString(),
+                packageName = launcherActivityInfo.applicationInfo.packageName,
+                activityName = launcherActivityInfo.name,
+                drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH),
+            )
+        }
 
     class App(
         val label: String,

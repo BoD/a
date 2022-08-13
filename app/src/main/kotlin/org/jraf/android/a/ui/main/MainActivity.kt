@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 
 package org.jraf.android.a.ui.main
 
@@ -32,6 +32,7 @@ import android.view.inputmethod.InputMethodManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -44,6 +45,7 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.OutlinedTextField
@@ -58,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -68,7 +71,6 @@ import kotlinx.coroutines.launch
 import org.jraf.android.a.R
 import org.jraf.android.a.ui.main.MainViewModel.App
 import org.jraf.android.a.ui.theme.ATheme
-import org.jraf.android.a.util.logd
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -90,8 +92,8 @@ class MainActivity : ComponentActivity() {
             val gridState = rememberLazyGridState()
 
             LaunchedEffect(scrollUp) {
-                logd("Scroll up scrollUp=$scrollUp")
-                gridState.scrollToItem(0)
+                delay(225)
+                gridState.animateScrollToItem(0)
             }
 
             MainScreen(
@@ -146,7 +148,7 @@ class MainActivity : ComponentActivity() {
         val focusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) {
             // No comment...
-            delay(200)
+            delay(1000)
             focusRequester.requestFocus()
         }
 
@@ -160,7 +162,11 @@ class MainActivity : ComponentActivity() {
             onValueChange = onSearchQueryChange,
             placeholder = {
                 Text(text = stringResource(R.string.main_search_placeholder))
-            }
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                autoCorrect = false
+            )
         )
     }
 
@@ -179,7 +185,9 @@ class MainActivity : ComponentActivity() {
         ) {
             items(apps, key = { it.packageName + it.activityName }) { app ->
                 ListItem(
-                    modifier = Modifier.clickable { onAppClick(app) },
+                    modifier = Modifier
+                        .animateItemPlacement()
+                        .clickable { onAppClick(app) },
                     leadingContent = {
                         Image(
                             modifier = Modifier.size(48.dp),

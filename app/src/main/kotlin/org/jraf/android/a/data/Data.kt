@@ -25,23 +25,79 @@
 package org.jraf.android.a.data
 
 import android.content.Context
-import org.jraf.android.kprefs.Key
-import org.jraf.android.kprefs.Prefs
+import androidx.datastore.core.CorruptionException
+import androidx.datastore.core.DataStoreFactory
+import androidx.datastore.core.Serializer
+import androidx.datastore.dataStoreFile
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import org.jraf.android.a.util.mergeReduce
+import java.io.InputStream
+import java.io.OutputStream
+
+private const val LONG_LAUNCH_COUNT = 300
+private const val SHORT_LAUNCH_COUNT = 20
+
+private const val RECENT_LAUNCH_WEIGHT = 3
 
 class Data(context: Context) {
-    private val prefs = Prefs(context)
+    private val settingsDataStore = DataStoreFactory.create(
+        serializer = SettingsSerializer,
+        produceFile = { context.dataStoreFile("settings.dataStore") },
+    )
 
-    private var countersSet: Set<String> by prefs.StringSet(emptySet(), Key("counters"))
+    val counters: Flow<Map<String, Int>> = settingsDataStore.data.map { settings ->
+        val longActivityCounters =
+            settings.longLaunchedActivityList.associateWith { activityName ->
+                settings.longLaunchedActivityList.count { it == activityName }
+            }
+        val shortActivityCounters =
+            settings.shortLaunchedActivityList.associateWith { activityName ->
+                settings.shortLaunchedActivityList.count { it == activityName } * RECENT_LAUNCH_WEIGHT
+            }
 
-    val counters: Map<String, Int>
-        get() = countersSet.associate {
-            val split = it.split(":")
-            split[0] to split[1].toInt()
+        longActivityCounters.mergeReduce(shortActivityCounters) { a, b -> a + b }
+    }
+
+    suspend fun incrementCounter(app: String) {
+        settingsDataStore.updateData { settings ->
+            val longActivityList = settings.longLaunchedActivityList.toMutableList()
+            if (longActivityList.size >= LONG_LAUNCH_COUNT) {
+                longActivityList.removeAt(0)
+            }
+            longActivityList.add(app)
+
+            val shortActivityList = settings.shortLaunchedActivityList.toMutableList()
+            if (shortActivityList.size >= SHORT_LAUNCH_COUNT) {
+                shortActivityList.removeAt(0)
+            }
+            shortActivityList.add(app)
+
+            settings.copy(
+                longLaunchedActivityList = longActivityList,
+                shortLaunchedActivityList = shortActivityList,
+            )
         }
-
-    fun incrementCounter(app: String) {
-        val counter = counters[app] ?: 0
-        countersSet =
-            (countersSet.filterNot { it.startsWith("$app:") } + (app + ":" + (counter + 1))).toSet()
     }
 }
+
+private object SettingsSerializer : Serializer<Settings> {
+    override val defaultValue: Settings
+        get() {
+            return Settings()
+        }
+
+    override suspend fun readFrom(input: InputStream): Settings {
+        try {
+            return Settings.ADAPTER.decode(input)
+        } catch (e: Exception) {
+            throw CorruptionException("Could not decode input", e)
+        }
+    }
+
+    override suspend fun writeTo(
+        t: Settings,
+        output: OutputStream
+    ) = Settings.ADAPTER.encode(output, t)
+}
+

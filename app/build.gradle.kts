@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     kotlin("android")
+    id("com.squareup.wire") version "4.4.1"
 }
 
 android {
@@ -31,7 +32,10 @@ android {
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             signingConfig = signingConfigs.getByName("release")
         }
     }
@@ -82,4 +86,17 @@ dependencies {
     implementation(libs.accompanist.drawablepainter)
 
     implementation(libs.kprefs)
+
+
+    // TODO
+    implementation("androidx.datastore:datastore:1.0.0")
+    implementation("com.google.protobuf:protobuf-javalite:3.21.5")
+}
+
+wire {
+    kotlin {
+        emitAppliedOptions = false
+        rpcCallStyle = "suspending"
+        rpcRole = "none"
+    }
 }
