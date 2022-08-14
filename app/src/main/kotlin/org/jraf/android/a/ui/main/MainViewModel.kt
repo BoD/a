@@ -39,13 +39,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.jraf.android.a.data.Data
 
-class MainViewModel(application: Application) : AndroidViewModel(application) {
-    private val DIFFERENT = object : Any() {
-        override fun equals(other: Any?): Boolean {
-            return false
-        }
+private val DIFFERENT = object : Any() {
+    override fun equals(other: Any?): Boolean {
+        return false
     }
+}
 
+class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val launcherApps: LauncherApps = application.getSystemService(LauncherApps::class.java)
     private var allApps: List<App> = emptyList()
 
