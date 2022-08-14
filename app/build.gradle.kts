@@ -8,7 +8,7 @@ android {
     compileSdk = 32
 
     defaultConfig {
-        applicationId = "a"
+        applicationId = "a.a.a.a"
         minSdk = 26
         targetSdk = 32
         versionCode = 1
@@ -95,3 +95,6 @@ wire {
         rpcRole = "none"
     }
 }
+
+// To release:
+// SIGNING_STORE_PATH=path/to/upload.keystore SIGNING_STORE_PASSWORD=password SIGNING_KEY_ALIAS=upload SIGNING_KEY_PASSWORD=password ./gradlew :app:bundleRelease
