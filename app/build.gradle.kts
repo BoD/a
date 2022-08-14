@@ -1,14 +1,14 @@
 plugins {
     id("com.android.application")
     kotlin("android")
-    id("com.squareup.wire") version "4.4.1"
+    alias(libs.plugins.wire)
 }
 
 android {
     compileSdk = 32
 
     defaultConfig {
-        applicationId = "org.jraf.android.a"
+        applicationId = "a"
         minSdk = 26
         targetSdk = 32
         versionCode = 1
@@ -86,17 +86,12 @@ dependencies {
     implementation(libs.accompanist.drawablepainter)
 
     implementation(libs.kprefs)
-
-
-    // TODO
-    implementation("androidx.datastore:datastore:1.0.0")
-    implementation("com.google.protobuf:protobuf-javalite:3.21.5")
+    implementation(libs.datastore)
 }
 
 wire {
     kotlin {
         emitAppliedOptions = false
-        rpcCallStyle = "suspending"
         rpcRole = "none"
     }
 }
