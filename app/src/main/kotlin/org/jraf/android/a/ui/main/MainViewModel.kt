@@ -32,11 +32,13 @@ import android.os.UserHandle
 import android.util.DisplayMetrics
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jraf.android.a.data.Data
 
 private val DIFFERENT = object : Any() {
@@ -47,7 +49,7 @@ private val DIFFERENT = object : Any() {
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val launcherApps: LauncherApps = application.getSystemService(LauncherApps::class.java)
-    private var allApps: List<App> = emptyList()
+    private var allApps: MutableStateFlow<List<App>> = MutableStateFlow(emptyList())
 
     private val data = Data(application)
 
@@ -60,17 +62,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+        refreshAllApps()
+
         launcherApps.registerCallback(object : LauncherApps.Callback() {
             override fun onPackageRemoved(packageName: String?, user: UserHandle?) {
-                allApps = getAllApps()
+                refreshAllApps()
             }
 
             override fun onPackageAdded(packageName: String?, user: UserHandle?) {
-                allApps = getAllApps()
+                refreshAllApps()
             }
 
             override fun onPackageChanged(packageName: String?, user: UserHandle?) {
-                allApps = getAllApps()
+                refreshAllApps()
             }
 
             override fun onPackagesAvailable(
@@ -78,7 +82,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 user: UserHandle?,
                 replacing: Boolean
             ) {
-                allApps = getAllApps()
+                refreshAllApps()
             }
 
             override fun onPackagesUnavailable(
@@ -86,24 +90,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 user: UserHandle?,
                 replacing: Boolean
             ) {
-                allApps = getAllApps()
+                refreshAllApps()
             }
         })
     }
 
     val searchQuery = MutableStateFlow("")
-    val filteredApps: Flow<List<App>> = searchQuery.map { verbatimQuery ->
-        val query = verbatimQuery.trim()
-        if (allApps.isEmpty()) allApps = getAllApps()
-        allApps
-            .filter { app ->
-                app.label.contains(query, true) ||
-                        app.packageName.contains(query, true)
-            }
-            .sortedByDescending {
-                counters.value[it.packageName + "/" + it.activityName] ?: 0
-            }
-    }
+    val filteredApps: Flow<List<App>> = allApps
+        .combine(searchQuery) { allApps, verbatimQuery ->
+            val query = verbatimQuery.trim()
+            allApps
+                .filter { app ->
+                    app.label.contains(query, true) ||
+                            app.packageName.contains(query, true)
+                }
+                .sortedByDescending {
+                    counters.value[it.packageName + "/" + it.activityName] ?: 0
+                }
+        }
+
     val intentToStart = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
     val scrollUp: MutableStateFlow<Any> = MutableStateFlow(DIFFERENT)
 
@@ -128,15 +133,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         onSearchQueryChange("")
     }
 
-    private fun getAllApps() = launcherApps.getActivityList(null, launcherApps.profiles[0])
-        .map { launcherActivityInfo ->
-            App(
-                label = launcherActivityInfo.label.toString(),
-                packageName = launcherActivityInfo.applicationInfo.packageName,
-                activityName = launcherActivityInfo.name,
-                drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH),
-            )
+    private suspend fun getAllApps(): List<App> = withContext(Dispatchers.IO) {
+        launcherApps.getActivityList(null, launcherApps.profiles[0])
+            .map { launcherActivityInfo ->
+                App(
+                    label = launcherActivityInfo.label.toString(),
+                    packageName = launcherActivityInfo.applicationInfo.packageName,
+                    activityName = launcherActivityInfo.name,
+                    drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH),
+                )
+            }
+    }
+
+    private fun refreshAllApps() {
+        viewModelScope.launch {
+            allApps.value = getAllApps()
         }
+    }
 
     class App(
         val label: String,
