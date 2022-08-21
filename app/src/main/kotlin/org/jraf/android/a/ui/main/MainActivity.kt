@@ -47,7 +47,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -56,14 +55,17 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.delay
@@ -148,7 +150,7 @@ class MainActivity : ComponentActivity() {
         val focusRequester = remember { FocusRequester() }
         LaunchedEffect(Unit) {
             // No comment...
-            delay(1000)
+            delay(2000)
             focusRequester.requestFocus()
         }
 
@@ -178,27 +180,33 @@ class MainActivity : ComponentActivity() {
     ) {
         LazyVerticalGrid(
             modifier = Modifier
-                .padding(top = 8.dp)
+                .padding(top = 4.dp)
                 .fillMaxSize(),
-            columns = GridCells.Fixed(2),
+            columns = GridCells.Fixed(5),
             state = gridState,
         ) {
             items(apps, key = { it.packageName + it.activityName }) { app ->
-                ListItem(
+                Column(
                     modifier = Modifier
                         .animateItemPlacement()
-                        .clickable { onAppClick(app) },
-                    leadingContent = {
-                        Image(
-                            modifier = Modifier.size(48.dp),
-                            painter = rememberDrawablePainter(drawable = app.drawable),
-                            contentDescription = app.label,
-                        )
-                    },
-                    headlineText = {
-                        Text(text = app.label, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    }
-                )
+                        .clickable { onAppClick(app) }
+                        .padding(top = 4.dp, bottom = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Image(
+                        modifier = Modifier
+                            .size(48.dp),
+                        painter = rememberDrawablePainter(drawable = app.drawable),
+                        contentDescription = app.label,
+                    )
+                    Text(
+                        text = app.label,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 18.sp
+                    )
+                }
             }
         }
     }
