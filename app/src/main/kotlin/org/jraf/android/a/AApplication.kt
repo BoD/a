@@ -25,44 +25,14 @@
 package org.jraf.android.a
 
 import android.app.Application
-import coil.ImageLoader
-import coil.ImageLoaderFactory
-import coil.disk.DiskCache
-import coil.memory.MemoryCache
-import coil.util.DebugLogger
 import org.jraf.android.a.util.initLogging
 
-class AApplication : Application(), ImageLoaderFactory {
+class AApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         initLogging()
 
         // Material dynamic colors
 //        DynamicColors.applyToActivitiesIfAvailable(this)
-    }
-
-    /**
-     * Coil image loader configuration.
-     */
-    override fun newImageLoader(): ImageLoader {
-        return ImageLoader.Builder(this)
-            // Caching
-            .memoryCache {
-                MemoryCache.Builder(this)
-                    .maxSizePercent(0.5)
-                    .build()
-            }
-            .diskCache {
-                DiskCache.Builder()
-                    .directory(cacheDir.resolve("coil_image_cache"))
-                    .maxSizePercent(0.2)
-                    .build()
-            }
-            .respectCacheHeaders(false)
-            // Crossfade
-            .crossfade(true)
-            // TODO: do this only in debug release builds
-            .logger(DebugLogger())
-            .build()
     }
 }

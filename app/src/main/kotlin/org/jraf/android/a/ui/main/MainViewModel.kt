@@ -28,7 +28,9 @@ import android.app.Application
 import android.content.Intent
 import android.content.pm.LauncherApps
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.UserHandle
+import android.provider.Settings
 import android.util.DisplayMetrics
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -128,6 +130,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             data.incrementCounter(app.packageName + "/" + app.activityName)
         }
     }
+
+    fun onAppLongClick(app: App) {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            .setData(Uri.parse("package:" + app.packageName))
+        intentToStart.tryEmit(intent)
+    }
+
 
     fun resetSearchQuery() {
         onSearchQueryChange("")

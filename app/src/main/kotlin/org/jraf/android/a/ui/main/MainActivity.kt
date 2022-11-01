@@ -27,6 +27,7 @@
 package org.jraf.android.a.ui.main
 
 import android.content.res.Configuration.UI_MODE_NIGHT_YES
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.ComponentActivity
@@ -34,13 +35,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridItemScope
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -59,6 +63,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -66,13 +76,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jraf.android.a.R
 import org.jraf.android.a.ui.main.MainViewModel.App
 import org.jraf.android.a.ui.theme.ATheme
+import kotlin.math.roundToInt
+import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -103,6 +115,7 @@ class MainActivity : ComponentActivity() {
                 apps = apps,
                 onSearchQueryChange = viewModel::onSearchQueryChange,
                 onAppClick = viewModel::onAppClick,
+                onAppLongClick = viewModel::onAppLongClick,
                 gridState = gridState,
             )
         }
@@ -126,6 +139,7 @@ class MainActivity : ComponentActivity() {
         apps: List<App>,
         onSearchQueryChange: (String) -> Unit,
         onAppClick: (App) -> Unit,
+        onAppLongClick: (App) -> Unit,
         gridState: LazyGridState,
     ) {
         ATheme {
@@ -136,7 +150,12 @@ class MainActivity : ComponentActivity() {
                         .padding(8.dp)
                 ) {
                     SearchTextField(searchQuery, onSearchQueryChange)
-                    AppList(apps = apps, onAppClick = onAppClick, gridState = gridState)
+                    AppList(
+                        apps = apps,
+                        onAppClick = onAppClick,
+                        onAppLongClick = onAppLongClick,
+                        gridState = gridState
+                    )
                 }
             }
         }
@@ -176,6 +195,7 @@ class MainActivity : ComponentActivity() {
     private fun AppList(
         apps: List<App>,
         onAppClick: (App) -> Unit,
+        onAppLongClick: (App) -> Unit,
         gridState: LazyGridState,
     ) {
         LazyVerticalGrid(
@@ -186,28 +206,43 @@ class MainActivity : ComponentActivity() {
             state = gridState,
         ) {
             items(apps, key = { it.packageName + it.activityName }) { app ->
-                Column(
-                    modifier = Modifier
-                        .animateItemPlacement()
-                        .clickable { onAppClick(app) }
-                        .padding(top = 4.dp, bottom = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .size(48.dp),
-                        painter = rememberDrawablePainter(drawable = app.drawable),
-                        contentDescription = app.label,
-                    )
-                    Text(
-                        text = app.label,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        lineHeight = 18.sp
-                    )
-                }
+                AppItem(app, onAppClick, onAppLongClick)
             }
+        }
+    }
+
+    @Composable
+    private fun LazyGridItemScope.AppItem(
+        app: App,
+        onAppClick: (App) -> Unit,
+        onAppLongClick: (App) -> Unit
+    ) {
+        Column(
+            modifier = Modifier
+                .animateItemPlacement()
+                .combinedClickable(
+                    onClick = { onAppClick(app) },
+                    onLongClick = { onAppLongClick(app) }
+                )
+                .padding(vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Image(
+                modifier = Modifier
+                    .size(48.dp),
+                painter = DrawablePainter(app.drawable),
+                contentDescription = app.label,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                modifier = Modifier
+                    .padding(horizontal = 2.dp),
+                text = app.label,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                fontSize = 12.sp,
+            )
         }
     }
 
@@ -216,10 +251,56 @@ class MainActivity : ComponentActivity() {
     private fun MainScreenPreview() {
         MainScreen(
             searchQuery = "",
-            apps = listOf(),
+            apps = listOf(
+                fakeApp(),
+                fakeApp(),
+                fakeApp(),
+                fakeApp(),
+                fakeApp(),
+                fakeApp(),
+                fakeApp(),
+                fakeApp(),
+                fakeApp(),
+            ),
             onSearchQueryChange = {},
             onAppClick = {},
+            onAppLongClick = {},
             gridState = rememberLazyGridState(),
         )
     }
+
+    @Composable
+    private fun fakeApp() = App(
+        label = "My App" * Random.nextInt(1, 4),
+        packageName = Random.nextInt().toString(),
+        activityName = Random.nextInt().toString(),
+        drawable = ContextCompat.getDrawable(
+            LocalContext.current,
+            R.mipmap.ic_launcher
+        )!!
+    )
+}
+
+private operator fun String.times(times: Int): String {
+    return buildString {
+        for (i in 0 until times) {
+            append(this@times)
+            if (i < times - 1) append(" ")
+        }
+    }
+}
+
+private class DrawablePainter(private val drawable: Drawable) : Painter() {
+    override val intrinsicSize: Size =
+        Size(width = drawable.intrinsicWidth.toFloat(), height = drawable.intrinsicHeight.toFloat())
+
+    override fun DrawScope.onDraw() {
+        drawIntoCanvas { canvas ->
+            // Update the Drawable's bounds
+            drawable.setBounds(0, 0, size.width.roundToInt(), size.height.roundToInt())
+            drawable.draw(canvas.nativeCanvas)
+        }
+
+    }
+
 }

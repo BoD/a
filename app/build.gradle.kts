@@ -11,8 +11,8 @@ android {
         applicationId = "a.a.a.a"
         minSdk = 26
         targetSdk = 33
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
     }
 
     signingConfigs {
@@ -77,13 +77,10 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.ui.util)
+    implementation(libs.androidx.compose.ui.graphics)
 //    implementation(libs.androidx.compose.material)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.core)
-
-    implementation(libs.coil.compose)
-
-    implementation(libs.accompanist.drawablepainter)
 
     implementation(libs.kprefs)
     implementation(libs.datastore)
