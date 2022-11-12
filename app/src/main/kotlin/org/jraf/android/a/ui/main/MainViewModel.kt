@@ -25,6 +25,7 @@
 package org.jraf.android.a.ui.main
 
 import android.app.Application
+import android.app.SearchManager
 import android.content.Intent
 import android.content.pm.LauncherApps
 import android.graphics.drawable.Drawable
@@ -158,6 +159,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             allApps.value = getAllApps()
         }
+    }
+
+    fun onWebSearchClick() {
+        val intent = Intent(Intent.ACTION_WEB_SEARCH)
+            .putExtra(SearchManager.QUERY, searchQuery.value)
+        intentToStart.tryEmit(intent)
     }
 
     class App(

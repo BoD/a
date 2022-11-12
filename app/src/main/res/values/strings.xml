@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name">a</string>
-    <string name="main_search_placeholder">Application name</string>
+    <string name="main_search_placeholder">Search</string>
+    <string name="main_search_reset">Clear</string>
+    <string name="main_search_webSearch">Search on the web</string>
 
 </resources>
