@@ -186,6 +186,7 @@ private fun SearchTextField(
         ),
         keyboardActions = KeyboardActions(
             onSearch = { onKeyboardActionButtonClick() },
+            onGo = { onKeyboardActionButtonClick() },
         ),
     )
 }
