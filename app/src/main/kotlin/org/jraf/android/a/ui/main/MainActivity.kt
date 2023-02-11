@@ -57,6 +57,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val searchQuery: String by viewModel.searchQuery.collectAsState(initial = "")
             val apps: List<App> by viewModel.filteredApps.collectAsState(initial = emptyList())
+            val isKeyboardWebSearchActive: Boolean by viewModel.isKeyboardWebSearchActive.collectAsState(
+                initial = false
+            )
             val scrollUp: Any by viewModel.scrollUp.collectAsState(initial = Unit)
 
             val gridState = rememberLazyGridState()
@@ -72,6 +75,8 @@ class MainActivity : ComponentActivity() {
                 onSearchQueryChange = viewModel::onSearchQueryChange,
                 onResetSearchQueryClick = viewModel::resetSearchQuery,
                 onWebSearchClick = viewModel::onWebSearchClick,
+                onKeyboardActionButtonClick = viewModel::onKeyboardActionButtonClick,
+                isKeyboardWebSearchActive = isKeyboardWebSearchActive,
                 onAppClick = viewModel::onAppClick,
                 onAppLongClick = viewModel::onAppLongClick,
                 gridState = gridState,
@@ -83,11 +88,17 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         viewModel.resetSearchQuery()
 
+        showKeyboardSupposedly()
+    }
+
+    private fun showKeyboardSupposedly() {
         // Force showing the keyboard, supposedly
         val imm: InputMethodManager = getSystemService(InputMethodManager::class.java)
         imm.hideSoftInputFromWindow(window.decorView.windowToken, 0)
         imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
     }
 
-    override fun onBackPressed() {}
+    override fun onBackPressed() {
+        showKeyboardSupposedly()
+    }
 }

@@ -96,6 +96,8 @@ fun MainLayout(
     onSearchQueryChange: (String) -> Unit,
     onResetSearchQueryClick: () -> Unit,
     onWebSearchClick: () -> Unit,
+    onKeyboardActionButtonClick: () -> Unit,
+    isKeyboardWebSearchActive: Boolean,
     onAppClick: (MainViewModel.App) -> Unit,
     onAppLongClick: (MainViewModel.App) -> Unit,
     gridState: LazyGridState,
@@ -115,6 +117,8 @@ fun MainLayout(
                     onSearchQueryChange = onSearchQueryChange,
                     onResetSearchQueryClick = onResetSearchQueryClick,
                     onWebSearchClick = onWebSearchClick,
+                    onKeyboardActionButtonClick = onKeyboardActionButtonClick,
+                    isKeyboardWebSearchActive = isKeyboardWebSearchActive,
                 )
                 AppList(
                     apps = apps,
@@ -133,6 +137,8 @@ private fun SearchTextField(
     onSearchQueryChange: (String) -> Unit,
     onResetSearchQueryClick: () -> Unit,
     onWebSearchClick: () -> Unit,
+    onKeyboardActionButtonClick: () -> Unit,
+    isKeyboardWebSearchActive: Boolean,
 ) {
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
@@ -175,11 +181,11 @@ private fun SearchTextField(
         },
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Password,
-            imeAction = ImeAction.Search,
+            imeAction = if (isKeyboardWebSearchActive) ImeAction.Search else ImeAction.Go,
             autoCorrect = false,
         ),
         keyboardActions = KeyboardActions(
-            onSearch = { onWebSearchClick() },
+            onSearch = { onKeyboardActionButtonClick() },
         ),
     )
 }
@@ -258,9 +264,11 @@ private fun MainScreenPreview() {
         onSearchQueryChange = {},
         onResetSearchQueryClick = {},
         onWebSearchClick = {},
+        onKeyboardActionButtonClick = {},
         onAppClick = {},
         onAppLongClick = {},
         gridState = rememberLazyGridState(),
+        isKeyboardWebSearchActive = false,
     )
 }
 

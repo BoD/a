@@ -39,10 +39,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jraf.android.a.data.Data
+import org.jraf.android.a.util.containsIgnoreAccents
 
 private val DIFFERENT = object : Any() {
     override fun equals(other: Any?): Boolean {
@@ -99,18 +104,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     val searchQuery = MutableStateFlow("")
-    val filteredApps: Flow<List<App>> = allApps
+    val filteredApps: StateFlow<List<App>> = allApps
         .combine(searchQuery) { allApps, verbatimQuery ->
             val query = verbatimQuery.trim()
             allApps
                 .filter { app ->
-                    app.label.contains(query, true) ||
+                    app.label.containsIgnoreAccents(query) ||
                             app.packageName.contains(query, true)
                 }
                 .sortedByDescending {
                     counters.value[it.packageName + "/" + it.activityName] ?: 0
                 }
         }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val isKeyboardWebSearchActive: Flow<Boolean> = filteredApps.map { it.isEmpty() }
 
     val intentToStart = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
     val scrollUp: MutableStateFlow<Any> = MutableStateFlow(DIFFERENT)
@@ -165,6 +172,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val intent = Intent(Intent.ACTION_WEB_SEARCH)
             .putExtra(SearchManager.QUERY, searchQuery.value)
         intentToStart.tryEmit(intent)
+    }
+
+    fun onKeyboardActionButtonClick() {
+        val appList = filteredApps.value
+        if (searchQuery.value.isBlank()) return
+        if (appList.isEmpty()) {
+            onWebSearchClick()
+        } else {
+            onAppClick(appList.first())
+        }
     }
 
     class App(
