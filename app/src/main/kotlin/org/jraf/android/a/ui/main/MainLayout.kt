@@ -50,6 +50,7 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -66,6 +67,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Size
@@ -92,14 +94,14 @@ import kotlin.random.Random
 @Composable
 fun MainLayout(
     searchQuery: String,
-    apps: List<MainViewModel.App>,
+    launchItems: List<MainViewModel.LaunchItem>,
     onSearchQueryChange: (String) -> Unit,
     onResetSearchQueryClick: () -> Unit,
     onWebSearchClick: () -> Unit,
     onKeyboardActionButtonClick: () -> Unit,
     isKeyboardWebSearchActive: Boolean,
-    onAppClick: (MainViewModel.App) -> Unit,
-    onAppLongClick: (MainViewModel.App) -> Unit,
+    onLaunchItemClick: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemLongClick: (MainViewModel.LaunchItem) -> Unit,
     gridState: LazyGridState,
 ) {
     ATheme {
@@ -120,10 +122,10 @@ fun MainLayout(
                     onKeyboardActionButtonClick = onKeyboardActionButtonClick,
                     isKeyboardWebSearchActive = isKeyboardWebSearchActive,
                 )
-                AppList(
-                    apps = apps,
-                    onAppClick = onAppClick,
-                    onAppLongClick = onAppLongClick,
+                LaunchItemList(
+                    launchItems = launchItems,
+                    onLaunchItemClick = onLaunchItemClick,
+                    onLaunchItemLongClick = onLaunchItemLongClick,
                     gridState = gridState
                 )
             }
@@ -159,7 +161,7 @@ private fun SearchTextField(
             Text(text = stringResource(R.string.main_search_placeholder))
         },
         trailingIcon = {
-            Crossfade(searchQuery.isNotBlank()) { visible ->
+            Crossfade(searchQuery.isNotBlank(), label = "trailingIconCrossFade") { visible ->
                 if (visible) {
                     Row {
                         IconButton(onClick = { onResetSearchQueryClick() }) {
@@ -192,10 +194,10 @@ private fun SearchTextField(
 }
 
 @Composable
-private fun AppList(
-    apps: List<MainViewModel.App>,
-    onAppClick: (MainViewModel.App) -> Unit,
-    onAppLongClick: (MainViewModel.App) -> Unit,
+private fun LaunchItemList(
+    launchItems: List<MainViewModel.LaunchItem>,
+    onLaunchItemClick: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemLongClick: (MainViewModel.LaunchItem) -> Unit,
     gridState: LazyGridState,
 ) {
     LazyVerticalGrid(
@@ -205,39 +207,47 @@ private fun AppList(
         columns = GridCells.Fixed(5),
         state = gridState,
     ) {
-        items(apps, key = { it.packageName + it.activityName }) { app ->
-            AppItem(app, onAppClick, onAppLongClick)
+        items(launchItems, key = { it.id }) { launchItem ->
+            LaunchItemItem(launchItem, onLaunchItemClick, onLaunchItemLongClick)
         }
     }
 }
 
 @Composable
-private fun LazyGridItemScope.AppItem(
-    app: MainViewModel.App,
-    onAppClick: (MainViewModel.App) -> Unit,
-    onAppLongClick: (MainViewModel.App) -> Unit
+private fun LazyGridItemScope.LaunchItemItem(
+    launchItem: MainViewModel.LaunchItem,
+    onLaunchItemClick: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemLongClick: (MainViewModel.LaunchItem) -> Unit
 ) {
     Column(
         modifier = Modifier
             .animateItemPlacement()
             .combinedClickable(
-                onClick = { onAppClick(app) },
-                onLongClick = { onAppLongClick(app) }
+                onClick = { onLaunchItemClick(launchItem) },
+                onLongClick = { onLaunchItemLongClick(launchItem) }
             )
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
             modifier = Modifier
-                .size(48.dp),
-            painter = DrawablePainter(app.drawable),
-            contentDescription = app.label,
+                .size(48.dp)
+                .let {
+                    if (launchItem is MainViewModel.ContactLaunchItem) {
+                        // Contact photos are square, but we want circles
+                        it.clip(CircleShape)
+                    } else {
+                        it
+                    }
+                },
+            painter = DrawablePainter(launchItem.drawable),
+            contentDescription = launchItem.label,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             modifier = Modifier
                 .padding(horizontal = 2.dp),
-            text = app.label,
+            text = launchItem.label,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
@@ -251,7 +261,7 @@ private fun LazyGridItemScope.AppItem(
 private fun MainScreenPreview() {
     MainLayout(
         searchQuery = "",
-        apps = listOf(
+        launchItems = listOf(
             fakeApp(),
             fakeApp(),
             fakeApp(),
@@ -266,15 +276,15 @@ private fun MainScreenPreview() {
         onResetSearchQueryClick = {},
         onWebSearchClick = {},
         onKeyboardActionButtonClick = {},
-        onAppClick = {},
-        onAppLongClick = {},
+        onLaunchItemClick = {},
+        onLaunchItemLongClick = {},
         gridState = rememberLazyGridState(),
         isKeyboardWebSearchActive = false,
     )
 }
 
 @Composable
-private fun fakeApp() = MainViewModel.App(
+private fun fakeApp() = MainViewModel.AppLaunchItem(
     label = "My App" * Random.nextInt(1, 4),
     packageName = Random.nextInt().toString(),
     activityName = Random.nextInt().toString(),

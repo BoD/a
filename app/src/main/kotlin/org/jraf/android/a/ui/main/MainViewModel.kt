@@ -27,15 +27,12 @@ package org.jraf.android.a.ui.main
 import android.app.Application
 import android.app.SearchManager
 import android.content.Intent
-import android.content.pm.LauncherApps
 import android.graphics.drawable.Drawable
 import android.net.Uri
-import android.os.UserHandle
+import android.provider.ContactsContract
 import android.provider.Settings
-import android.util.DisplayMetrics
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,8 +42,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.jraf.android.a.data.Data
+import org.jraf.android.a.data.AppRepository
+import org.jraf.android.a.data.ContactRepository
+import org.jraf.android.a.data.LaunchItemRepository
 import org.jraf.android.a.util.containsIgnoreAccents
 
 private val DIFFERENT = object : Any() {
@@ -56,68 +54,36 @@ private val DIFFERENT = object : Any() {
 }
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
-    private val launcherApps: LauncherApps = application.getSystemService(LauncherApps::class.java)
-    private var allApps: MutableStateFlow<List<App>> = MutableStateFlow(emptyList())
+    private var allLaunchItems: MutableStateFlow<List<LaunchItem>> = MutableStateFlow(emptyList())
 
-    private val data = Data(application)
+    private val launchItemRepository = LaunchItemRepository(application)
+    private val appRepository = AppRepository(application, onPackagesChanged = ::refreshAllLaunchItems)
+    private val contactRepository = ContactRepository(application)
 
     private val counters: MutableStateFlow<Map<String, Long>> = MutableStateFlow(emptyMap())
 
     init {
         viewModelScope.launch {
-            data.counters.collect {
+            launchItemRepository.counters.collect {
                 counters.value = it
             }
         }
 
-        refreshAllApps()
-
-        launcherApps.registerCallback(object : LauncherApps.Callback() {
-            override fun onPackageRemoved(packageName: String?, user: UserHandle?) {
-                refreshAllApps()
-            }
-
-            override fun onPackageAdded(packageName: String?, user: UserHandle?) {
-                refreshAllApps()
-            }
-
-            override fun onPackageChanged(packageName: String?, user: UserHandle?) {
-                refreshAllApps()
-            }
-
-            override fun onPackagesAvailable(
-                packageNames: Array<out String>?,
-                user: UserHandle?,
-                replacing: Boolean
-            ) {
-                refreshAllApps()
-            }
-
-            override fun onPackagesUnavailable(
-                packageNames: Array<out String>?,
-                user: UserHandle?,
-                replacing: Boolean
-            ) {
-                refreshAllApps()
-            }
-        })
+        refreshAllLaunchItems()
     }
 
     val searchQuery = MutableStateFlow("")
-    val filteredApps: StateFlow<List<App>> = allApps
-        .combine(searchQuery) { allApps, verbatimQuery ->
+    val filteredLaunchItems: StateFlow<List<LaunchItem>> = allLaunchItems
+        .combine(searchQuery) { allLaunchedItems, verbatimQuery ->
             val query = verbatimQuery.trim()
-            allApps
-                .filter { app ->
-                    app.label.containsIgnoreAccents(query) ||
-                            app.packageName.contains(query, true)
-                }
+            allLaunchedItems
+                .filter { it.matchesFilter(query) }
                 .sortedByDescending {
-                    counters.value[it.packageName + "/" + it.activityName] ?: 0
+                    counters.value[it.id] ?: 0
                 }
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-    val isKeyboardWebSearchActive: Flow<Boolean> = filteredApps.map { it.isEmpty() }
+    val isKeyboardWebSearchActive: Flow<Boolean> = filteredLaunchItems.map { it.isEmpty() }
 
     val intentToStart = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
     val scrollUp: MutableStateFlow<Any> = MutableStateFlow(DIFFERENT)
@@ -127,44 +93,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         scrollUp.value = DIFFERENT
     }
 
-    fun onAppClick(app: App) {
-        val intent = Intent()
-            .apply { setClassName(app.packageName, app.activityName) }
-            .addCategory(Intent.CATEGORY_LAUNCHER)
-            .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-//            .setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
-        intentToStart.tryEmit(intent)
+    fun onLaunchItemClick(launchedItem: LaunchItem) {
+        intentToStart.tryEmit(launchedItem.clickIntent)
         viewModelScope.launch {
-            data.recordLaunchedItem(app.packageName + "/" + app.activityName)
+            launchItemRepository.recordLaunchedItem(launchedItem.id)
         }
     }
 
-    fun onAppLongClick(app: App) {
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-            .setData(Uri.parse("package:" + app.packageName))
-        intentToStart.tryEmit(intent)
+    fun onLaunchItemLongClick(launchedItem: LaunchItem) {
+        launchedItem.longClickIntent?.let { intentToStart.tryEmit(it) }
     }
-
 
     fun resetSearchQuery() {
         onSearchQueryChange("")
     }
 
-    private suspend fun getAllApps(): List<App> = withContext(Dispatchers.IO) {
-        launcherApps.getActivityList(null, launcherApps.profiles[0])
-            .map { launcherActivityInfo ->
-                App(
-                    label = launcherActivityInfo.label.toString(),
-                    packageName = launcherActivityInfo.applicationInfo.packageName,
-                    activityName = launcherActivityInfo.name,
-                    drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH),
-                )
-            }
+    private suspend fun getAllLaunchItems(): List<LaunchItem> {
+        return appRepository.getAllApps().map { it.toAppLaunchItem() } +
+                contactRepository.getStarredContacts().map { it.toContactLaunchItem() }
     }
 
-    private fun refreshAllApps() {
+    private fun refreshAllLaunchItems() {
         viewModelScope.launch {
-            allApps.value = getAllApps()
+            allLaunchItems.value = getAllLaunchItems()
         }
     }
 
@@ -175,19 +126,80 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onKeyboardActionButtonClick() {
-        val appList = filteredApps.value
+        val launchItems = filteredLaunchItems.value
         if (searchQuery.value.isBlank()) return
-        if (appList.isEmpty()) {
+        if (launchItems.isEmpty()) {
             onWebSearchClick()
         } else {
-            onAppClick(appList.first())
+            onLaunchItemClick(launchItems.first())
         }
     }
 
-    class App(
-        val label: String,
-        val packageName: String,
-        val activityName: String,
-        val drawable: Drawable,
-    )
+    sealed interface LaunchItem {
+        val label: String
+        val drawable: Drawable
+        val id: String
+        val clickIntent: Intent
+        val longClickIntent: Intent?
+
+        fun matchesFilter(query: String): Boolean
+    }
+
+    data class AppLaunchItem(
+        override val label: String,
+        private val packageName: String,
+        private val activityName: String,
+        override val drawable: Drawable,
+    ) : LaunchItem {
+        override val id = "$packageName/$activityName"
+
+        override val clickIntent = Intent()
+            .apply { setClassName(packageName, activityName) }
+            .addCategory(Intent.CATEGORY_LAUNCHER)
+            .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+
+        override val longClickIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            .setData(Uri.parse("package:$packageName"))
+
+        override fun matchesFilter(query: String): Boolean {
+            return label.containsIgnoreAccents(query) ||
+                    packageName.contains(query, true)
+        }
+    }
+
+    private fun AppRepository.App.toAppLaunchItem(): AppLaunchItem {
+        return AppLaunchItem(
+            label = label,
+            packageName = packageName,
+            activityName = activityName,
+            drawable = drawable,
+        )
+    }
+
+    data class ContactLaunchItem(
+        override val label: String,
+        private val contactId: Long,
+        private val lookupKey: String,
+        override val drawable: Drawable,
+    ) : LaunchItem {
+        override val id = lookupKey
+
+        override val clickIntent = Intent(Intent.ACTION_VIEW)
+            .setData(ContactsContract.Contacts.getLookupUri(contactId, lookupKey))
+
+        override val longClickIntent = null
+
+        override fun matchesFilter(query: String): Boolean {
+            return label.containsIgnoreAccents(query)
+        }
+    }
+
+    private fun ContactRepository.Contact.toContactLaunchItem(): ContactLaunchItem {
+        return ContactLaunchItem(
+            label = displayName,
+            contactId = contactId,
+            lookupKey = lookupKey,
+            drawable = photoDrawable,
+        )
+    }
 }

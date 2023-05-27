@@ -38,7 +38,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jraf.android.a.ui.main.MainViewModel.App
+import org.jraf.android.a.ui.main.MainViewModel.LaunchItem
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val searchQuery: String by viewModel.searchQuery.collectAsState(initial = "")
-            val apps: List<App> by viewModel.filteredApps.collectAsState(initial = emptyList())
+            val launchItems: List<LaunchItem> by viewModel.filteredLaunchItems.collectAsState(initial = emptyList())
             val isKeyboardWebSearchActive: Boolean by viewModel.isKeyboardWebSearchActive.collectAsState(
                 initial = false
             )
@@ -71,14 +71,14 @@ class MainActivity : ComponentActivity() {
 
             MainLayout(
                 searchQuery = searchQuery,
-                apps = apps,
+                launchItems = launchItems,
                 onSearchQueryChange = viewModel::onSearchQueryChange,
                 onResetSearchQueryClick = viewModel::resetSearchQuery,
                 onWebSearchClick = viewModel::onWebSearchClick,
                 onKeyboardActionButtonClick = viewModel::onKeyboardActionButtonClick,
                 isKeyboardWebSearchActive = isKeyboardWebSearchActive,
-                onAppClick = viewModel::onAppClick,
-                onAppLongClick = viewModel::onAppLongClick,
+                onLaunchItemClick = viewModel::onLaunchItemClick,
+                onLaunchItemLongClick = viewModel::onLaunchItemLongClick,
                 gridState = gridState,
             )
         }

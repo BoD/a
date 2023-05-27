@@ -41,7 +41,7 @@ private const val LONG_TERM_WEIGHT = 1L
 private const val SHORT_TERM_HISTORY_SIZE = 20L
 private const val SHORT_TERM_WEIGHT = 3L
 
-class Data(private val context: Context) {
+class LaunchItemRepository(private val context: Context) {
     private val database: Database by lazy { createSqldelightDatabase(context) }
 
     private fun createSqldelightDatabase(context: Context): Database {
