@@ -98,6 +98,7 @@ class MainActivity : ComponentActivity() {
         imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         showKeyboardSupposedly()
     }

@@ -1,33 +1,18 @@
-import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+//import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 plugins {
-    alias(libs.plugins.benManes.versions)
+// Commented out for now because plugin is incompatible with Wire (uses an old version of okio)
+    //    alias(libs.plugins.benManes.versions)
+
+    alias(libs.plugins.androidApplication) apply false
+    alias(libs.plugins.kotlinAndroid) apply false
 }
 
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath(libs.android.gradlePlugin)
-        classpath(libs.kotlin.gradlePlugin)
-    }
-}
-
-tasks {
-    register<Delete>("clean") {
-        delete(rootProject.buildDir)
-    }
-}
-
-tasks.withType<DependencyUpdatesTask> {
-    rejectVersionIf {
-        val reject = setOf("alpha", "beta", "rc")
-        reject.any { candidate.version.contains(it, ignoreCase = true) }
-//        false
-    }
-}
+//tasks.withType<DependencyUpdatesTask> {
+//    rejectVersionIf {
+//        val reject = setOf("alpha", "beta", "rc", "dev")
+//        reject.any { candidate.version.contains("-$it", ignoreCase = true) }
+//    }
+//}
 
 // `./gradlew dependencyUpdates` to see new dependency versions
