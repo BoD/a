@@ -25,28 +25,49 @@
 
 package org.jraf.android.a.ui.main
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jraf.android.a.ui.main.MainViewModel.LaunchItem
+import org.jraf.android.a.util.logd
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
+
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        logd("Permission granted: $granted")
+        viewModel.refreshAllLaunchItems()
+        viewModel.shouldShowRequestPermissionRationale.value =
+            ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CONTACTS)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_DENIED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CONTACTS)) {
+                viewModel.shouldShowRequestPermissionRationale.value = true
+            } else {
+                requestPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+            }
+        }
 
         lifecycleScope.launch {
             viewModel.intentToStart.collect { intent ->
@@ -61,6 +82,9 @@ class MainActivity : ComponentActivity() {
                 initial = false
             )
             val scrollUp: Any by viewModel.scrollUp.collectAsState(initial = Unit)
+            val shouldShowRequestPermissionRationale: Boolean by viewModel.shouldShowRequestPermissionRationale.collectAsState(
+                initial = false
+            )
 
             val gridState = rememberLazyGridState()
 
@@ -72,6 +96,7 @@ class MainActivity : ComponentActivity() {
             MainLayout(
                 searchQuery = searchQuery,
                 launchItems = launchItems,
+                shouldShowRequestPermissionRationale = shouldShowRequestPermissionRationale,
                 onSearchQueryChange = viewModel::onSearchQueryChange,
                 onResetSearchQueryClick = viewModel::resetSearchQuery,
                 onWebSearchClick = viewModel::onWebSearchClick,
@@ -79,6 +104,10 @@ class MainActivity : ComponentActivity() {
                 isKeyboardWebSearchActive = isKeyboardWebSearchActive,
                 onLaunchItemClick = viewModel::onLaunchItemClick,
                 onLaunchItemLongClick = viewModel::onLaunchItemLongClick,
+                onRequestPermissionRationaleClick = {
+                    viewModel.shouldShowRequestPermissionRationale.value = false
+                    requestPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                },
                 gridState = gridState,
             )
         }

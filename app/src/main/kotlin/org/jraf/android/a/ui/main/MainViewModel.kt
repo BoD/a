@@ -88,6 +88,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val intentToStart = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
     val scrollUp: MutableStateFlow<Any> = MutableStateFlow(DIFFERENT)
 
+    val shouldShowRequestPermissionRationale = MutableStateFlow(false)
+
     fun onSearchQueryChange(query: String) {
         searchQuery.value = query
         scrollUp.value = DIFFERENT
@@ -113,7 +115,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 contactRepository.getStarredContacts().map { it.toContactLaunchItem() }
     }
 
-    private fun refreshAllLaunchItems() {
+    fun refreshAllLaunchItems() {
         viewModelScope.launch {
             allLaunchItems.value = getAllLaunchItems()
         }

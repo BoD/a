@@ -24,10 +24,13 @@
  */
 package org.jraf.android.a.data
 
+import android.Manifest.permission
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.provider.ContactsContract.Contacts
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -40,35 +43,39 @@ class ContactRepository(private val context: Context) {
     )
 
     suspend fun getStarredContacts(): List<Contact> {
-        return withContext(Dispatchers.IO) {
-            context.contentResolver.query(
-                Contacts.CONTENT_URI,
-                arrayOf(
-                    Contacts._ID,
-                    Contacts.LOOKUP_KEY,
-                    Contacts.DISPLAY_NAME,
-                ),
-                "${Contacts.STARRED} = 1",
-                null,
-                null,
-            )?.use { cursor ->
-                buildList<Contact> {
-                    while (cursor.moveToNext()) {
-                        val contactId = cursor.getLong(0)
-                        val lookupKey = cursor.getString(1)
-                        add(
-                            Contact(
-                                contactId = contactId,
-                                lookupKey = lookupKey,
-                                displayName = cursor.getString(2),
-                                photoDrawable = getPhotoDrawable(
-                                    Contacts.getLookupUri(contactId, lookupKey)
+        return if (ContextCompat.checkSelfPermission(context, permission.READ_CONTACTS) == PackageManager.PERMISSION_DENIED) {
+            emptyList()
+        } else {
+            withContext(Dispatchers.IO) {
+                context.contentResolver.query(
+                    Contacts.CONTENT_URI,
+                    arrayOf(
+                        Contacts._ID,
+                        Contacts.LOOKUP_KEY,
+                        Contacts.DISPLAY_NAME,
+                    ),
+                    "${Contacts.STARRED} = 1",
+                    null,
+                    null,
+                )?.use { cursor ->
+                    buildList<Contact> {
+                        while (cursor.moveToNext()) {
+                            val contactId = cursor.getLong(0)
+                            val lookupKey = cursor.getString(1)
+                            add(
+                                Contact(
+                                    contactId = contactId,
+                                    lookupKey = lookupKey,
+                                    displayName = cursor.getString(2),
+                                    photoDrawable = getPhotoDrawable(
+                                        Contacts.getLookupUri(contactId, lookupKey)
+                                    )
                                 )
                             )
-                        )
+                        }
                     }
-                }
-            } ?: emptyList()
+                } ?: emptyList()
+            }
         }
     }
 

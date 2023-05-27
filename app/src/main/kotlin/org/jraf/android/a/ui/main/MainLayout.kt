@@ -56,6 +56,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -95,6 +96,7 @@ import kotlin.random.Random
 fun MainLayout(
     searchQuery: String,
     launchItems: List<MainViewModel.LaunchItem>,
+    shouldShowRequestPermissionRationale: Boolean,
     onSearchQueryChange: (String) -> Unit,
     onResetSearchQueryClick: () -> Unit,
     onWebSearchClick: () -> Unit,
@@ -102,6 +104,7 @@ fun MainLayout(
     isKeyboardWebSearchActive: Boolean,
     onLaunchItemClick: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemLongClick: (MainViewModel.LaunchItem) -> Unit,
+    onRequestPermissionRationaleClick: () -> Unit,
     gridState: LazyGridState,
 ) {
     ATheme {
@@ -109,7 +112,6 @@ fun MainLayout(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-//                    .padding(8.dp)
                     .statusBarsPadding()
                     .navigationBarsPadding()
                     .imePadding()
@@ -122,6 +124,9 @@ fun MainLayout(
                     onKeyboardActionButtonClick = onKeyboardActionButtonClick,
                     isKeyboardWebSearchActive = isKeyboardWebSearchActive,
                 )
+                if (shouldShowRequestPermissionRationale) {
+                    RequestPermissionRationale(onRequestPermissionRationaleClick = onRequestPermissionRationaleClick)
+                }
                 LaunchItemList(
                     launchItems = launchItems,
                     onLaunchItemClick = onLaunchItemClick,
@@ -130,6 +135,29 @@ fun MainLayout(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun RequestPermissionRationale(onRequestPermissionRationaleClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    )
+    {
+        Text(
+            modifier = Modifier
+                .padding(8.dp)
+                .weight(1F),
+            text = stringResource(R.string.main_requestPermissionRationale_text),
+        )
+
+        Spacer(modifier = Modifier.size(8.dp))
+
+        Button(onClick = onRequestPermissionRationaleClick) {
+            Text(text = stringResource(R.string.main_requestPermissionRationale_button))
+        }
+        Spacer(modifier = Modifier.size(8.dp))
     }
 }
 
@@ -272,14 +300,16 @@ private fun MainScreenPreview() {
             fakeApp(),
             fakeApp(),
         ),
+        shouldShowRequestPermissionRationale = true,
         onSearchQueryChange = {},
         onResetSearchQueryClick = {},
         onWebSearchClick = {},
         onKeyboardActionButtonClick = {},
+        isKeyboardWebSearchActive = false,
         onLaunchItemClick = {},
         onLaunchItemLongClick = {},
+        onRequestPermissionRationaleClick = {},
         gridState = rememberLazyGridState(),
-        isKeyboardWebSearchActive = false,
     )
 }
 
