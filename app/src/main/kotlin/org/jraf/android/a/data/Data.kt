@@ -7,7 +7,7 @@
  *                              /___/
  * repository.
  *
- * Copyright (C) 2022-present Benoit 'BoD' Lubek (BoD@JRAF.org)
+ * Copyright (C) 2023-present Benoit 'BoD' Lubek (BoD@JRAF.org)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,79 +25,52 @@
 package org.jraf.android.a.data
 
 import android.content.Context
-import androidx.datastore.core.CorruptionException
-import androidx.datastore.core.DataStoreFactory
-import androidx.datastore.core.Serializer
-import androidx.datastore.dataStoreFile
+import com.squareup.sqldelight.android.AndroidSqliteDriver
+import com.squareup.sqldelight.runtime.coroutines.asFlow
+import com.squareup.sqldelight.runtime.coroutines.mapToList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import org.jraf.android.a.util.mergeReduce
-import java.io.InputStream
-import java.io.OutputStream
+import kotlinx.coroutines.withContext
+import org.jraf.android.a.Database
 
-private const val LONG_LAUNCH_COUNT = 300
-private const val SHORT_LAUNCH_COUNT = 20
+private const val LONG_TERM_HISTORY_SIZE = 300L
+private const val LONG_TERM_WEIGHT = 1L
 
-private const val RECENT_LAUNCH_WEIGHT = 3
+private const val SHORT_TERM_HISTORY_SIZE = 20L
+private const val SHORT_TERM_WEIGHT = 3L
 
-class Data(context: Context) {
-    private val settingsDataStore = DataStoreFactory.create(
-        serializer = SettingsSerializer,
-        produceFile = { context.dataStoreFile("settings.dataStore") },
-    )
+class Data(private val context: Context) {
+    private val database: Database by lazy { createSqldelightDatabase(context) }
 
-    val counters: Flow<Map<String, Int>> = settingsDataStore.data.map { settings ->
-        val longActivityCounters =
-            settings.longLaunchedActivityList.associateWith { activityName ->
-                settings.longLaunchedActivityList.count { it == activityName }
-            }
-        val shortActivityCounters =
-            settings.shortLaunchedActivityList.associateWith { activityName ->
-                settings.shortLaunchedActivityList.count { it == activityName } * RECENT_LAUNCH_WEIGHT
-            }
-
-        longActivityCounters.mergeReduce(shortActivityCounters) { a, b -> a + b }
+    private fun createSqldelightDatabase(context: Context): Database {
+        val driver = AndroidSqliteDriver(
+            schema = Database.Schema,
+            context = context,
+            name = "a.db",
+        )
+        return Database(driver)
     }
 
-    suspend fun incrementCounter(app: String) {
-        settingsDataStore.updateData { settings ->
-            val longActivityList = settings.longLaunchedActivityList.toMutableList()
-            if (longActivityList.size >= LONG_LAUNCH_COUNT) {
-                longActivityList.removeAt(0)
-            }
-            longActivityList.add(app)
-
-            val shortActivityList = settings.shortLaunchedActivityList.toMutableList()
-            if (shortActivityList.size >= SHORT_LAUNCH_COUNT) {
-                shortActivityList.removeAt(0)
-            }
-            shortActivityList.add(app)
-
-            settings.copy(
-                longLaunchedActivityList = longActivityList,
-                shortLaunchedActivityList = shortActivityList,
-            )
+    suspend fun recordLaunchedItem(id: String) {
+        withContext(Dispatchers.IO) {
+            database.launchedItemsQueries.insert(id)
         }
     }
+
+    val counters: Flow<Map<String, Long>> = run {
+        val longTermCounters = getCounters(LONG_TERM_HISTORY_SIZE, LONG_TERM_WEIGHT)
+        val shortTermCounters = getCounters(SHORT_TERM_HISTORY_SIZE, SHORT_TERM_WEIGHT)
+        longTermCounters.combine(shortTermCounters) { longTerm, shortTerm ->
+            longTerm.mapValues { it.value + shortTerm.getOrDefault(it.key, 0) }
+        }
+    }
+
+    private fun getCounters(historySize: Long, weight: Long) = database.launchedItemsQueries.select(historySize = historySize)
+        .asFlow()
+        .mapToList()
+        .map { counters ->
+            counters.associate { it.id to it.count * weight }
+        }
 }
-
-private object SettingsSerializer : Serializer<Settings> {
-    override val defaultValue: Settings
-        get() {
-            return Settings()
-        }
-
-    override suspend fun readFrom(input: InputStream): Settings {
-        try {
-            return Settings.ADAPTER.decode(input)
-        } catch (e: Exception) {
-            throw CorruptionException("Could not decode input", e)
-        }
-    }
-
-    override suspend fun writeTo(
-        t: Settings,
-        output: OutputStream
-    ) = Settings.ADAPTER.encode(output, t)
-}
-

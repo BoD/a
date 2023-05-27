@@ -61,7 +61,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val data = Data(application)
 
-    private val counters: MutableStateFlow<Map<String, Int>> = MutableStateFlow(emptyMap())
+    private val counters: MutableStateFlow<Map<String, Long>> = MutableStateFlow(emptyMap())
 
     init {
         viewModelScope.launch {
@@ -135,7 +135,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 //            .setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
         intentToStart.tryEmit(intent)
         viewModelScope.launch {
-            data.incrementCounter(app.packageName + "/" + app.activityName)
+            data.recordLaunchedItem(app.packageName + "/" + app.activityName)
         }
     }
 

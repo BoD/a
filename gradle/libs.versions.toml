@@ -15,15 +15,13 @@ androidx-compose-material = "1.4.3"
 androidx-compose-material3 = "1.1.0"
 google-material = "1.9.0"
 benManes-versions = "0.46.0"
-kprefs = "1.7.0"
-datastore = "1.0.0"
-wire = "4.7.0"
+sqldelight = "1.5.5"
 
 [plugins]
 benManes-versions = { id = "com.github.ben-manes.versions", version.ref = "benManes-versions" }
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-wire = { id = "com.squareup.wire", version.ref = "wire" }
+sqldelight = { id = "com.squareup.sqldelight", version.ref = "sqldelight" }
 
 [libraries]
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
@@ -44,10 +42,9 @@ androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graph
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "androidx-compose-material3" }
 androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core", version.ref = "androidx-compose-material" }
 
-kprefs = { group = "org.jraf", name = "kprefs", version.ref = "kprefs" }
-
 testing-junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 google-material = { group = "com.google.android.material", name = "material", version.ref = "google-material" }
 
-datastore = { group = "androidx.datastore", name = "datastore", version.ref = "datastore" }
+sqldelight-androidDriver = { group = "com.squareup.sqldelight", name = "android-driver", version.ref = "sqldelight" }
+sqldelight-coroutines = { group = "com.squareup.sqldelight", name = "coroutines-extensions", version.ref = "sqldelight" }

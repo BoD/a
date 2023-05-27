@@ -1,0 +1,20 @@
+CREATE TABLE LaunchedItems (
+    id TEXT NOT NULL
+);
+
+insert:
+INSERT OR REPLACE INTO LaunchedItems (
+    id
+) VALUES (
+    :id
+);
+
+select:
+SELECT id, COUNT(id) AS count FROM (
+    SELECT id FROM LaunchedItems LIMIT :historySize
+) GROUP BY id;
+
+purgeOld:
+DELETE FROM LaunchedItems WHERE id NOT IN (
+    SELECT id FROM LaunchedItems ORDER BY id DESC LIMIT :maxCount
+);
