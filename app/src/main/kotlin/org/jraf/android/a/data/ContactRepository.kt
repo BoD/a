@@ -30,9 +30,11 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.provider.ContactsContract.Contacts
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jraf.android.a.R
 
 class ContactRepository(private val context: Context) {
     data class Contact(
@@ -84,8 +86,8 @@ class ContactRepository(private val context: Context) {
             context.contentResolver,
             lookupUri,
             false
-        ).use { inputStream ->
-            Drawable.createFromStream(inputStream, null)!!
-        }
+        )?.use { inputStream ->
+            Drawable.createFromStream(inputStream, null)
+        } ?: AppCompatResources.getDrawable(context, R.drawable.ic_contact)!!
     }
 }
