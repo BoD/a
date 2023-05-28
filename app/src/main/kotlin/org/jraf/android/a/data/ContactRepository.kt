@@ -29,6 +29,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.provider.ContactsContract
 import android.provider.ContactsContract.Contacts
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
@@ -42,6 +43,7 @@ class ContactRepository(private val context: Context) {
         val lookupKey: String,
         val displayName: String,
         val photoDrawable: Drawable,
+        val phoneNumber: String?,
     )
 
     suspend fun getStarredContacts(): List<Contact> {
@@ -71,7 +73,8 @@ class ContactRepository(private val context: Context) {
                                     displayName = cursor.getString(2),
                                     photoDrawable = getPhotoDrawable(
                                         Contacts.getLookupUri(contactId, lookupKey)
-                                    )
+                                    ),
+                                    phoneNumber = getPhoneNumber(contactId)
                                 )
                             )
                         }
@@ -90,4 +93,21 @@ class ContactRepository(private val context: Context) {
             Drawable.createFromStream(inputStream, null)
         } ?: AppCompatResources.getDrawable(context, R.drawable.ic_contact)!!
     }
+
+    private fun getPhoneNumber(contactId: Long): String? {
+        return context.contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+            "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+            arrayOf(contactId.toString()),
+            ContactsContract.CommonDataKinds.Phone.IS_SUPER_PRIMARY + " DESC",
+        )?.use { cursor ->
+            if (cursor.moveToNext()) {
+                cursor.getString(0)
+            } else {
+                null
+            }
+        }
+    }
+
 }

@@ -155,13 +155,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) : LaunchItem {
         override val id = "$packageName/$activityName"
 
-        override val clickIntent = Intent()
-            .apply { setClassName(packageName, activityName) }
-            .addCategory(Intent.CATEGORY_LAUNCHER)
-            .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+        override val clickIntent: Intent
+            get() = Intent()
+                .apply { setClassName(packageName, activityName) }
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
 
-        override val longClickIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-            .setData(Uri.parse("package:$packageName"))
+        override val longClickIntent: Intent
+            get() = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                .setData(Uri.parse("package:$packageName"))
 
         override fun matchesFilter(query: String): Boolean {
             return label.containsIgnoreAccents(query) ||
@@ -183,13 +185,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private val contactId: Long,
         private val lookupKey: String,
         override val drawable: Drawable,
+        private val phoneNumber: String?,
     ) : LaunchItem {
         override val id = lookupKey
 
-        override val clickIntent = Intent(Intent.ACTION_VIEW)
-            .setData(ContactsContract.Contacts.getLookupUri(contactId, lookupKey))
+        override val clickIntent: Intent
+            get() = Intent(Intent.ACTION_VIEW)
+                .setData(ContactsContract.Contacts.getLookupUri(contactId, lookupKey))
 
-        override val longClickIntent = null
+        override val longClickIntent: Intent?
+            get() = phoneNumber?.let {
+                Intent(Intent.ACTION_SENDTO)
+                    .setData(Uri.parse("smsto:$it"))
+            }
 
         override fun matchesFilter(query: String): Boolean {
             return label.containsIgnoreAccents(query)
@@ -202,6 +210,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             contactId = contactId,
             lookupKey = lookupKey,
             drawable = photoDrawable,
+            phoneNumber = phoneNumber,
         )
     }
 }
