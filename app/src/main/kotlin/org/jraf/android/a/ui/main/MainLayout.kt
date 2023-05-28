@@ -83,12 +83,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
 import org.jraf.android.a.R
 import org.jraf.android.a.ui.theme.ATheme
+import org.jraf.android.a.util.toDp
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -147,17 +147,17 @@ private fun RequestPermissionRationale(onRequestPermissionRationaleClick: () -> 
     {
         Text(
             modifier = Modifier
-                .padding(8.dp)
+                .padding(8.sp.toDp())
                 .weight(1F),
             text = stringResource(R.string.main_requestPermissionRationale_text),
         )
 
-        Spacer(modifier = Modifier.size(8.dp))
+        Spacer(modifier = Modifier.size(8.sp.toDp()))
 
         Button(onClick = onRequestPermissionRationaleClick) {
             Text(text = stringResource(R.string.main_requestPermissionRationale_button))
         }
-        Spacer(modifier = Modifier.size(8.dp))
+        Spacer(modifier = Modifier.size(8.sp.toDp()))
     }
 }
 
@@ -181,7 +181,7 @@ private fun SearchTextField(
         modifier = Modifier
             .focusRequester(focusRequester)
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.sp.toDp()),
         value = searchQuery,
         singleLine = true,
         onValueChange = onSearchQueryChange,
@@ -230,9 +230,9 @@ private fun LaunchItemList(
 ) {
     LazyVerticalGrid(
         modifier = Modifier
-            .padding(top = 4.dp)
+            .padding(top = 4.sp.toDp())
             .fillMaxSize(),
-        columns = GridCells.Fixed(5),
+        columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
         state = gridState,
     ) {
         items(launchItems, key = { it.id }) { launchItem ->
@@ -254,12 +254,12 @@ private fun LazyGridItemScope.LaunchItemItem(
                 onClick = { onLaunchItemClick(launchItem) },
                 onLongClick = { onLaunchItemLongClick(launchItem) }
             )
-            .padding(vertical = 6.dp),
+            .padding(vertical = 6.sp.toDp()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
             modifier = Modifier
-                .size(48.dp)
+                .size(48.sp.toDp())
                 .let {
                     if (launchItem is MainViewModel.ContactLaunchItem) {
                         // Contact photos are square, but we want circles
@@ -271,10 +271,9 @@ private fun LazyGridItemScope.LaunchItemItem(
             painter = DrawablePainter(launchItem.drawable),
             contentDescription = launchItem.label,
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(4.sp.toDp()))
         Text(
-            modifier = Modifier
-                .padding(horizontal = 2.dp),
+            modifier = Modifier.padding(horizontal = 2.sp.toDp()),
             text = launchItem.label,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
