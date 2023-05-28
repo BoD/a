@@ -1,7 +1,7 @@
 plugins {
-    id("com.android.application")
-    kotlin("android")
-    alias(libs.plugins.wire)
+    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.kotlinAndroid)
+    alias(libs.plugins.sqldelight)
 }
 
 android {
@@ -13,8 +13,8 @@ android {
         applicationId = "a.a.a.a"
         minSdk = 26
         targetSdk = 33
-        versionCode = 5
-        versionName = "1.4.0"
+        versionCode = 6
+        versionName = "1.5.0"
     }
 
     signingConfigs {
@@ -34,10 +34,7 @@ android {
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
         }
     }
@@ -59,11 +56,6 @@ android {
         jvmTarget = "1.8"
         freeCompilerArgs = listOf("-Xcontext-receivers")
     }
-
-    sourceSets {
-        getByName("main").java.srcDirs("src/main/kotlin")
-        getByName("debug").java.srcDirs("src/debug/kotlin")
-    }
 }
 
 dependencies {
@@ -83,15 +75,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.core)
 
-    implementation(libs.kprefs)
-    implementation(libs.datastore)
-}
-
-wire {
-    kotlin {
-        emitAppliedOptions = false
-        rpcRole = "none"
-    }
+    implementation(libs.sqldelight.androidDriver)
+    implementation(libs.sqldelight.coroutines)
 }
 
 // To release:

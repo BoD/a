@@ -2,31 +2,15 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 plugins {
     alias(libs.plugins.benManes.versions)
-}
 
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-
-    dependencies {
-        classpath(libs.android.gradlePlugin)
-        classpath(libs.kotlin.gradlePlugin)
-    }
-}
-
-tasks {
-    register<Delete>("clean") {
-        delete(rootProject.buildDir)
-    }
+    alias(libs.plugins.androidApplication) apply false
+    alias(libs.plugins.kotlinAndroid) apply false
 }
 
 tasks.withType<DependencyUpdatesTask> {
     rejectVersionIf {
-        val reject = setOf("alpha", "beta", "rc")
-        reject.any { candidate.version.contains(it, ignoreCase = true) }
-//        false
+        val reject = setOf("alpha", "beta", "rc", "dev")
+        reject.any { candidate.version.contains("-$it", ignoreCase = true) }
     }
 }
 

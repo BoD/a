@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-option java_package = "org.jraf.android.a.data";
-option java_multiple_files = true;
-
-message Settings {
-  repeated string longLaunchedActivityList = 1;
-  repeated string shortLaunchedActivityList = 2;
-}

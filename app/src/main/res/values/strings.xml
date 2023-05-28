@@ -3,5 +3,8 @@
     <string name="main_search_placeholder">Search</string>
     <string name="main_search_reset">Clear</string>
     <string name="main_search_webSearch">Search on the web</string>
+    <string name="main_requestPermissionRationale_text">The Read Contacts permission is needed if you wish
+        to include your favorite contacts in the list.</string>
+    <string name="main_requestPermissionRationale_button">OK</string>
 
 </resources>
