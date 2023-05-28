@@ -32,8 +32,11 @@ import android.graphics.drawable.Drawable
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -60,6 +63,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -72,6 +76,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
@@ -127,6 +133,7 @@ fun MainLayout(
                 if (shouldShowRequestPermissionRationale) {
                     RequestPermissionRationale(onRequestPermissionRationaleClick = onRequestPermissionRationaleClick)
                 }
+
                 LaunchItemList(
                     launchItems = launchItems,
                     onLaunchItemClick = onLaunchItemClick,
@@ -181,7 +188,7 @@ private fun SearchTextField(
         modifier = Modifier
             .focusRequester(focusRequester)
             .fillMaxWidth()
-            .padding(8.sp.toDp()),
+            .padding(top = 8.sp.toDp(), start = 8.sp.toDp(), end = 8.sp.toDp()),
         value = searchQuery,
         singleLine = true,
         onValueChange = onSearchQueryChange,
@@ -228,16 +235,34 @@ private fun LaunchItemList(
     onLaunchItemLongClick: (MainViewModel.LaunchItem) -> Unit,
     gridState: LazyGridState,
 ) {
-    LazyVerticalGrid(
-        modifier = Modifier
-            .padding(top = 4.sp.toDp())
-            .fillMaxSize(),
-        columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
-        state = gridState,
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        items(launchItems, key = { it.id }) { launchItem ->
-            LaunchItemItem(launchItem, onLaunchItemClick, onLaunchItemLongClick)
+        LazyVerticalGrid(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(top = 4.sp.toDp()),
+            columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
+            state = gridState,
+        ) {
+            items(launchItems, key = { it.id }) { launchItem ->
+                LaunchItemItem(launchItem, onLaunchItemClick, onLaunchItemLongClick)
+            }
         }
+
+        // Fading edge
+        Spacer(
+            Modifier
+                .fillMaxWidth()
+                .height(12.sp.toDp())
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surface.copy(alpha = .8f),
+                            Color.Transparent,
+                        )
+                    )
+                )
+        )
     }
 }
 
@@ -299,7 +324,7 @@ private fun MainScreenPreview() {
             fakeApp(),
             fakeApp(),
         ),
-        shouldShowRequestPermissionRationale = true,
+        shouldShowRequestPermissionRationale = false,
         onSearchQueryChange = {},
         onResetSearchQueryClick = {},
         onWebSearchClick = {},
