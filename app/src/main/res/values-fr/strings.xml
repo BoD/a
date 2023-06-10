@@ -1,0 +1,9 @@
+<resources>
+    <string name="main_search_placeholder">Rechercher</string>
+    <string name="main_search_reset">Effacer</string>
+    <string name="main_search_webSearch">Chercher sur Internet</string>
+    <string name="main_requestPermissionRationale_text">La permission Lire les Contacts est nécessaire si vous souhaitez
+        inclure vos contacts favoris dans la liste.</string>
+    <string name="main_requestPermissionRationale_button">OK</string>
+
+</resources>
