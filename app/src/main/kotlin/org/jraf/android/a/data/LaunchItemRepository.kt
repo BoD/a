@@ -62,15 +62,35 @@ class LaunchItemRepository(private val context: Context) {
     val counters: Flow<Map<String, Long>> = run {
         val longTermCounters = getCounters(LONG_TERM_HISTORY_SIZE, LONG_TERM_WEIGHT)
         val shortTermCounters = getCounters(SHORT_TERM_HISTORY_SIZE, SHORT_TERM_WEIGHT)
-        longTermCounters.combine(shortTermCounters) { longTerm, shortTerm ->
-            longTerm.mapValues { it.value + shortTerm.getOrDefault(it.key, 0) }
+        val deprioritizedItems = getDeprioritizedItems()
+        combine(longTermCounters, shortTermCounters, deprioritizedItems) { longTerm, shortTerm, deprioritized ->
+            longTerm.mapValues { it.value + shortTerm.getOrDefault(it.key, 0) } + deprioritized.map { it to -1L }
         }
     }
 
-    private fun getCounters(historySize: Long, weight: Long) = database.launchedItemsQueries.select(historySize = historySize)
+    private fun getCounters(historySize: Long, weight: Long): Flow<Map<String, Long>> =
+        database.launchedItemsQueries.select(historySize = historySize)
+            .asFlow()
+            .mapToList()
+            .map { counters ->
+                counters.associate { it.id to it.count * weight }
+            }
+
+    suspend fun deprioritizeItem(id: String) {
+        withContext(Dispatchers.IO) {
+            database.deprioritizedItemsQueries.insert(id)
+            // Also reset counter
+            database.launchedItemsQueries.delete(id)
+        }
+    }
+
+    suspend fun undeprioritizeItem(id: String) {
+        withContext(Dispatchers.IO) {
+            database.deprioritizedItemsQueries.delete(id)
+        }
+    }
+
+    private fun getDeprioritizedItems(): Flow<List<String>> = database.deprioritizedItemsQueries.select()
         .asFlow()
         .mapToList()
-        .map { counters ->
-            counters.associate { it.id to it.count * weight }
-        }
 }

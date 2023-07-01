@@ -102,8 +102,9 @@ class MainActivity : ComponentActivity() {
                 onWebSearchClick = viewModel::onWebSearchClick,
                 onKeyboardActionButtonClick = viewModel::onKeyboardActionButtonClick,
                 isKeyboardWebSearchActive = isKeyboardWebSearchActive,
-                onLaunchItemClick = viewModel::onLaunchItemClick,
-                onLaunchItemLongClick = viewModel::onLaunchItemLongClick,
+                onLaunchItemPrimaryAction = viewModel::onLaunchItemPrimaryAction,
+                onLaunchItemSecondaryAction = viewModel::onLaunchItemSecondaryAction,
+                onLaunchItemTertiaryAction = viewModel::onLaunchItemTertiaryAction,
                 onRequestPermissionRationaleClick = {
                     viewModel.shouldShowRequestPermissionRationale.value = false
                     requestPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)

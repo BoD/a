@@ -13,8 +13,8 @@ android {
         applicationId = "a.a.a.a"
         minSdk = 26
         targetSdk = 33
-        versionCode = 6
-        versionName = "1.5.0"
+        versionCode = 8
+        versionName = "1.6.0"
     }
 
     signingConfigs {
@@ -79,5 +79,14 @@ dependencies {
     implementation(libs.sqldelight.coroutines)
 }
 
+sqldelight {
+    database("Database") {
+        schemaOutputDirectory = file("src/main/sqldelight/databases")
+    }
+}
+
 // To release:
 // SIGNING_STORE_PATH=path/to/upload.keystore SIGNING_STORE_PASSWORD=password SIGNING_KEY_ALIAS=upload SIGNING_KEY_PASSWORD=password ./gradlew :app:bundleRelease
+
+// `./gradlew :app:generateReleaseDatabaseSchema` to create the sqldelight database
+// `./gradlew :app:verifySqlDelightMigration` to verify the migration

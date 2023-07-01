@@ -1,10 +1,14 @@
 <resources>
-    <string name="app_name">a</string>
+    <string name="app_name" translatable="false">a</string>
     <string name="main_search_placeholder">Search</string>
     <string name="main_search_reset">Clear</string>
     <string name="main_search_webSearch">Search on the web</string>
     <string name="main_requestPermissionRationale_text">The Read Contacts permission is needed if you wish
         to include your favorite contacts in the list.</string>
     <string name="main_requestPermissionRationale_button">OK</string>
+
+    <string name="main_list_app_appDetails">App details</string>
+    <string name="main_list_app_deprioritize">De-prioritize</string>
+    <string name="main_list_app_undeprioritize">Un-de-prioritize</string>
 
 </resources>

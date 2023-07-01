@@ -33,6 +33,7 @@ import android.provider.ContactsContract
 import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,13 +74,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     val searchQuery = MutableStateFlow("")
-    val filteredLaunchItems: StateFlow<List<LaunchItem>> = allLaunchItems
-        .combine(searchQuery) { allLaunchedItems, verbatimQuery ->
+    val filteredLaunchItems: StateFlow<List<LaunchItem>> =
+        combine(allLaunchItems, searchQuery, counters) { allLaunchedItems, verbatimQuery, counters ->
             val query = verbatimQuery.trim()
             allLaunchedItems
+                .map {
+                    if (it is AppLaunchItem && counters[it.id] == -1L) {
+                        it.copy(isDeprioritized = true)
+                    } else {
+                        it
+                    }
+                }
                 .filter { it.matchesFilter(query) }
                 .sortedByDescending {
-                    counters.value[it.id] ?: 0
+                    counters[it.id] ?: 0
                 }
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -95,15 +103,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         scrollUp.value = DIFFERENT
     }
 
-    fun onLaunchItemClick(launchedItem: LaunchItem) {
-        intentToStart.tryEmit(launchedItem.clickIntent)
+    fun onLaunchItemPrimaryAction(launchedItem: LaunchItem) {
+        intentToStart.tryEmit(launchedItem.primaryIntent)
         viewModelScope.launch {
+            // Add a delay so the reordering animation isn't distracting
+            delay(1000)
             launchItemRepository.recordLaunchedItem(launchedItem.id)
         }
     }
 
-    fun onLaunchItemLongClick(launchedItem: LaunchItem) {
-        launchedItem.longClickIntent?.let { intentToStart.tryEmit(it) }
+    fun onLaunchItemSecondaryAction(launchedItem: LaunchItem) {
+        launchedItem.secondaryIntent?.let { intentToStart.tryEmit(it) }
+        // Long clicking on a contact counts as a primary action
+        if (launchedItem is ContactLaunchItem) {
+            viewModelScope.launch {
+                delay(1000)
+                launchItemRepository.recordLaunchedItem(launchedItem.id)
+            }
+        }
+    }
+
+    fun onLaunchItemTertiaryAction(launchedItem: LaunchItem) {
+        viewModelScope.launch {
+            if (launchedItem.isDeprioritized) {
+                launchItemRepository.undeprioritizeItem(launchedItem.id)
+            } else {
+                launchItemRepository.deprioritizeItem(launchedItem.id)
+            }
+        }
     }
 
     fun resetSearchQuery() {
@@ -133,7 +160,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (launchItems.isEmpty()) {
             onWebSearchClick()
         } else {
-            onLaunchItemClick(launchItems.first())
+            onLaunchItemPrimaryAction(launchItems.first())
         }
     }
 
@@ -141,8 +168,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val label: String
         val drawable: Drawable
         val id: String
-        val clickIntent: Intent
-        val longClickIntent: Intent?
+        val primaryIntent: Intent
+        val secondaryIntent: Intent?
+        val isDeprioritized: Boolean
 
         fun matchesFilter(query: String): Boolean
     }
@@ -152,16 +180,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private val packageName: String,
         private val activityName: String,
         override val drawable: Drawable,
+        override val isDeprioritized: Boolean,
     ) : LaunchItem {
         override val id = "$packageName/$activityName"
 
-        override val clickIntent: Intent
+        override val primaryIntent: Intent
             get() = Intent()
                 .apply { setClassName(packageName, activityName) }
                 .addCategory(Intent.CATEGORY_LAUNCHER)
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
 
-        override val longClickIntent: Intent
+        override val secondaryIntent: Intent
             get() = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                 .setData(Uri.parse("package:$packageName"))
 
@@ -177,6 +206,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             packageName = packageName,
             activityName = activityName,
             drawable = drawable,
+            isDeprioritized = false,
         )
     }
 
@@ -189,11 +219,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) : LaunchItem {
         override val id = lookupKey
 
-        override val clickIntent: Intent
+        override val primaryIntent: Intent
             get() = Intent(Intent.ACTION_VIEW)
                 .setData(ContactsContract.Contacts.getLookupUri(contactId, lookupKey))
 
-        override val longClickIntent: Intent?
+        override val secondaryIntent: Intent?
             get() = phoneNumber?.let {
                 Intent(Intent.ACTION_SENDTO)
                     .setData(Uri.parse("smsto:$it"))
@@ -202,6 +232,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         override fun matchesFilter(query: String): Boolean {
             return label.containsIgnoreAccents(query)
         }
+
+        override val isDeprioritized: Boolean = false
     }
 
     private fun ContactRepository.Contact.toContactLaunchItem(): ContactLaunchItem {
