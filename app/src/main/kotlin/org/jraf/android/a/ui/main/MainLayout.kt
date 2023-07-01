@@ -60,6 +60,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -69,15 +71,21 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
@@ -108,8 +116,9 @@ fun MainLayout(
     onWebSearchClick: () -> Unit,
     onKeyboardActionButtonClick: () -> Unit,
     isKeyboardWebSearchActive: Boolean,
-    onLaunchItemClick: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemLongClick: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
     onRequestPermissionRationaleClick: () -> Unit,
     gridState: LazyGridState,
 ) {
@@ -136,8 +145,9 @@ fun MainLayout(
 
                 LaunchItemList(
                     launchItems = launchItems,
-                    onLaunchItemClick = onLaunchItemClick,
-                    onLaunchItemLongClick = onLaunchItemLongClick,
+                    onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
+                    onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
+                    onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
                     gridState = gridState
                 )
             }
@@ -231,8 +241,9 @@ private fun SearchTextField(
 @Composable
 private fun LaunchItemList(
     launchItems: List<MainViewModel.LaunchItem>,
-    onLaunchItemClick: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemLongClick: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
     gridState: LazyGridState,
 ) {
     Box(
@@ -245,7 +256,12 @@ private fun LaunchItemList(
             state = gridState,
         ) {
             items(launchItems, key = { it.id }) { launchItem ->
-                LaunchItemItem(launchItem, onLaunchItemClick, onLaunchItemLongClick)
+                LaunchItemItem(
+                    launchItem = launchItem,
+                    onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
+                    onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
+                    onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
+                )
             }
         }
 
@@ -266,45 +282,105 @@ private fun LaunchItemList(
     }
 }
 
+private val deprioritizedColorFilter = ColorFilter.colorMatrix(
+    ColorMatrix().apply {
+        setToSaturation(0F)
+    }
+)
+
 @Composable
 private fun LazyGridItemScope.LaunchItemItem(
     launchItem: MainViewModel.LaunchItem,
-    onLaunchItemClick: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemLongClick: (MainViewModel.LaunchItem) -> Unit
+    onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
 ) {
-    Column(
+    var dropdownMenuVisible by remember { mutableStateOf(false) }
+    Box(
         modifier = Modifier
             .animateItemPlacement()
-            .combinedClickable(
-                onClick = { onLaunchItemClick(launchItem) },
-                onLongClick = { onLaunchItemLongClick(launchItem) }
-            )
             .padding(vertical = 6.sp.toDp()),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        contentAlignment = Alignment.Center,
     ) {
-        Image(
+        Column(
             modifier = Modifier
-                .size(48.sp.toDp())
+                .combinedClickable(
+                    onClick = { onLaunchItemPrimaryAction(launchItem) },
+                    onLongClick = {
+                        if (launchItem is MainViewModel.AppLaunchItem) {
+                            dropdownMenuVisible = true
+                        } else {
+                            onLaunchItemSecondaryAction(launchItem)
+                        }
+                    }
+                )
                 .let {
-                    if (launchItem is MainViewModel.ContactLaunchItem) {
-                        // Contact photos are square, but we want circles
-                        it.clip(CircleShape)
+                    if (launchItem.isDeprioritized) {
+                        it.alpha(.5f)
                     } else {
                         it
                     }
                 },
-            painter = DrawablePainter(launchItem.drawable),
-            contentDescription = launchItem.label,
-        )
-        Spacer(modifier = Modifier.height(4.sp.toDp()))
-        Text(
-            modifier = Modifier.padding(horizontal = 2.sp.toDp()),
-            text = launchItem.label,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center,
-            fontSize = 12.sp,
-        )
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Image(
+                modifier = Modifier
+                    .size(48.sp.toDp())
+                    .let {
+                        if (launchItem is MainViewModel.ContactLaunchItem) {
+                            // Contact photos are square, but we want circles
+                            it.clip(CircleShape)
+                        } else {
+                            it
+                        }
+                    },
+                painter = DrawablePainter(launchItem.drawable),
+                contentDescription = launchItem.label,
+                colorFilter = if (launchItem.isDeprioritized) {
+                    deprioritizedColorFilter
+                } else {
+                    null
+                },
+            )
+            Spacer(modifier = Modifier.height(4.sp.toDp()))
+            Text(
+                modifier = Modifier.padding(horizontal = 2.sp.toDp()),
+                text = launchItem.label,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                fontSize = 12.sp,
+            )
+        }
+
+        if (launchItem is MainViewModel.AppLaunchItem) {
+            DropdownMenu(expanded = dropdownMenuVisible, onDismissRequest = { dropdownMenuVisible = false }) {
+                DropdownMenuItem(
+                    onClick = {
+                        onLaunchItemSecondaryAction(launchItem)
+                        dropdownMenuVisible = false
+                    },
+                    text = { Text(stringResource(R.string.main_list_app_appDetails)) }
+                )
+                DropdownMenuItem(
+                    onClick = {
+                        onLaunchItemTertiaryAction(launchItem)
+                        dropdownMenuVisible = false
+                    },
+                    text = {
+                        Text(
+                            stringResource(
+                                if (launchItem.isDeprioritized) {
+                                    R.string.main_list_app_undeprioritize
+                                } else {
+                                    R.string.main_list_app_deprioritize
+                                }
+                            )
+                        )
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -330,8 +406,9 @@ private fun MainScreenPreview() {
         onWebSearchClick = {},
         onKeyboardActionButtonClick = {},
         isKeyboardWebSearchActive = false,
-        onLaunchItemClick = {},
-        onLaunchItemLongClick = {},
+        onLaunchItemPrimaryAction = {},
+        onLaunchItemSecondaryAction = {},
+        onLaunchItemTertiaryAction = {},
         onRequestPermissionRationaleClick = {},
         gridState = rememberLazyGridState(),
     )
@@ -345,7 +422,8 @@ private fun fakeApp() = MainViewModel.AppLaunchItem(
     drawable = ContextCompat.getDrawable(
         LocalContext.current,
         R.mipmap.ic_launcher
-    )!!
+    )!!,
+    isDeprioritized = false
 )
 
 

@@ -14,6 +14,9 @@ SELECT id, COUNT(id) AS count FROM (
     SELECT id FROM LaunchedItems LIMIT :historySize
 ) GROUP BY id;
 
+delete:
+DELETE FROM LaunchedItems WHERE id = :id;
+
 purgeOld:
 DELETE FROM LaunchedItems WHERE id NOT IN (
     SELECT id FROM LaunchedItems ORDER BY id DESC LIMIT :maxCount

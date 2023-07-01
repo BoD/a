@@ -7,4 +7,8 @@
         to include your favorite contacts in the list.</string>
     <string name="main_requestPermissionRationale_button">OK</string>
 
+    <string name="main_list_app_appDetails">App details</string>
+    <string name="main_list_app_deprioritize">De-prioritize</string>
+    <string name="main_list_app_undeprioritize">Un-de-prioritize</string>
+
 </resources>

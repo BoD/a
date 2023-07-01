@@ -6,4 +6,8 @@
         inclure vos contacts favoris dans la liste.</string>
     <string name="main_requestPermissionRationale_button">OK</string>
 
+    <string name="main_list_app_appDetails">Détails de l\'appli</string>
+    <string name="main_list_app_deprioritize">Déprioritiser</string>
+    <string name="main_list_app_undeprioritize">Dé-déprioritiser</string>
+
 </resources>
