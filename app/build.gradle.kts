@@ -79,5 +79,14 @@ dependencies {
     implementation(libs.sqldelight.coroutines)
 }
 
+sqldelight {
+    database("Database") {
+        schemaOutputDirectory = file("src/main/sqldelight/databases")
+    }
+}
+
 // To release:
 // SIGNING_STORE_PATH=path/to/upload.keystore SIGNING_STORE_PASSWORD=password SIGNING_KEY_ALIAS=upload SIGNING_KEY_PASSWORD=password ./gradlew :app:bundleRelease
+
+// `./gradlew :app:generateReleaseDatabaseSchema` to create the sqldelight database
+// `./gradlew :app:verifySqlDelightMigration` to verify the migration
