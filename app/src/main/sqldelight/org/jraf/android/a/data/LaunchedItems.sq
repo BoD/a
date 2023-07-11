@@ -11,13 +11,8 @@ INSERT OR REPLACE INTO LaunchedItems (
 
 select:
 SELECT id, COUNT(id) AS count FROM (
-    SELECT id FROM LaunchedItems LIMIT :historySize
+    SELECT id FROM LaunchedItems ORDER BY rowid DESC LIMIT :historySize
 ) GROUP BY id;
 
 delete:
 DELETE FROM LaunchedItems WHERE id = :id;
-
-purgeOld:
-DELETE FROM LaunchedItems WHERE id NOT IN (
-    SELECT id FROM LaunchedItems ORDER BY id DESC LIMIT :maxCount
-);
