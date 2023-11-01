@@ -11,4 +11,9 @@
     <string name="main_list_app_deprioritize">De-prioritize</string>
     <string name="main_list_app_undeprioritize">Un-de-prioritize</string>
 
+    <string name="main_list_shortcut_deleteShortcut">Delete shortcut</string>
+
+
+    <string name="shortcutAccept_toast_accepted">Shortcut added</string>
+
 </resources>

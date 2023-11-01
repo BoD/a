@@ -93,4 +93,16 @@ class LaunchItemRepository(private val context: Context) {
     private fun getDeprioritizedItems(): Flow<List<String>> = database.deprioritizedItemsQueries.select()
         .asFlow()
         .mapToList()
+
+    suspend fun deleteItem(id: String) {
+        withContext(Dispatchers.IO) {
+            database.deletedItemsQueries.insert(id)
+            // Also reset counter
+            database.launchedItemsQueries.delete(id)
+        }
+    }
+
+    fun getDeletedItems(): Flow<List<String>> = database.deletedItemsQueries.select()
+        .asFlow()
+        .mapToList()
 }
