@@ -46,13 +46,9 @@ import kotlinx.coroutines.launch
 import org.jraf.android.a.data.AppRepository
 import org.jraf.android.a.data.ContactRepository
 import org.jraf.android.a.data.LaunchItemRepository
+import org.jraf.android.a.data.ShortcutRepository
+import org.jraf.android.a.util.DIFFERENT
 import org.jraf.android.a.util.containsIgnoreAccents
-
-private val DIFFERENT = object : Any() {
-    override fun equals(other: Any?): Boolean {
-        return false
-    }
-}
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private var allLaunchItems: MutableStateFlow<List<LaunchItem>> = MutableStateFlow(emptyList())
@@ -60,13 +56,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val launchItemRepository = LaunchItemRepository(application)
     private val appRepository = AppRepository(application, onPackagesChanged = ::refreshAllLaunchItems)
     private val contactRepository = ContactRepository(application)
+    private val shortcutRepository = ShortcutRepository(application)
 
     private val counters: MutableStateFlow<Map<String, Long>> = MutableStateFlow(emptyMap())
 
+    private val deletedLaunchItems = launchItemRepository.getDeletedItems()
+
     init {
         viewModelScope.launch {
-            launchItemRepository.counters.collect {
-                counters.value = it
+            launch {
+                launchItemRepository.counters.collect {
+                    counters.value = it
+                }
+            }
+
+            shortcutRepository.observeShortcutsChanged {
+                refreshAllLaunchItems()
             }
         }
 
@@ -75,7 +80,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val searchQuery = MutableStateFlow("")
     val filteredLaunchItems: StateFlow<List<LaunchItem>> =
-        combine(allLaunchItems, searchQuery, counters) { allLaunchedItems, verbatimQuery, counters ->
+        combine(
+            allLaunchItems,
+            searchQuery,
+            counters,
+            deletedLaunchItems,
+        ) { allLaunchedItems, verbatimQuery, counters, deletedLaunchItems ->
             val query = verbatimQuery.trim()
             allLaunchedItems
                 .map {
@@ -85,12 +95,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         it
                     }
                 }
+                .filterNot { it.id in deletedLaunchItems }
                 .filter { it.matchesFilter(query) }
                 .sortedByDescending {
                     counters[it.id] ?: 0
                 }
         }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val isKeyboardWebSearchActive: Flow<Boolean> = filteredLaunchItems.map { it.isEmpty() }
 
     val intentToStart = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
@@ -104,7 +115,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onLaunchItemPrimaryAction(launchedItem: LaunchItem) {
-        intentToStart.tryEmit(launchedItem.primaryIntent)
+        when (launchedItem) {
+            is AppLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppIntent)
+            is ContactLaunchItem -> intentToStart.tryEmit(launchedItem.viewContactIntent)
+            is ShortcutLaunchItem -> shortcutRepository.launchShortcut(launchedItem.shortcut)
+        }
         viewModelScope.launch {
             // Add a delay so the reordering animation isn't distracting
             delay(1000)
@@ -113,13 +128,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onLaunchItemSecondaryAction(launchedItem: LaunchItem) {
-        launchedItem.secondaryIntent?.let { intentToStart.tryEmit(it) }
-        // Long clicking on a contact counts as a primary action
-        if (launchedItem is ContactLaunchItem) {
-            viewModelScope.launch {
-                delay(1000)
-                launchItemRepository.recordLaunchedItem(launchedItem.id)
+        when (launchedItem) {
+            is AppLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppDetailsIntent)
+            is ContactLaunchItem -> {
+                launchedItem.sendSmsIntent?.let { intentToStart.tryEmit(it) }
+
+                // Long clicking on a contact counts as a primary action
+                viewModelScope.launch {
+                    delay(1000)
+                    launchItemRepository.recordLaunchedItem(launchedItem.id)
+                }
             }
+
+            is ShortcutLaunchItem -> viewModelScope.launch { launchItemRepository.deleteItem(launchedItem.id) }
         }
     }
 
@@ -138,8 +159,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private suspend fun getAllLaunchItems(): List<LaunchItem> {
-        return appRepository.getAllApps().map { it.toAppLaunchItem() } +
-                contactRepository.getStarredContacts().map { it.toContactLaunchItem() }
+        val allApps = appRepository.getAllApps()
+        val allShortcuts = shortcutRepository.getAllShortcuts(allApps.map { it.packageName })
+        val starredContacts = contactRepository.getStarredContacts()
+        return allApps.map { it.toAppLaunchItem() } +
+                allShortcuts.map { it.toShortcutLaunchItem() } +
+                starredContacts.map { it.toContactLaunchItem() }
     }
 
     fun refreshAllLaunchItems() {
@@ -168,8 +193,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val label: String
         val drawable: Drawable
         val id: String
-        val primaryIntent: Intent
-        val secondaryIntent: Intent?
         val isDeprioritized: Boolean
 
         fun matchesFilter(query: String): Boolean
@@ -184,13 +207,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) : LaunchItem {
         override val id = "$packageName/$activityName"
 
-        override val primaryIntent: Intent
+        val launchAppIntent: Intent
             get() = Intent()
                 .apply { setClassName(packageName, activityName) }
                 .addCategory(Intent.CATEGORY_LAUNCHER)
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
 
-        override val secondaryIntent: Intent
+        val launchAppDetailsIntent: Intent
             get() = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                 .setData(Uri.parse("package:$packageName"))
 
@@ -219,11 +242,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) : LaunchItem {
         override val id = lookupKey
 
-        override val primaryIntent: Intent
+        val viewContactIntent: Intent
             get() = Intent(Intent.ACTION_VIEW)
                 .setData(ContactsContract.Contacts.getLookupUri(contactId, lookupKey))
 
-        override val secondaryIntent: Intent?
+        val sendSmsIntent: Intent?
             get() = phoneNumber?.let {
                 Intent(Intent.ACTION_SENDTO)
                     .setData(Uri.parse("smsto:$it"))
@@ -243,6 +266,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             lookupKey = lookupKey,
             drawable = photoDrawable,
             phoneNumber = phoneNumber,
+        )
+    }
+
+    data class ShortcutLaunchItem(
+        override val label: String,
+        override val drawable: Drawable,
+        val shortcut: ShortcutRepository.Shortcut,
+    ) : LaunchItem {
+        override val id = "shortcut/${shortcut.id}"
+
+        override fun matchesFilter(query: String): Boolean {
+            return label.containsIgnoreAccents(query)
+        }
+
+        override val isDeprioritized: Boolean = false
+    }
+
+    private fun ShortcutRepository.Shortcut.toShortcutLaunchItem(): ShortcutLaunchItem {
+        return ShortcutLaunchItem(
+            label = label,
+            drawable = drawable,
+            shortcut = this,
         )
     }
 }

@@ -22,46 +22,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-@file:Suppress("NOTHING_TO_INLINE")
 
-package org.jraf.android.a.util
+package org.jraf.android.a.ui.shortcut
 
-import timber.log.Timber
+import android.content.pm.LauncherApps
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import org.jraf.android.a.R
+import org.jraf.android.a.data.notifyShortcutsChanged
 
-fun initLogging() {
-    Timber.plant(Timber.DebugTree())
-}
-
-inline fun logd(tag: String, message: String) {
-    Timber.tag(tag)
-    Timber.d(message)
-}
-
-inline fun logd(message: String) {
-    Timber.d(message)
-}
-
-inline fun logd(any: Any) {
-    Timber.d(any.toString())
-}
-
-inline fun logd(throwable: Throwable) {
-    Timber.d(throwable)
-}
-
-inline fun logd(throwable: Throwable, message: String) {
-    Timber.d(throwable, message)
-}
-
-inline fun logd(throwable: Throwable, any: Any) {
-    Timber.d(throwable, any.toString())
-}
-
-inline fun logw(throwable: Throwable, any: Any) {
-    Timber.w(throwable, any.toString())
-}
-
-inline fun logw(tag: String, message: String) {
-    Timber.tag(tag)
-    Timber.w(message)
+class ShortcutAcceptActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val launcherApps = getSystemService(LauncherApps::class.java)
+        val pinItemRequest = launcherApps.getPinItemRequest(intent)
+        pinItemRequest.accept()
+        notifyShortcutsChanged()
+        Toast.makeText(this, getString(R.string.shortcutAccept_toast_accepted), Toast.LENGTH_SHORT).show()
+        finish()
+    }
 }

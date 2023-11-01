@@ -1,0 +1,13 @@
+CREATE TABLE DeletedItems (
+    id TEXT NOT NULL
+);
+
+insert:
+INSERT OR REPLACE INTO DeletedItems (
+    id
+) VALUES (
+    :id
+);
+
+select:
+SELECT id FROM DeletedItems;

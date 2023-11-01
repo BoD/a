@@ -307,10 +307,14 @@ private fun LazyGridItemScope.LaunchItemItem(
                 .combinedClickable(
                     onClick = { onLaunchItemPrimaryAction(launchItem) },
                     onLongClick = {
-                        if (launchItem is MainViewModel.AppLaunchItem) {
-                            dropdownMenuVisible = true
-                        } else {
-                            onLaunchItemSecondaryAction(launchItem)
+                        when (launchItem) {
+                            is MainViewModel.AppLaunchItem, is MainViewModel.ShortcutLaunchItem -> {
+                                dropdownMenuVisible = true
+                            }
+
+                            is MainViewModel.ContactLaunchItem -> {
+                                onLaunchItemSecondaryAction(launchItem)
+                            }
                         }
                     }
                 )
@@ -353,33 +357,49 @@ private fun LazyGridItemScope.LaunchItemItem(
             )
         }
 
-        if (launchItem is MainViewModel.AppLaunchItem) {
-            DropdownMenu(expanded = dropdownMenuVisible, onDismissRequest = { dropdownMenuVisible = false }) {
-                DropdownMenuItem(
-                    onClick = {
-                        onLaunchItemSecondaryAction(launchItem)
-                        dropdownMenuVisible = false
-                    },
-                    text = { Text(stringResource(R.string.main_list_app_appDetails)) }
-                )
-                DropdownMenuItem(
-                    onClick = {
-                        onLaunchItemTertiaryAction(launchItem)
-                        dropdownMenuVisible = false
-                    },
-                    text = {
-                        Text(
-                            stringResource(
-                                if (launchItem.isDeprioritized) {
-                                    R.string.main_list_app_undeprioritize
-                                } else {
-                                    R.string.main_list_app_deprioritize
-                                }
+        when (launchItem) {
+            is MainViewModel.AppLaunchItem -> {
+                DropdownMenu(expanded = dropdownMenuVisible, onDismissRequest = { dropdownMenuVisible = false }) {
+                    DropdownMenuItem(
+                        onClick = {
+                            onLaunchItemSecondaryAction(launchItem)
+                            dropdownMenuVisible = false
+                        },
+                        text = { Text(stringResource(R.string.main_list_app_appDetails)) }
+                    )
+                    DropdownMenuItem(
+                        onClick = {
+                            onLaunchItemTertiaryAction(launchItem)
+                            dropdownMenuVisible = false
+                        },
+                        text = {
+                            Text(
+                                stringResource(
+                                    if (launchItem.isDeprioritized) {
+                                        R.string.main_list_app_undeprioritize
+                                    } else {
+                                        R.string.main_list_app_deprioritize
+                                    }
+                                )
                             )
-                        )
-                    }
-                )
+                        }
+                    )
+                }
             }
+
+            is MainViewModel.ShortcutLaunchItem -> {
+                DropdownMenu(expanded = dropdownMenuVisible, onDismissRequest = { dropdownMenuVisible = false }) {
+                    DropdownMenuItem(
+                        onClick = {
+                            onLaunchItemSecondaryAction(launchItem)
+                            dropdownMenuVisible = false
+                        },
+                        text = { Text(stringResource(R.string.main_list_shortcut_deleteShortcut)) }
+                    )
+                }
+            }
+
+            is MainViewModel.ContactLaunchItem -> {}
         }
     }
 }
