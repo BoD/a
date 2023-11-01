@@ -7,12 +7,12 @@ plugins {
 android {
     namespace = "org.jraf.android.a"
 
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "a.a.a.a"
         minSdk = 26
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 8
         versionName = "1.6.0"
     }
