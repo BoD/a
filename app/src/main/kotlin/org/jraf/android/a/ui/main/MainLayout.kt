@@ -66,7 +66,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -194,7 +193,7 @@ private fun SearchTextField(
         focusRequester.requestFocus()
     }
 
-    OutlinedTextField(
+    DenseOutlinedTextField(
         modifier = Modifier
             .focusRequester(focusRequester)
             .fillMaxWidth()
@@ -251,7 +250,7 @@ private fun LaunchItemList(
     ) {
         LazyVerticalGrid(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 4.sp.toDp()),
+            contentPadding = PaddingValues(top = 2.sp.toDp()),
             columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
             state = gridState,
         ) {
