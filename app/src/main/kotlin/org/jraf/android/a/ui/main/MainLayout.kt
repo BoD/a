@@ -23,7 +23,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@file:OptIn(ExperimentalFoundationApi::class)
 
 package org.jraf.android.a.ui.main
 
@@ -62,11 +62,9 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -194,10 +192,11 @@ private fun SearchTextField(
         focusRequester.requestFocus()
     }
 
-    OutlinedTextField(
+    UltraDenseOutlinedTextField(
         modifier = Modifier
             .focusRequester(focusRequester)
             .fillMaxWidth()
+            .height(40.sp.toDp())
             .padding(top = 8.sp.toDp(), start = 8.sp.toDp(), end = 8.sp.toDp()),
         value = searchQuery,
         singleLine = true,
@@ -209,14 +208,20 @@ private fun SearchTextField(
             Crossfade(searchQuery.isNotBlank(), label = "trailingIconCrossFade") { visible ->
                 if (visible) {
                     Row {
-                        IconButton(onClick = { onResetSearchQueryClick() }) {
+                        IconButton(
+                            modifier = Modifier.height(32.sp.toDp()),
+                            onClick = { onResetSearchQueryClick() }
+                        ) {
                             Icon(
                                 imageVector = Icons.Filled.Clear,
                                 contentDescription = stringResource(R.string.main_search_reset),
                             )
                         }
 
-                        IconButton(onClick = { onWebSearchClick() }) {
+                        IconButton(
+                            modifier = Modifier.height(32.sp.toDp()),
+                            onClick = { onWebSearchClick() }
+                        ) {
                             Icon(
                                 imageVector = Icons.Filled.Search,
                                 contentDescription = stringResource(R.string.main_search_webSearch),
@@ -251,7 +256,7 @@ private fun LaunchItemList(
     ) {
         LazyVerticalGrid(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 4.sp.toDp()),
+            contentPadding = PaddingValues(top = 2.sp.toDp()),
             columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
             state = gridState,
         ) {
