@@ -27,6 +27,7 @@ package org.jraf.android.a.ui.main
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.inputmethod.InputMethodManager
@@ -115,15 +116,26 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+
+    // Back from another app: onStart is called only
+    // Home from another app: onStart then onNewIntent are called
+    // Home from this app: onNewIntent is called only
+    // Therefore we need to reset the search query / show the keyboard in both onStart and onNewIntent
+
     override fun onStart() {
         super.onStart()
         viewModel.resetSearchQuery()
+        showKeyboardSupposedly()
+    }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        viewModel.resetSearchQuery()
         showKeyboardSupposedly()
     }
 
     private fun showKeyboardSupposedly() {
-        // Force showing the keyboard, supposedly
+        // Force showing the keyboard, supposedly.  This works 93.78% of the time.  Shout out to /r/mAndroidDev!
         val imm: InputMethodManager = getSystemService(InputMethodManager::class.java)
         imm.hideSoftInputFromWindow(window.decorView.windowToken, 0)
         imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
@@ -132,6 +144,7 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("MissingSuperCall")
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        viewModel.resetSearchQuery()
         showKeyboardSupposedly()
     }
 }
