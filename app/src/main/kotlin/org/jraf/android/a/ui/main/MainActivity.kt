@@ -26,6 +26,7 @@
 package org.jraf.android.a.ui.main
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.inputmethod.InputMethodManager
@@ -51,7 +52,7 @@ class MainActivity : ComponentActivity() {
 
     private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         logd("Permission granted: $granted")
-        viewModel.refreshAllLaunchItems()
+        viewModel.onContactsPermissionChanged()
         viewModel.shouldShowRequestPermissionRationale.value =
             ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CONTACTS)
     }
@@ -81,7 +82,7 @@ class MainActivity : ComponentActivity() {
             val isKeyboardWebSearchActive: Boolean by viewModel.isKeyboardWebSearchActive.collectAsState(
                 initial = false
             )
-            val scrollUp: Any by viewModel.scrollUp.collectAsState(initial = Unit)
+            val scrollUp: Any by viewModel.onScrollUp.collectAsState(initial = Unit)
             val shouldShowRequestPermissionRationale: Boolean by viewModel.shouldShowRequestPermissionRationale.collectAsState(
                 initial = false
             )
@@ -128,6 +129,7 @@ class MainActivity : ComponentActivity() {
         imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
     }
 
+    @SuppressLint("MissingSuperCall")
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         showKeyboardSupposedly()

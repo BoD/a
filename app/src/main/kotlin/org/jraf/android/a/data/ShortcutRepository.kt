@@ -30,19 +30,14 @@ import android.content.pm.ShortcutInfo
 import android.graphics.drawable.Drawable
 import android.os.Process
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.withContext
-import org.jraf.android.a.util.DIFFERENT
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import org.jraf.android.a.util.invoke
 import org.jraf.android.a.util.logw
+import org.jraf.android.a.util.signalStateFlow
 
 class ShortcutRepository(context: Context) {
-    suspend fun observeShortcutsChanged(onShortcutsChanged: () -> Unit) {
-        shortcutChanged.drop(1).collect {
-            onShortcutsChanged()
-        }
-    }
-
     private val launcherApps: LauncherApps = context.getSystemService(LauncherApps::class.java)
 
     class Shortcut(
@@ -53,7 +48,7 @@ class ShortcutRepository(context: Context) {
         val label: String = shortcutInfo.shortLabel.toString()
     }
 
-    suspend fun getAllShortcuts(packageNames: List<String>): List<Shortcut> = withContext(Dispatchers.IO) {
+    fun getAllShortcuts(packageNames: List<String>): Flow<List<Shortcut>> = onShortcutChanged.map {
         if (!launcherApps.hasShortcutHostPermission()) {
             emptyList()
         } else {
@@ -73,7 +68,7 @@ class ShortcutRepository(context: Context) {
                     }
             }
         }
-    }
+    }.flowOn(Dispatchers.IO)
 
     fun launchShortcut(shortcut: Shortcut) {
         try {
@@ -84,8 +79,8 @@ class ShortcutRepository(context: Context) {
     }
 }
 
-fun notifyShortcutsChanged() {
-    shortcutChanged.value = DIFFERENT
-}
+private val onShortcutChanged = signalStateFlow()
 
-private val shortcutChanged: MutableStateFlow<Any> = MutableStateFlow(DIFFERENT)
+fun notifyShortcutsChanged() {
+    onShortcutChanged()
+}

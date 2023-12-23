@@ -24,6 +24,14 @@
  */
 package org.jraf.android.a.util
 
-val DIFFERENT = object : Any() {
+import kotlinx.coroutines.flow.MutableStateFlow
+
+private val DIFFERENT = object : Any() {
     override fun equals(other: Any?) = false
+}
+
+fun signalStateFlow(): MutableStateFlow<Any> = MutableStateFlow(DIFFERENT)
+
+operator fun MutableStateFlow<Any>.invoke() {
+    value = DIFFERENT
 }

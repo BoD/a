@@ -33,6 +33,7 @@ import android.provider.ContactsContract
 import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -40,6 +41,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flattenConcat
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -47,43 +49,35 @@ import org.jraf.android.a.data.AppRepository
 import org.jraf.android.a.data.ContactRepository
 import org.jraf.android.a.data.LaunchItemRepository
 import org.jraf.android.a.data.ShortcutRepository
-import org.jraf.android.a.util.DIFFERENT
 import org.jraf.android.a.util.containsIgnoreAccents
+import org.jraf.android.a.util.invoke
+import org.jraf.android.a.util.signalStateFlow
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
-    private var allLaunchItems: MutableStateFlow<List<LaunchItem>> = MutableStateFlow(emptyList())
-
     private val launchItemRepository = LaunchItemRepository(application)
-    private val appRepository = AppRepository(application, onPackagesChanged = ::refreshAllLaunchItems)
+    private val appRepository = AppRepository(application)
     private val contactRepository = ContactRepository(application)
     private val shortcutRepository = ShortcutRepository(application)
 
-    private val counters: MutableStateFlow<Map<String, Long>> = MutableStateFlow(emptyMap())
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val allLaunchItems: Flow<List<LaunchItem>> = appRepository.allApps.map { allApps ->
+        val allShortcutsFlow = shortcutRepository.getAllShortcuts(allApps.map { it.packageName })
+        combine(allShortcutsFlow, contactRepository.starredContacts) { allShortcuts, starredContacts ->
+            allApps.map { it.toAppLaunchItem() } +
+                    allShortcuts.map { it.toShortcutLaunchItem() } +
+                    starredContacts.map { it.toContactLaunchItem() }
+        }
+    }.flattenConcat()
+
 
     private val deletedLaunchItems = launchItemRepository.getDeletedItems()
-
-    init {
-        viewModelScope.launch {
-            launch {
-                launchItemRepository.counters.collect {
-                    counters.value = it
-                }
-            }
-
-            shortcutRepository.observeShortcutsChanged {
-                refreshAllLaunchItems()
-            }
-        }
-
-        refreshAllLaunchItems()
-    }
 
     val searchQuery = MutableStateFlow("")
     val filteredLaunchItems: StateFlow<List<LaunchItem>> =
         combine(
             allLaunchItems,
             searchQuery,
-            counters,
+            launchItemRepository.counters,
             deletedLaunchItems,
         ) { allLaunchedItems, verbatimQuery, counters, deletedLaunchItems ->
             val query = verbatimQuery.trim()
@@ -105,13 +99,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val isKeyboardWebSearchActive: Flow<Boolean> = filteredLaunchItems.map { it.isEmpty() }
 
     val intentToStart = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
-    val scrollUp: MutableStateFlow<Any> = MutableStateFlow(DIFFERENT)
+    val onScrollUp = signalStateFlow()
 
     val shouldShowRequestPermissionRationale = MutableStateFlow(false)
 
     fun onSearchQueryChange(query: String) {
         searchQuery.value = query
-        scrollUp.value = DIFFERENT
+        onScrollUp()
     }
 
     fun onLaunchItemPrimaryAction(launchedItem: LaunchItem) {
@@ -156,21 +150,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetSearchQuery() {
         onSearchQueryChange("")
-    }
-
-    private suspend fun getAllLaunchItems(): List<LaunchItem> {
-        val allApps = appRepository.getAllApps()
-        val allShortcuts = shortcutRepository.getAllShortcuts(allApps.map { it.packageName })
-        val starredContacts = contactRepository.getStarredContacts()
-        return allApps.map { it.toAppLaunchItem() } +
-                allShortcuts.map { it.toShortcutLaunchItem() } +
-                starredContacts.map { it.toContactLaunchItem() }
-    }
-
-    fun refreshAllLaunchItems() {
-        viewModelScope.launch {
-            allLaunchItems.value = getAllLaunchItems()
-        }
     }
 
     fun onWebSearchClick() {
@@ -289,5 +268,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             drawable = drawable,
             shortcut = this,
         )
+    }
+
+    fun onContactsPermissionChanged() {
+        contactRepository.onContactsPermissionChanged()
     }
 }
