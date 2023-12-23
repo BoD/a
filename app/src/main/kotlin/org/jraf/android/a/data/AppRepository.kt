@@ -33,6 +33,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import org.jraf.android.a.BuildConfig
 import org.jraf.android.a.util.invoke
 import org.jraf.android.a.util.signalStateFlow
 
@@ -90,6 +91,10 @@ class AppRepository(context: Context) {
                     activityName = launcherActivityInfo.name,
                     drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH),
                 )
+            }
+            .filter { app ->
+                // Don't show ourselves, unless we're in debug mode
+                BuildConfig.DEBUG || app.packageName != context.packageName
             }
     }
         .flowOn(Dispatchers.IO)
