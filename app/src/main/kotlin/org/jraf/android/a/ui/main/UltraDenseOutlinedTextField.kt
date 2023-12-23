@@ -102,6 +102,7 @@ fun UltraDenseOutlinedTextField(
                 }
             }
             BasicTextField(
+                modifier = Modifier.fillMaxWidth(),
                 value = value,
                 onValueChange = onValueChange,
                 enabled = enabled,
