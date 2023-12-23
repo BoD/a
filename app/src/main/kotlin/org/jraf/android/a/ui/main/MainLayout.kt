@@ -196,8 +196,8 @@ private fun SearchTextField(
         modifier = Modifier
             .focusRequester(focusRequester)
             .fillMaxWidth()
-            .height(40.sp.toDp())
-            .padding(top = 8.sp.toDp(), start = 8.sp.toDp(), end = 8.sp.toDp()),
+            .height(32.sp.toDp())
+            .padding(start = 8.sp.toDp(), end = 8.sp.toDp()),
         value = searchQuery,
         singleLine = true,
         onValueChange = onSearchQueryChange,
