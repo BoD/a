@@ -2,7 +2,7 @@
 <resources>
 
     <style name="Theme.A" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="android:statusBarColor">?attr/colorSurface</item>
+        <item name="android:statusBarColor">#000</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
 

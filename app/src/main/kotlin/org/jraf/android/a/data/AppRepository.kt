@@ -30,13 +30,16 @@ import android.graphics.drawable.Drawable
 import android.os.UserHandle
 import android.util.DisplayMetrics
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import org.jraf.android.a.util.invoke
+import org.jraf.android.a.util.signalStateFlow
 
-class AppRepository(
-    context: Context,
-    private val onPackagesChanged: () -> Unit,
-) {
+class AppRepository(context: Context) {
     private val launcherApps: LauncherApps = context.getSystemService(LauncherApps::class.java)
+
+    private val onPackagesChanged = signalStateFlow()
 
     init {
         launcherApps.registerCallback(
@@ -78,7 +81,7 @@ class AppRepository(
         val drawable: Drawable,
     )
 
-    suspend fun getAllApps(): List<App> = withContext(Dispatchers.IO) {
+    val allApps: Flow<List<App>> = onPackagesChanged.map {
         launcherApps.getActivityList(null, launcherApps.profiles[0])
             .map { launcherActivityInfo ->
                 App(
@@ -89,4 +92,6 @@ class AppRepository(
                 )
             }
     }
+        .flowOn(Dispatchers.IO)
 }
+
