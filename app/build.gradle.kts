@@ -82,8 +82,10 @@ dependencies {
 }
 
 sqldelight {
-    database("Database") {
-        schemaOutputDirectory = file("src/main/sqldelight/databases")
+    databases {
+        create("Database") {
+            schemaOutputDirectory.set(file("src/main/sqldelight/databases"))
+        }
     }
 }
 

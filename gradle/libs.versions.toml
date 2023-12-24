@@ -15,13 +15,13 @@ androidx-compose-bom = "2023.10.01"
 
 google-material = "1.11.0"
 benManes-versions = "0.50.0"
-sqldelight = "1.5.5"
+sqldelight = "2.0.1"
 
 [plugins]
 benManes-versions = { id = "com.github.ben-manes.versions", version.ref = "benManes-versions" }
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-sqldelight = { id = "com.squareup.sqldelight", version.ref = "sqldelight" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 
 [libraries]
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
@@ -48,5 +48,5 @@ testing-junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 google-material = { group = "com.google.android.material", name = "material", version.ref = "google-material" }
 
-sqldelight-androidDriver = { group = "com.squareup.sqldelight", name = "android-driver", version.ref = "sqldelight" }
-sqldelight-coroutines = { group = "com.squareup.sqldelight", name = "coroutines-extensions", version.ref = "sqldelight" }
+sqldelight-androidDriver = { group = "app.cash.sqldelight", name = "android-driver", version.ref = "sqldelight" }
+sqldelight-coroutines = { group = "app.cash.sqldelight", name = "coroutines-extensions", version.ref = "sqldelight" }
