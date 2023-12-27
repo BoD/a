@@ -41,7 +41,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flattenConcat
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -60,14 +60,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val shortcutRepository = ShortcutRepository(application)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val allLaunchItems: Flow<List<LaunchItem>> = appRepository.allApps.map { allApps ->
+    private val allLaunchItems: Flow<List<LaunchItem>> = appRepository.allApps.flatMapLatest { allApps ->
         val allShortcutsFlow = shortcutRepository.getAllShortcuts(allApps.map { it.packageName })
         combine(allShortcutsFlow, contactRepository.starredContacts) { allShortcuts, starredContacts ->
             allApps.map { it.toAppLaunchItem() } +
                     allShortcuts.map { it.toShortcutLaunchItem() } +
                     starredContacts.map { it.toContactLaunchItem() }
         }
-    }.flattenConcat()
+    }
 
 
     private val deletedLaunchItems = launchItemRepository.getDeletedItems()
