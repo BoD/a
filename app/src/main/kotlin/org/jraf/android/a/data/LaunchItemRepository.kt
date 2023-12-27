@@ -25,9 +25,9 @@
 package org.jraf.android.a.data
 
 import android.content.Context
-import com.squareup.sqldelight.android.AndroidSqliteDriver
-import com.squareup.sqldelight.runtime.coroutines.asFlow
-import com.squareup.sqldelight.runtime.coroutines.mapToList
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
+import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -71,7 +71,7 @@ class LaunchItemRepository(private val context: Context) {
     private fun getCounters(historySize: Long, weight: Long): Flow<Map<String, Long>> =
         database.launchedItemsQueries.select(historySize = historySize)
             .asFlow()
-            .mapToList()
+            .mapToList(Dispatchers.IO)
             .map { counters ->
                 counters.associate { it.id to it.count * weight }
             }
@@ -92,7 +92,7 @@ class LaunchItemRepository(private val context: Context) {
 
     private fun getDeprioritizedItems(): Flow<List<String>> = database.deprioritizedItemsQueries.select()
         .asFlow()
-        .mapToList()
+        .mapToList(Dispatchers.IO)
 
     suspend fun deleteItem(id: String) {
         withContext(Dispatchers.IO) {
@@ -104,5 +104,5 @@ class LaunchItemRepository(private val context: Context) {
 
     fun getDeletedItems(): Flow<List<String>> = database.deletedItemsQueries.select()
         .asFlow()
-        .mapToList()
+        .mapToList(Dispatchers.IO)
 }
