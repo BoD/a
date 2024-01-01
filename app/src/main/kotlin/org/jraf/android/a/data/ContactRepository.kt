@@ -39,10 +39,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import org.jraf.android.a.R
+import org.jraf.android.a.util.Key
 import org.jraf.android.a.util.invoke
 import org.jraf.android.a.util.signalStateFlow
 
 class ContactRepository(private val context: Context) {
+    companion object : Key<ContactRepository>
+
     private val onContactsChanged = signalStateFlow()
     private var contentObserver: ContentObserver? = null
 

@@ -33,6 +33,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -77,6 +78,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Size
@@ -95,6 +97,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
@@ -117,6 +120,7 @@ fun MainLayout(
     onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
     onRequestPermissionRationaleClick: () -> Unit,
     gridState: LazyGridState,
 ) {
@@ -146,6 +150,7 @@ fun MainLayout(
                     onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
                     onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
                     onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
+                    onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
                     gridState = gridState
                 )
             }
@@ -249,6 +254,7 @@ private fun LaunchItemList(
     onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
     gridState: LazyGridState,
 ) {
     Box(
@@ -266,6 +272,7 @@ private fun LaunchItemList(
                     onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
                     onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
                     onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
+                    onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
                 )
             }
         }
@@ -299,6 +306,7 @@ private fun LazyGridItemScope.LaunchItemItem(
     onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
 ) {
     var dropdownMenuVisible by remember { mutableStateOf(false) }
     Box(
@@ -332,25 +340,41 @@ private fun LazyGridItemScope.LaunchItemItem(
                 },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Image(
+            Box(
                 modifier = Modifier
                     .size(48.sp.toDp())
-                    .let {
-                        if (launchItem is MainViewModel.ContactLaunchItem) {
-                            // Contact photos are square, but we want circles
-                            it.clip(CircleShape)
-                        } else {
-                            it
-                        }
+            ) {
+                Image(
+                    modifier = Modifier
+                        .size(48.sp.toDp())
+                        .let {
+                            if (launchItem is MainViewModel.ContactLaunchItem) {
+                                // Contact photos are square, but we want circles
+                                it.clip(CircleShape)
+                            } else {
+                                it
+                            }
+                        },
+                    painter = DrawablePainter(launchItem.drawable),
+                    contentDescription = launchItem.label,
+                    colorFilter = if (launchItem.isDeprioritized) {
+                        deprioritizedColorFilter
+                    } else {
+                        null
                     },
-                painter = DrawablePainter(launchItem.drawable),
-                contentDescription = launchItem.label,
-                colorFilter = if (launchItem.isDeprioritized) {
-                    deprioritizedColorFilter
-                } else {
-                    null
-                },
-            )
+                )
+                if (launchItem.hasNotification) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(16.sp.toDp())
+                            .border(1.dp, Color.White, CircleShape)
+                            .padding(1.dp)
+                            .shadow(4.dp, CircleShape)
+                            .background(Color.Red),
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(4.sp.toDp()))
             Text(
                 modifier = Modifier.padding(horizontal = 2.sp.toDp()),
@@ -371,6 +395,23 @@ private fun LazyGridItemScope.LaunchItemItem(
                             dropdownMenuVisible = false
                         },
                         text = { Text(stringResource(R.string.main_list_app_appDetails)) }
+                    )
+                    DropdownMenuItem(
+                        onClick = {
+                            onLaunchItemQuaternaryAction(launchItem)
+                            dropdownMenuVisible = false
+                        },
+                        text = {
+                            Text(
+                                stringResource(
+                                    if (launchItem.ignoreNotifications) {
+                                        R.string.main_list_app_unignoreNotifications
+                                    } else {
+                                        R.string.main_list_app_ignoreNotifications
+                                    }
+                                )
+                            )
+                        }
                     )
                     DropdownMenuItem(
                         onClick = {
@@ -435,6 +476,7 @@ private fun MainScreenPreview() {
         onLaunchItemSecondaryAction = {},
         onLaunchItemTertiaryAction = {},
         onRequestPermissionRationaleClick = {},
+        onLaunchItemQuaternaryAction = {},
         gridState = rememberLazyGridState(),
     )
 }
@@ -448,7 +490,9 @@ private fun fakeApp() = MainViewModel.AppLaunchItem(
         LocalContext.current,
         R.mipmap.ic_launcher
     )!!,
-    isDeprioritized = false
+    isDeprioritized = false,
+    hasNotification = true,
+    ignoreNotifications = false,
 )
 
 

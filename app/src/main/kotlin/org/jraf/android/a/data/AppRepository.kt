@@ -39,10 +39,13 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import org.jraf.android.a.BuildConfig
 import org.jraf.android.a.R
+import org.jraf.android.a.util.Key
 import org.jraf.android.a.util.invoke
 import org.jraf.android.a.util.signalStateFlow
 
 class AppRepository(context: Context) {
+    companion object : Key<AppRepository>
+
     private val launcherApps: LauncherApps = context.getSystemService(LauncherApps::class.java)
 
     private val onPackagesChanged = signalStateFlow()
@@ -127,4 +130,3 @@ class AppRepository(context: Context) {
     }
         .flowOn(Dispatchers.IO)
 }
-

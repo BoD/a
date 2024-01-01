@@ -34,14 +34,17 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.jraf.android.a.Database
+import org.jraf.android.a.util.Key
 
-private const val LONG_TERM_HISTORY_SIZE = 300L
+private const val LONG_TERM_HISTORY_SIZE = 600L
 private const val LONG_TERM_WEIGHT = 1L
 
 private const val SHORT_TERM_HISTORY_SIZE = 20L
 private const val SHORT_TERM_WEIGHT = 3L
 
 class LaunchItemRepository(private val context: Context) {
+    companion object : Key<LaunchItemRepository>
+
     private val database: Database by lazy { createSqldelightDatabase(context) }
 
     private fun createSqldelightDatabase(context: Context): Database {
@@ -91,6 +94,22 @@ class LaunchItemRepository(private val context: Context) {
     }
 
     private fun getDeprioritizedItems(): Flow<List<String>> = database.deprioritizedItemsQueries.select()
+        .asFlow()
+        .mapToList(Dispatchers.IO)
+
+    suspend fun ignoreNotifications(id: String) {
+        withContext(Dispatchers.IO) {
+            database.ignoredNotificationsItemsQueries.insert(id)
+        }
+    }
+
+    suspend fun unignoreNotifications(id: String) {
+        withContext(Dispatchers.IO) {
+            database.ignoredNotificationsItemsQueries.delete(id)
+        }
+    }
+
+    fun getIgnoredNotificationsItems(): Flow<List<String>> = database.ignoredNotificationsItemsQueries.select()
         .asFlow()
         .mapToList(Dispatchers.IO)
 

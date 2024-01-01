@@ -107,6 +107,7 @@ class MainActivity : ComponentActivity() {
                 onLaunchItemPrimaryAction = viewModel::onLaunchItemPrimaryAction,
                 onLaunchItemSecondaryAction = viewModel::onLaunchItemSecondaryAction,
                 onLaunchItemTertiaryAction = viewModel::onLaunchItemTertiaryAction,
+                onLaunchItemQuaternaryAction = viewModel::onLaunchItemQuaternaryAction,
                 onRequestPermissionRationaleClick = {
                     viewModel.shouldShowRequestPermissionRationale.value = false
                     requestPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
@@ -138,6 +139,7 @@ class MainActivity : ComponentActivity() {
         // Force showing the keyboard, supposedly.  This works 93.78% of the time.  Shout out to /r/mAndroidDev!
         val imm: InputMethodManager = getSystemService(InputMethodManager::class.java)
         imm.hideSoftInputFromWindow(window.decorView.windowToken, 0)
+        @Suppress("DEPRECATION")
         imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
     }
 

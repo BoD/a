@@ -10,6 +10,8 @@
     <string name="main_list_app_appDetails">App details</string>
     <string name="main_list_app_deprioritize">De-prioritize</string>
     <string name="main_list_app_undeprioritize">Un-de-prioritize</string>
+    <string name="main_list_app_ignoreNotifications">Ignore notifications</string>
+    <string name="main_list_app_unignoreNotifications">Unignore notifications</string>
 
     <string name="main_list_shortcut_deleteShortcut">Delete shortcut</string>
 
