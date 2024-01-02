@@ -131,10 +131,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             is ContactLaunchItem -> intentToStart.tryEmit(launchedItem.viewContactIntent)
             is ShortcutLaunchItem -> shortcutRepository.launchShortcut(launchedItem.shortcut)
         }
-        viewModelScope.launch {
-            // Add a delay so the reordering animation isn't distracting
-            delay(1000)
-            launchItemRepository.recordLaunchedItem(launchedItem.id)
+        // Don't record the launch if there's a notification, as it's likely the user just wants to read it, that shouldn't count as a "real" launch
+        if (!launchedItem.hasNotification) {
+            viewModelScope.launch {
+                // Add a delay so the reordering animation isn't distracting
+                delay(1000)
+                launchItemRepository.recordLaunchedItem(launchedItem.id)
+            }
         }
     }
 
