@@ -30,6 +30,7 @@ import org.jraf.android.a.data.AppRepository
 import org.jraf.android.a.data.ContactRepository
 import org.jraf.android.a.data.LaunchItemRepository
 import org.jraf.android.a.data.NotificationRepository
+import org.jraf.android.a.data.SettingsRepository
 import org.jraf.android.a.data.ShortcutRepository
 import org.jraf.android.a.util.Key
 import org.jraf.android.a.util.initLogging
@@ -53,6 +54,7 @@ class AApplication : Application() {
         repositories[LaunchItemRepository] = LaunchItemRepository(context)
         repositories[ShortcutRepository] = ShortcutRepository(context)
         repositories[NotificationRepository] = NotificationRepository(context)
+        repositories[SettingsRepository] = SettingsRepository(context)
     }
 
     @Suppress("UNCHECKED_CAST")

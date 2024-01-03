@@ -31,6 +31,7 @@ import android.graphics.drawable.Drawable
 import android.os.Process
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import org.jraf.android.a.util.Key
@@ -49,6 +50,24 @@ class ShortcutRepository(context: Context) {
     ) {
         val id: String = shortcutInfo.id
         val label: String = shortcutInfo.shortLabel.toString()
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as Shortcut
+
+            if (id != other.id) return false
+            if (label != other.label) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = id.hashCode()
+            result = 31 * result + label.hashCode()
+            return result
+        }
     }
 
     fun getAllShortcuts(packageNames: List<String>): Flow<List<Shortcut>> = onShortcutChanged.map {
@@ -71,7 +90,9 @@ class ShortcutRepository(context: Context) {
                     }
             }
         }
-    }.flowOn(Dispatchers.IO)
+    }
+        .distinctUntilChanged()
+        .flowOn(Dispatchers.IO)
 
     fun launchShortcut(shortcut: Shortcut) {
         try {

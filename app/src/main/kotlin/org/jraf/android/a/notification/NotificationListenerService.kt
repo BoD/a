@@ -57,29 +57,34 @@ class NotificationListenerService : android.service.notification.NotificationLis
     private fun updateActiveNotifications() {
         app[NotificationRepository].updateNotifications(
             @Suppress("DEPRECATION")
-            activeNotifications.filter { statusBarNotification ->
-                val notification = statusBarNotification.notification!!
-                val hasMediaSession = notification.extras.containsKey(Notification.EXTRA_MEDIA_SESSION)
-                val isOwnNotification = statusBarNotification.packageName == packageName
-                val isIgnoredPackage = statusBarNotification.packageName in ignoredPackages
-                val hasOverrideGroupKey = statusBarNotification.overrideGroupKey != null
-                val isNotificationSilent = notification.priority == Notification.PRIORITY_LOW ||
-                        notification.priority == Notification.PRIORITY_MIN
+            activeNotifications
+                .filter { statusBarNotification ->
+                    val notification = statusBarNotification.notification!!
+                    val hasMediaSession = notification.extras.containsKey(Notification.EXTRA_MEDIA_SESSION)
+                    val isOwnNotification = statusBarNotification.packageName == packageName
+                    val isIgnoredPackage = statusBarNotification.packageName in ignoredPackages
+                    val hasOverrideGroupKey = statusBarNotification.overrideGroupKey != null
+                    val isNotificationSilent = notification.priority == Notification.PRIORITY_LOW ||
+                            notification.priority == Notification.PRIORITY_MIN
 
 //                val isChannelSilent = getSystemService(NotificationManager::class.java)
 //                    .getNotificationChannel(notification.channelId).importance.let {
 //                        it == NotificationManager.IMPORTANCE_LOW || it == NotificationManager.IMPORTANCE_MIN
 //                    }
 
-                notification.channelId
-                !isOwnNotification &&
-                        !isIgnoredPackage &&
-                        !statusBarNotification.isOngoing &&
-                        statusBarNotification.isClearable &&
-                        !hasOverrideGroupKey &&
-                        !hasMediaSession &&
-                        !(isNotificationSilent /*|| isChannelSilent*/)
-            }.associateBy { it.packageName }
+                    notification.channelId
+                    !isOwnNotification &&
+                            !isIgnoredPackage &&
+                            !statusBarNotification.isOngoing &&
+                            statusBarNotification.isClearable &&
+                            !hasOverrideGroupKey &&
+                            !hasMediaSession &&
+                            !(isNotificationSilent /*|| isChannelSilent*/)
+                }
+                .sortedBy { statusBarNotification ->
+                    statusBarNotification.notification.`when`
+                }
+                .associateBy { it.packageName }
         )
     }
 }

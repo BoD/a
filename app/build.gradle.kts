@@ -79,6 +79,8 @@ dependencies {
 
     implementation(libs.sqldelight.androidDriver)
     implementation(libs.sqldelight.coroutines)
+
+    implementation(libs.kprefs)
 }
 
 sqldelight {

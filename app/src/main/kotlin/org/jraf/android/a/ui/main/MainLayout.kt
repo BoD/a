@@ -29,6 +29,7 @@ package org.jraf.android.a.ui.main
 
 import android.content.res.Configuration
 import android.graphics.drawable.Drawable
+import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -111,7 +112,6 @@ import kotlin.random.Random
 fun MainLayout(
     searchQuery: String,
     launchItems: List<MainViewModel.LaunchItem>,
-    shouldShowRequestPermissionRationale: Boolean,
     onSearchQueryChange: (String) -> Unit,
     onResetSearchQueryClick: () -> Unit,
     onWebSearchClick: () -> Unit,
@@ -121,7 +121,10 @@ fun MainLayout(
     onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
-    onRequestPermissionRationaleClick: () -> Unit,
+    showRequestContactsPermissionBanner: Boolean,
+    onRequestContactsPermissionClick: () -> Unit,
+    showNotificationListenerPermissionBanner: Boolean,
+    onRequestNotificationListenerPermissionClick: () -> Unit,
     gridState: LazyGridState,
 ) {
     ATheme {
@@ -141,8 +144,17 @@ fun MainLayout(
                     onKeyboardActionButtonClick = onKeyboardActionButtonClick,
                     isKeyboardWebSearchActive = isKeyboardWebSearchActive,
                 )
-                if (shouldShowRequestPermissionRationale) {
-                    RequestPermissionRationale(onRequestPermissionRationaleClick = onRequestPermissionRationaleClick)
+                if (showRequestContactsPermissionBanner) {
+                    RequestPermissionBanner(
+                        messageResId = R.string.main_requestPermissionRationale_text,
+                        onRequestPermissionClick = onRequestContactsPermissionClick
+                    )
+                }
+                if (showNotificationListenerPermissionBanner) {
+                    RequestPermissionBanner(
+                        messageResId = R.string.main_requestNotificationListenerPermission_text,
+                        onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
+                    )
                 }
 
                 LaunchItemList(
@@ -159,23 +171,25 @@ fun MainLayout(
 }
 
 @Composable
-private fun RequestPermissionRationale(onRequestPermissionRationaleClick: () -> Unit) {
+private fun RequestPermissionBanner(
+    @StringRes messageResId: Int,
+    onRequestPermissionClick: () -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-    )
-    {
+    ) {
         Text(
             modifier = Modifier
                 .padding(8.sp.toDp())
                 .weight(1F),
-            text = stringResource(R.string.main_requestPermissionRationale_text),
+            text = stringResource(messageResId),
         )
 
         Spacer(modifier = Modifier.size(8.sp.toDp()))
 
-        Button(onClick = onRequestPermissionRationaleClick) {
-            Text(text = stringResource(R.string.main_requestPermissionRationale_button))
+        Button(onClick = onRequestPermissionClick) {
+            Text(text = stringResource(R.string.main_requestPermissionRationale_button_ok))
         }
         Spacer(modifier = Modifier.size(8.sp.toDp()))
     }
@@ -193,7 +207,7 @@ private fun SearchTextField(
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         // No comment...
-        delay(2000)
+        delay(1800)
         focusRequester.requestFocus()
     }
 
@@ -466,7 +480,6 @@ private fun MainScreenPreview() {
             fakeApp(),
             fakeApp(),
         ),
-        shouldShowRequestPermissionRationale = false,
         onSearchQueryChange = {},
         onResetSearchQueryClick = {},
         onWebSearchClick = {},
@@ -475,8 +488,11 @@ private fun MainScreenPreview() {
         onLaunchItemPrimaryAction = {},
         onLaunchItemSecondaryAction = {},
         onLaunchItemTertiaryAction = {},
-        onRequestPermissionRationaleClick = {},
         onLaunchItemQuaternaryAction = {},
+        showRequestContactsPermissionBanner = false,
+        onRequestContactsPermissionClick = {},
+        showNotificationListenerPermissionBanner = true,
+        onRequestNotificationListenerPermissionClick = {},
         gridState = rememberLazyGridState(),
     )
 }
@@ -491,7 +507,7 @@ private fun fakeApp() = MainViewModel.AppLaunchItem(
         R.mipmap.ic_launcher
     )!!,
     isDeprioritized = false,
-    hasNotification = true,
+    notificationTime = 42,
     ignoreNotifications = false,
 )
 

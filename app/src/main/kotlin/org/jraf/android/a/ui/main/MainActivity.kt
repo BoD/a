@@ -46,6 +46,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jraf.android.a.ui.main.MainViewModel.LaunchItem
+import org.jraf.android.a.util.invoke
 import org.jraf.android.a.util.logd
 
 class MainActivity : ComponentActivity() {
@@ -87,6 +88,12 @@ class MainActivity : ComponentActivity() {
             val shouldShowRequestPermissionRationale: Boolean by viewModel.shouldShowRequestPermissionRationale.collectAsState(
                 initial = false
             )
+            val hasNotificationListenerPermission: Boolean by viewModel.hasNotificationListenerPermission.collectAsState(
+                initial = true
+            )
+            val hasSeenRequestNotificationListenerPermissionBanner: Boolean by viewModel.hasSeenRequestNotificationListenerPermissionBanner.collectAsState(
+                initial = false
+            )
 
             val gridState = rememberLazyGridState()
 
@@ -98,7 +105,6 @@ class MainActivity : ComponentActivity() {
             MainLayout(
                 searchQuery = searchQuery,
                 launchItems = launchItems,
-                shouldShowRequestPermissionRationale = shouldShowRequestPermissionRationale,
                 onSearchQueryChange = viewModel::onSearchQueryChange,
                 onResetSearchQueryClick = viewModel::resetSearchQuery,
                 onWebSearchClick = viewModel::onWebSearchClick,
@@ -108,10 +114,13 @@ class MainActivity : ComponentActivity() {
                 onLaunchItemSecondaryAction = viewModel::onLaunchItemSecondaryAction,
                 onLaunchItemTertiaryAction = viewModel::onLaunchItemTertiaryAction,
                 onLaunchItemQuaternaryAction = viewModel::onLaunchItemQuaternaryAction,
-                onRequestPermissionRationaleClick = {
+                showRequestContactsPermissionBanner = shouldShowRequestPermissionRationale,
+                onRequestContactsPermissionClick = {
                     viewModel.shouldShowRequestPermissionRationale.value = false
                     requestPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                 },
+                showNotificationListenerPermissionBanner = !hasNotificationListenerPermission && !hasSeenRequestNotificationListenerPermissionBanner,
+                onRequestNotificationListenerPermissionClick = viewModel::onRequestNotificationListenerPermissionClick,
                 gridState = gridState,
             )
         }
@@ -127,6 +136,11 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         viewModel.resetSearchQuery()
         showKeyboardSupposedly()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.hasNotificationListenerPermissionSignal()
     }
 
     override fun onNewIntent(intent: Intent?) {

@@ -34,6 +34,7 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -88,7 +89,29 @@ class AppRepository(context: Context) {
         val packageName: String,
         val activityName: String,
         val drawable: Drawable,
-    )
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as App
+
+            if (label != other.label) return false
+            if (packageName != other.packageName) return false
+            if (activityName != other.activityName) return false
+            if (drawable::class.java != other.drawable::class.java) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = label.hashCode()
+            result = 31 * result + packageName.hashCode()
+            result = 31 * result + activityName.hashCode()
+            result = 31 * result + drawable::class.java.hashCode()
+            return result
+        }
+    }
 
     private var firstLoad = true
 
@@ -128,5 +151,6 @@ class AppRepository(context: Context) {
             )
         }
     }
+        .distinctUntilChanged()
         .flowOn(Dispatchers.IO)
 }

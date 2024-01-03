@@ -98,7 +98,7 @@ class ContactRepository(private val context: Context) {
                 null,
                 null,
             )?.use { cursor ->
-                buildList<Contact> {
+                buildList {
                     while (cursor.moveToNext()) {
                         val contactId = cursor.getLong(0)
                         val lookupKey = cursor.getString(1)
@@ -107,9 +107,7 @@ class ContactRepository(private val context: Context) {
                                 contactId = contactId,
                                 lookupKey = lookupKey,
                                 displayName = cursor.getString(2),
-                                photoDrawable = getPhotoDrawable(
-                                    Contacts.getLookupUri(contactId, lookupKey)
-                                ),
+                                photoDrawable = getPhotoDrawable(Contacts.getLookupUri(contactId, lookupKey)),
                                 phoneNumber = getPhoneNumber(contactId)
                             )
                         )

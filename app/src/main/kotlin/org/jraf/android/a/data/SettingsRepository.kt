@@ -25,28 +25,14 @@
 package org.jraf.android.a.data
 
 import android.content.Context
-import android.service.notification.StatusBarNotification
-import androidx.core.app.NotificationManagerCompat
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import org.jraf.android.a.util.Key
+import org.jraf.android.kprefs.Prefs
 
-class NotificationRepository(private val context: Context) {
-    companion object : Key<NotificationRepository>
+class SettingsRepository(context: Context) {
+    companion object : Key<SettingsRepository>
 
-    private val _notifications: MutableStateFlow<Map<String, StatusBarNotification>> = MutableStateFlow(emptyMap())
-    val notificationTimes: Flow<Map<String, Long>> = _notifications
-        .map { notifications ->
-            notifications.mapValues { it.value.notification.`when` }
-        }
-        .distinctUntilChanged()
+    private val prefs = Prefs(context)
 
-    fun updateNotifications(notifications: Map<String, StatusBarNotification>) {
-        _notifications.value = notifications
-    }
-
-    fun hasNotificationListenerPermission(): Boolean =
-        NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+    val hasSeenRequestNotificationListenerPermissionBanner: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
 }
