@@ -111,6 +111,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         ) { allLaunchedItems, verbatimQuery, counters, deletedLaunchItems ->
             val query = verbatimQuery.trim()
             allLaunchedItems
+                .asSequence()
                 .map {
                     if (it is AppLaunchItem && counters[it.id] == -1L) {
                         it.copy(isDeprioritized = true)
@@ -132,6 +133,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         0
                     }
                 }
+                .toList()
         }
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
