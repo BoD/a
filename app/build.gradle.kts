@@ -13,8 +13,8 @@ android {
         applicationId = "a.a.a.a"
         minSdk = 26
         targetSdk = 34
-        versionCode = 11
-        versionName = "1.8.0"
+        versionCode = 12
+        versionName = "1.9.0"
     }
 
     signingConfigs {
@@ -79,6 +79,8 @@ dependencies {
 
     implementation(libs.sqldelight.androidDriver)
     implementation(libs.sqldelight.coroutines)
+
+    implementation(libs.kprefs)
 }
 
 sqldelight {

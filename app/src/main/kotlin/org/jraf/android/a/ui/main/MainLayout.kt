@@ -29,10 +29,12 @@ package org.jraf.android.a.ui.main
 
 import android.content.res.Configuration
 import android.graphics.drawable.Drawable
+import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -77,6 +79,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Size
@@ -95,6 +98,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
@@ -108,7 +112,6 @@ import kotlin.random.Random
 fun MainLayout(
     searchQuery: String,
     launchItems: List<MainViewModel.LaunchItem>,
-    shouldShowRequestPermissionRationale: Boolean,
     onSearchQueryChange: (String) -> Unit,
     onResetSearchQueryClick: () -> Unit,
     onWebSearchClick: () -> Unit,
@@ -117,7 +120,11 @@ fun MainLayout(
     onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
-    onRequestPermissionRationaleClick: () -> Unit,
+    onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
+    showRequestContactsPermissionBanner: Boolean,
+    onRequestContactsPermissionClick: () -> Unit,
+    showNotificationListenerPermissionBanner: Boolean,
+    onRequestNotificationListenerPermissionClick: () -> Unit,
     gridState: LazyGridState,
 ) {
     ATheme {
@@ -137,8 +144,17 @@ fun MainLayout(
                     onKeyboardActionButtonClick = onKeyboardActionButtonClick,
                     isKeyboardWebSearchActive = isKeyboardWebSearchActive,
                 )
-                if (shouldShowRequestPermissionRationale) {
-                    RequestPermissionRationale(onRequestPermissionRationaleClick = onRequestPermissionRationaleClick)
+                if (showRequestContactsPermissionBanner) {
+                    RequestPermissionBanner(
+                        messageResId = R.string.main_requestContactsPermissionRationale_text,
+                        onRequestPermissionClick = onRequestContactsPermissionClick
+                    )
+                }
+                if (showNotificationListenerPermissionBanner) {
+                    RequestPermissionBanner(
+                        messageResId = R.string.main_requestNotificationListenerPermission_text,
+                        onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
+                    )
                 }
 
                 LaunchItemList(
@@ -146,6 +162,7 @@ fun MainLayout(
                     onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
                     onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
                     onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
+                    onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
                     gridState = gridState
                 )
             }
@@ -154,23 +171,25 @@ fun MainLayout(
 }
 
 @Composable
-private fun RequestPermissionRationale(onRequestPermissionRationaleClick: () -> Unit) {
+private fun RequestPermissionBanner(
+    @StringRes messageResId: Int,
+    onRequestPermissionClick: () -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-    )
-    {
+    ) {
         Text(
             modifier = Modifier
                 .padding(8.sp.toDp())
                 .weight(1F),
-            text = stringResource(R.string.main_requestPermissionRationale_text),
+            text = stringResource(messageResId),
         )
 
         Spacer(modifier = Modifier.size(8.sp.toDp()))
 
-        Button(onClick = onRequestPermissionRationaleClick) {
-            Text(text = stringResource(R.string.main_requestPermissionRationale_button))
+        Button(onClick = onRequestPermissionClick) {
+            Text(text = stringResource(R.string.main_requestPermissionRationale_button_ok))
         }
         Spacer(modifier = Modifier.size(8.sp.toDp()))
     }
@@ -188,7 +207,7 @@ private fun SearchTextField(
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         // No comment...
-        delay(2000)
+        delay(1800)
         focusRequester.requestFocus()
     }
 
@@ -249,6 +268,7 @@ private fun LaunchItemList(
     onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
     gridState: LazyGridState,
 ) {
     Box(
@@ -266,6 +286,7 @@ private fun LaunchItemList(
                     onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
                     onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
                     onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
+                    onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
                 )
             }
         }
@@ -299,6 +320,7 @@ private fun LazyGridItemScope.LaunchItemItem(
     onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
 ) {
     var dropdownMenuVisible by remember { mutableStateOf(false) }
     Box(
@@ -332,25 +354,41 @@ private fun LazyGridItemScope.LaunchItemItem(
                 },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Image(
+            Box(
                 modifier = Modifier
                     .size(48.sp.toDp())
-                    .let {
-                        if (launchItem is MainViewModel.ContactLaunchItem) {
-                            // Contact photos are square, but we want circles
-                            it.clip(CircleShape)
-                        } else {
-                            it
-                        }
+            ) {
+                Image(
+                    modifier = Modifier
+                        .size(48.sp.toDp())
+                        .let {
+                            if (launchItem is MainViewModel.ContactLaunchItem) {
+                                // Contact photos are square, but we want circles
+                                it.clip(CircleShape)
+                            } else {
+                                it
+                            }
+                        },
+                    painter = DrawablePainter(launchItem.drawable),
+                    contentDescription = launchItem.label,
+                    colorFilter = if (launchItem.isDeprioritized) {
+                        deprioritizedColorFilter
+                    } else {
+                        null
                     },
-                painter = DrawablePainter(launchItem.drawable),
-                contentDescription = launchItem.label,
-                colorFilter = if (launchItem.isDeprioritized) {
-                    deprioritizedColorFilter
-                } else {
-                    null
-                },
-            )
+                )
+                if (launchItem.hasNotification) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(16.sp.toDp())
+                            .border(1.dp, Color.White, CircleShape)
+                            .padding(1.dp)
+                            .shadow(4.dp, CircleShape)
+                            .background(Color.Red),
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(4.sp.toDp()))
             Text(
                 modifier = Modifier.padding(horizontal = 2.sp.toDp()),
@@ -371,6 +409,23 @@ private fun LazyGridItemScope.LaunchItemItem(
                             dropdownMenuVisible = false
                         },
                         text = { Text(stringResource(R.string.main_list_app_appDetails)) }
+                    )
+                    DropdownMenuItem(
+                        onClick = {
+                            onLaunchItemQuaternaryAction(launchItem)
+                            dropdownMenuVisible = false
+                        },
+                        text = {
+                            Text(
+                                stringResource(
+                                    if (launchItem.ignoreNotifications) {
+                                        R.string.main_list_app_unignoreNotifications
+                                    } else {
+                                        R.string.main_list_app_ignoreNotifications
+                                    }
+                                )
+                            )
+                        }
                     )
                     DropdownMenuItem(
                         onClick = {
@@ -425,7 +480,6 @@ private fun MainScreenPreview() {
             fakeApp(),
             fakeApp(),
         ),
-        shouldShowRequestPermissionRationale = false,
         onSearchQueryChange = {},
         onResetSearchQueryClick = {},
         onWebSearchClick = {},
@@ -434,7 +488,11 @@ private fun MainScreenPreview() {
         onLaunchItemPrimaryAction = {},
         onLaunchItemSecondaryAction = {},
         onLaunchItemTertiaryAction = {},
-        onRequestPermissionRationaleClick = {},
+        onLaunchItemQuaternaryAction = {},
+        showRequestContactsPermissionBanner = false,
+        onRequestContactsPermissionClick = {},
+        showNotificationListenerPermissionBanner = true,
+        onRequestNotificationListenerPermissionClick = {},
         gridState = rememberLazyGridState(),
     )
 }
@@ -448,7 +506,9 @@ private fun fakeApp() = MainViewModel.AppLaunchItem(
         LocalContext.current,
         R.mipmap.ic_launcher
     )!!,
-    isDeprioritized = false
+    isDeprioritized = false,
+    notificationTime = 42,
+    ignoreNotifications = false,
 )
 
 

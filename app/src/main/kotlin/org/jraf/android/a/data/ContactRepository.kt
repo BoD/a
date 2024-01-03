@@ -39,10 +39,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import org.jraf.android.a.R
+import org.jraf.android.a.util.Key
 import org.jraf.android.a.util.invoke
 import org.jraf.android.a.util.signalStateFlow
 
 class ContactRepository(private val context: Context) {
+    companion object : Key<ContactRepository>
+
     private val onContactsChanged = signalStateFlow()
     private var contentObserver: ContentObserver? = null
 
@@ -95,7 +98,7 @@ class ContactRepository(private val context: Context) {
                 null,
                 null,
             )?.use { cursor ->
-                buildList<Contact> {
+                buildList {
                     while (cursor.moveToNext()) {
                         val contactId = cursor.getLong(0)
                         val lookupKey = cursor.getString(1)
@@ -104,9 +107,7 @@ class ContactRepository(private val context: Context) {
                                 contactId = contactId,
                                 lookupKey = lookupKey,
                                 displayName = cursor.getString(2),
-                                photoDrawable = getPhotoDrawable(
-                                    Contacts.getLookupUri(contactId, lookupKey)
-                                ),
+                                photoDrawable = getPhotoDrawable(Contacts.getLookupUri(contactId, lookupKey)),
                                 phoneNumber = getPhoneNumber(contactId)
                             )
                         )

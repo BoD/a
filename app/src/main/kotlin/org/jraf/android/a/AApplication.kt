@@ -25,6 +25,14 @@
 package org.jraf.android.a
 
 import android.app.Application
+import android.content.Context
+import org.jraf.android.a.data.AppRepository
+import org.jraf.android.a.data.ContactRepository
+import org.jraf.android.a.data.LaunchItemRepository
+import org.jraf.android.a.data.NotificationRepository
+import org.jraf.android.a.data.SettingsRepository
+import org.jraf.android.a.data.ShortcutRepository
+import org.jraf.android.a.util.Key
 import org.jraf.android.a.util.initLogging
 
 class AApplication : Application() {
@@ -34,5 +42,26 @@ class AApplication : Application() {
 
         // Material dynamic colors
 //        DynamicColors.applyToActivitiesIfAvailable(this)
+
+        initRepositories(this)
     }
+
+    private val repositories = mutableMapOf<Key<*>, Any>()
+
+    private fun initRepositories(context: Context) {
+        repositories[AppRepository] = AppRepository(context)
+        repositories[ContactRepository] = ContactRepository(context)
+        repositories[LaunchItemRepository] = LaunchItemRepository(context)
+        repositories[ShortcutRepository] = ShortcutRepository(context)
+        repositories[NotificationRepository] = NotificationRepository(context)
+        repositories[SettingsRepository] = SettingsRepository(context)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    operator fun <T> get(key: Key<T>): T = repositories[key] as T
 }
+
+val Context.app: AApplication
+    get() = applicationContext as AApplication
+
+operator fun <T> Context.get(key: Key<T>): T = app[key]

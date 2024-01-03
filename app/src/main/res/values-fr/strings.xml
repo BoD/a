@@ -2,13 +2,16 @@
     <string name="main_search_placeholder">Rechercher</string>
     <string name="main_search_reset">Effacer</string>
     <string name="main_search_webSearch">Chercher sur Internet</string>
-    <string name="main_requestPermissionRationale_text">La permission Lire les Contacts est nécessaire si vous souhaitez
+    <string name="main_requestContactsPermissionRationale_text">La permission Lire les Contacts est nécessaire si vous souhaitez
         inclure vos contacts favoris dans la liste.</string>
-    <string name="main_requestPermissionRationale_button">OK</string>
+    <string name="main_requestNotificationListenerPermission_text">Autorisez l\'accès aux notifications si vous souhaitez afficher des badges sur les icones.</string>
+    <string name="main_requestPermissionRationale_button_ok">OK</string>
 
     <string name="main_list_app_appDetails">Détails de l\'appli</string>
     <string name="main_list_app_deprioritize">Déprioritiser</string>
     <string name="main_list_app_undeprioritize">Dé-déprioritiser</string>
+    <string name="main_list_app_ignoreNotifications">Ignorer les notifications</string>
+    <string name="main_list_app_unignoreNotifications">Désignorer les notifications</string>
 
     <string name="main_list_shortcut_deleteShortcut">Supprimer le raccourci</string>
 

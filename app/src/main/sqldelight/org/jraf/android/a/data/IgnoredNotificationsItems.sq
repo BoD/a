@@ -1,0 +1,16 @@
+CREATE TABLE IgnoredNotificationsItems (
+    id TEXT NOT NULL
+);
+
+insert:
+INSERT OR REPLACE INTO IgnoredNotificationsItems (
+    id
+) VALUES (
+    :id
+);
+
+select:
+SELECT id FROM IgnoredNotificationsItems;
+
+delete:
+DELETE FROM IgnoredNotificationsItems WHERE id = :id;

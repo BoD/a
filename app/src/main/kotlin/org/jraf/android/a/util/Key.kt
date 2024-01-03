@@ -7,7 +7,7 @@
  *                              /___/
  * repository.
  *
- * Copyright (C) 2022-present Benoit 'BoD' Lubek (BoD@JRAF.org)
+ * Copyright (C) 2024-present Benoit 'BoD' Lubek (BoD@JRAF.org)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,25 +22,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package org.jraf.android.a.util
 
-package org.jraf.android.a.ui.shortcut
-
-import android.content.pm.LauncherApps
-import android.os.Bundle
-import android.widget.Toast
-import androidx.activity.ComponentActivity
-import org.jraf.android.a.R
-import org.jraf.android.a.app
-import org.jraf.android.a.data.ShortcutRepository
-
-class ShortcutAcceptActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val launcherApps = getSystemService(LauncherApps::class.java)
-        val pinItemRequest = launcherApps.getPinItemRequest(intent)
-        pinItemRequest.accept()
-        app[ShortcutRepository].notifyShortcutsChanged()
-        Toast.makeText(this, getString(R.string.shortcutAccept_toast_accepted), Toast.LENGTH_SHORT).show()
-        finish()
-    }
-}
+interface Key<T>
