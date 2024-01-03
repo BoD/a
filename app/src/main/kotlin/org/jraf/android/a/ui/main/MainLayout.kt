@@ -146,7 +146,7 @@ fun MainLayout(
                 )
                 if (showRequestContactsPermissionBanner) {
                     RequestPermissionBanner(
-                        messageResId = R.string.main_requestPermissionRationale_text,
+                        messageResId = R.string.main_requestContactsPermissionRationale_text,
                         onRequestPermissionClick = onRequestContactsPermissionClick
                     )
                 }
