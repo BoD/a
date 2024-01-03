@@ -52,6 +52,7 @@ import org.jraf.android.a.data.AppRepository
 import org.jraf.android.a.data.ContactRepository
 import org.jraf.android.a.data.LaunchItemRepository
 import org.jraf.android.a.data.NotificationRepository
+import org.jraf.android.a.data.SettingsRepository
 import org.jraf.android.a.data.ShortcutRepository
 import org.jraf.android.a.get
 import org.jraf.android.a.notification.NotificationListenerService
@@ -65,7 +66,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val contactRepository = application[ContactRepository]
     private val shortcutRepository = application[ShortcutRepository]
     private val notificationRepository = application[NotificationRepository]
-    private val settingsRepository = application[org.jraf.android.a.data.SettingsRepository]
+    private val settingsRepository = application[SettingsRepository]
 
     private val ignoredNotificationsItems = launchItemRepository.getIgnoredNotificationsItems()
 
