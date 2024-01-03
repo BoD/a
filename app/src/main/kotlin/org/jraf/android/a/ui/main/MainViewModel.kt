@@ -124,7 +124,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 .sortedByDescending {
                     counters[it.id] ?: 0
                 }
-                // then by notification time (ascending)
+                // then by notification time (descending)
                 .sortedByDescending {
                     if (it.notificationTime != null && !it.ignoreNotifications) {
                         it.notificationTime!!
