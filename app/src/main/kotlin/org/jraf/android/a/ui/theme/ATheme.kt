@@ -36,7 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val ALightColorScheme: ColorScheme = lightColorScheme().copy(surface = Color.White)
+private val ALightColorScheme: ColorScheme = lightColorScheme()
 private val ADarkColorScheme: ColorScheme = darkColorScheme(surface = Color.Black)
 
 @Composable
@@ -47,7 +47,7 @@ fun ATheme(
     val dynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val colorScheme = when {
         dynamicColor && darkTheme -> dynamicDarkColorScheme(LocalContext.current).copy(surface = Color.Black)
-        dynamicColor && !darkTheme -> dynamicLightColorScheme(LocalContext.current).copy(surface = Color.White)
+        dynamicColor && !darkTheme -> dynamicLightColorScheme(LocalContext.current)
         darkTheme -> ADarkColorScheme
         else -> ALightColorScheme
     }

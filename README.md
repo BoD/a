@@ -17,7 +17,7 @@ It's named 'a' because it's the simplest name I could think of.
 
 ## Features
 
-Probably the fastest way to launch an app on Android:
+Probably the simplest and quickest way to launch apps:
 
 - Lists apps and favorite contacts
 - Most used ones appear at the top of the list
