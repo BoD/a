@@ -6,13 +6,13 @@ It's named 'a' because it's the simplest name I could think of.
 
 ## Screenshots
 
-<img src="assets/screenshot1.png" width="640" />
+<img src="assets/screenshot1.png" width="400" />
 
-<img src="assets/screenshot2.png" width="640" />
+<img src="assets/screenshot2.png" width="400" />
 
-<img src="assets/screenshot3.png" width="640" />
+<img src="assets/screenshot3.png" width="400" />
 
-<img src="assets/screenshot4.png" width="640" />
+<img src="assets/screenshot4.png" width="400" />
 
 
 ## Features
