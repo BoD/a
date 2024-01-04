@@ -6,13 +6,13 @@ It's named 'a' because it's the simplest name I could think of.
 
 ## Screenshots
 
-![Screenshot 1](assets/screenshot1.png)
+<img src="assets/screenshot1.png" width="640" />
 
-![Screenshot 1](assets/screenshot2.png)
+<img src="assets/screenshot2.png" width="640" />
 
-![Screenshot 1](assets/screenshot3.png)
+<img src="assets/screenshot3.png" width="640" />
 
-![Screenshot 1](assets/screenshot4.png)
+<img src="assets/screenshot4.png" width="640" />
 
 
 ## Features
