@@ -76,21 +76,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         combine(
             allShortcutsFlow,
             contactRepository.starredContacts,
-            notificationRepository.notificationTimes,
+            notificationRepository.notificationRankings,
             ignoredNotificationsItems,
             hasNotificationListenerPermission,
-        ) { allShortcuts, starredContacts, notificationTimes, ignoredNotificationsItems, hasNotificationListenerPermission ->
+        ) { allShortcuts, starredContacts, notificationRankings, ignoredNotificationsItems, hasNotificationListenerPermission ->
             allApps.map { app ->
                 val ignoreNotifications =
                     AppLaunchItem.getId(packageName = app.packageName, activityName = app.activityName) in ignoredNotificationsItems
-                val notificationTime = if (!hasNotificationListenerPermission || ignoreNotifications) {
+                val notificationRanking = if (!hasNotificationListenerPermission || ignoreNotifications) {
                     null
                 } else {
-                    notificationTimes[app.packageName]
+                    notificationRankings[app.packageName]
                 }
                 app.toAppLaunchItem(
                     ignoreNotifications = ignoreNotifications,
-                    notificationTime = notificationTime,
+                    notificationRanking = notificationRanking,
                 )
             } +
                     allShortcuts.map { it.toShortcutLaunchItem() } +
@@ -125,12 +125,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 .sortedByDescending {
                     counters[it.id] ?: 0
                 }
-                // then by notification time (descending)
-                .sortedByDescending {
-                    if (it.notificationTime != null && !it.ignoreNotifications) {
-                        it.notificationTime!!
+                // then by notification rank (ascending)
+                .sortedBy {
+                    if (it.notificationRanking != null && !it.ignoreNotifications) {
+                        it.notificationRanking!!
                     } else {
-                        0
+                        Integer.MAX_VALUE
                     }
                 }
                 .toList()
@@ -228,9 +228,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         abstract val id: String
         abstract val isDeprioritized: Boolean
         abstract val ignoreNotifications: Boolean
-        abstract val notificationTime: Long?
+        abstract val notificationRanking: Int?
 
-        val hasNotification: Boolean get() = notificationTime != null
+        val hasNotification: Boolean get() = notificationRanking != null
 
         abstract fun matchesFilter(query: String): Boolean
     }
@@ -242,7 +242,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         override val drawable: Drawable,
         override val isDeprioritized: Boolean,
         override val ignoreNotifications: Boolean,
-        override val notificationTime: Long?,
+        override val notificationRanking: Int?,
     ) : LaunchItem() {
         override val id = getId(packageName, activityName)
 
@@ -268,7 +268,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun AppRepository.App.toAppLaunchItem(
         ignoreNotifications: Boolean,
-        notificationTime: Long?,
+        notificationRanking: Int?,
     ): AppLaunchItem {
         return AppLaunchItem(
             label = label,
@@ -277,7 +277,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             drawable = drawable,
             isDeprioritized = false,
             ignoreNotifications = ignoreNotifications,
-            notificationTime = notificationTime,
+            notificationRanking = notificationRanking,
         )
     }
 
@@ -308,7 +308,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         override val ignoreNotifications: Boolean = false
 
-        override val notificationTime: Long? = null
+        override val notificationRanking: Int? = null
     }
 
     private fun ContactRepository.Contact.toContactLaunchItem(): ContactLaunchItem {
@@ -336,7 +336,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         override val ignoreNotifications: Boolean = false
 
-        override val notificationTime: Long? = null
+        override val notificationRanking: Int? = null
     }
 
     private fun ShortcutRepository.Shortcut.toShortcutLaunchItem(): ShortcutLaunchItem {

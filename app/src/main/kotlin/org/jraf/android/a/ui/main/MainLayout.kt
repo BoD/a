@@ -507,7 +507,7 @@ private fun fakeApp() = MainViewModel.AppLaunchItem(
         R.mipmap.ic_launcher
     )!!,
     isDeprioritized = false,
-    notificationTime = 42,
+    notificationRanking = 42,
     ignoreNotifications = false,
 )
 
