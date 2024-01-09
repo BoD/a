@@ -64,6 +64,10 @@ class NotificationListenerService : NotificationListenerService() {
     }
 
     private fun updateActiveNotifications(rankingMap: RankingMap?) {
+        val activeNotifications = activeNotifications
+
+        // Note: activeNotifications and currentRanking are not always in sync: by the time we call activeNotifications, it may contain
+        // more or fewer notifications than what's in currentRanking... Therefore we must expect rankingByKey[key] to be potentially null.
         val currentRankingMap = rankingMap ?: currentRanking
         val rankingByKey: Map<String, Ranking> = currentRankingMap.let {
             it.orderedKeys.associateWith { key ->
@@ -72,8 +76,6 @@ class NotificationListenerService : NotificationListenerService() {
                 ranking
             }
         }
-
-        val activeNotifications = activeNotifications
 
         // Don't consider ignored packages, media, and ongoing notifications
         val filteredNotifications: List<StatusBarNotification> = activeNotifications
@@ -103,8 +105,8 @@ class NotificationListenerService : NotificationListenerService() {
 
         val summaryNotificationsSortedByRanking: List<StatusBarNotification> = summaryNotificationsWithConversation
             .sortedWith { (aNotification, aIsConversation), (bNotification, bIsConversation) ->
-                val aRanking = rankingByKey[aNotification.key]!!
-                val bRanking = rankingByKey[bNotification.key]!!
+                val aRanking = rankingByKey[aNotification.key] ?: return@sortedWith 0
+                val bRanking = rankingByKey[bNotification.key] ?: return@sortedWith 0
                 if (aIsConversation) {
                     if (bIsConversation) {
                         // Both are conversations, sort by ranking
@@ -128,7 +130,7 @@ class NotificationListenerService : NotificationListenerService() {
         // Discard low importance notifications and associate by package name
         val notificationRankings = summaryNotificationsSortedByRanking
             .filter { statusBarNotification ->
-                val ranking = rankingByKey[statusBarNotification.key]!!
+                val ranking = rankingByKey[statusBarNotification.key] ?: return@filter true
                 val isChannelLowImportance = ranking.channel.importance == NotificationManagerCompat.IMPORTANCE_LOW ||
                         ranking.channel.importance == NotificationManagerCompat.IMPORTANCE_MIN
                 val isNotificationLowImportance = ranking.importance == NotificationManagerCompat.IMPORTANCE_LOW ||
