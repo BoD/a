@@ -130,7 +130,7 @@ class NotificationListenerService : NotificationListenerService() {
         // Discard low importance notifications and associate by package name
         val notificationRankings = summaryNotificationsSortedByRanking
             .filter { statusBarNotification ->
-                val ranking = rankingByKey[statusBarNotification.key] ?: return@filter false
+                val ranking = rankingByKey[statusBarNotification.key] ?: return@filter true
                 val isChannelLowImportance = ranking.channel.importance == NotificationManagerCompat.IMPORTANCE_LOW ||
                         ranking.channel.importance == NotificationManagerCompat.IMPORTANCE_MIN
                 val isNotificationLowImportance = ranking.importance == NotificationManagerCompat.IMPORTANCE_LOW ||
