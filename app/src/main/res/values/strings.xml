@@ -16,7 +16,10 @@
 
     <string name="main_list_shortcut_deleteShortcut">Delete shortcut</string>
 
-
     <string name="shortcutAccept_toast_accepted">Shortcut added</string>
 
+    <string name="settings_title">Settings</string>
+    <string name="settings_reverseLayout_title">Most used items position</string>
+    <string name="settings_reverseLayout_top">TOP</string>
+    <string name="settings_reverseLayout_bottom">BOTTOM</string>
 </resources>

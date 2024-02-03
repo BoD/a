@@ -94,6 +94,7 @@ class MainActivity : ComponentActivity() {
             val hasSeenRequestNotificationListenerPermissionBanner: Boolean by viewModel.hasSeenRequestNotificationListenerPermissionBanner.collectAsState(
                 initial = false
             )
+            val reverseLayout: Boolean by viewModel.reverseLayout.collectAsState(initial = false)
 
             val gridState = rememberLazyGridState()
 
@@ -121,7 +122,7 @@ class MainActivity : ComponentActivity() {
                 },
                 showNotificationListenerPermissionBanner = !hasNotificationListenerPermission && !hasSeenRequestNotificationListenerPermissionBanner,
                 onRequestNotificationListenerPermissionClick = viewModel::onRequestNotificationListenerPermissionClick,
-                reverseLayout = true,
+                reverseLayout = reverseLayout,
                 gridState = gridState,
             )
         }

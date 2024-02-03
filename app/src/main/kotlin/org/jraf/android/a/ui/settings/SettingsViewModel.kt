@@ -7,7 +7,7 @@
  *                              /___/
  * repository.
  *
- * Copyright (C) 2023-present Benoit 'BoD' Lubek (BoD@JRAF.org)
+ * Copyright (C) 2022-present Benoit 'BoD' Lubek (BoD@JRAF.org)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,19 +22,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.jraf.android.a.data
+package org.jraf.android.a.ui.settings
 
-import android.content.Context
-import kotlinx.coroutines.flow.MutableStateFlow
-import org.jraf.android.a.util.Key
-import org.jraf.android.kprefs.Prefs
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import kotlinx.coroutines.flow.Flow
+import org.jraf.android.a.data.SettingsRepository
+import org.jraf.android.a.get
 
-class SettingsRepository(context: Context) {
-    companion object : Key<SettingsRepository>
+class SettingsViewModel(application: Application) : AndroidViewModel(application) {
+    private val settingsRepository = application[SettingsRepository]
 
-    private val prefs = Prefs(context)
+    val reverseLayout: Flow<Boolean> = settingsRepository.reverseLayout
 
-    val hasSeenRequestNotificationListenerPermissionBanner: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
-
-    val reverseLayout: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
+    fun setReverseLayout(reverseLayout: Boolean) {
+        settingsRepository.reverseLayout.value = reverseLayout
+    }
 }

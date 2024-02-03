@@ -27,12 +27,14 @@ package org.jraf.android.a.ui.main
 import android.app.Application
 import android.app.SearchManager
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.provider.ContactsContract
 import android.provider.Settings
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -48,6 +50,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.jraf.android.a.R
 import org.jraf.android.a.data.AppRepository
 import org.jraf.android.a.data.ContactRepository
 import org.jraf.android.a.data.LaunchItemRepository
@@ -56,6 +59,7 @@ import org.jraf.android.a.data.SettingsRepository
 import org.jraf.android.a.data.ShortcutRepository
 import org.jraf.android.a.get
 import org.jraf.android.a.notification.NotificationListenerService
+import org.jraf.android.a.ui.settings.SettingsActivity
 import org.jraf.android.a.util.containsIgnoreAccents
 import org.jraf.android.a.util.invoke
 import org.jraf.android.a.util.signalStateFlow
@@ -94,7 +98,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
             } +
                     allShortcuts.map { it.toShortcutLaunchItem() } +
-                    starredContacts.map { it.toContactLaunchItem() }
+                    starredContacts.map { it.toContactLaunchItem() } +
+                    ASettingsLaunchItem(context = getApplication(), isDeprioritized = false)
         }
     }
 
@@ -114,6 +119,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 .asSequence()
                 .map {
                     if (it is AppLaunchItem && counters[it.id] == -1L) {
+                        it.copy(isDeprioritized = true)
+                    } else if (it is ASettingsLaunchItem && counters[it.id] == -1L) {
                         it.copy(isDeprioritized = true)
                     } else {
                         it
@@ -152,6 +159,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onLaunchItemPrimaryAction(launchedItem: LaunchItem) {
         when (launchedItem) {
             is AppLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppIntent)
+            is ASettingsLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppIntent)
             is ContactLaunchItem -> intentToStart.tryEmit(launchedItem.viewContactIntent)
             is ShortcutLaunchItem -> shortcutRepository.launchShortcut(launchedItem.shortcut)
         }
@@ -168,6 +176,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onLaunchItemSecondaryAction(launchedItem: LaunchItem) {
         when (launchedItem) {
             is AppLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppDetailsIntent)
+            is ASettingsLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppDetailsIntent)
             is ContactLaunchItem -> {
                 launchedItem.sendSmsIntent?.let { intentToStart.tryEmit(it) }
 
@@ -339,6 +348,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         override val notificationRanking: Int? = null
     }
 
+    data class ASettingsLaunchItem(
+        val context: Context,
+        override val isDeprioritized: Boolean,
+    ) : LaunchItem() {
+        override val drawable: Drawable = AppCompatResources.getDrawable(context, R.mipmap.ic_launcher)!!
+        override val id = "aSettings"
+        override val label: String = context.getString(R.string.settings_reverseLayout_title)
+        override val ignoreNotifications: Boolean = false
+        override val notificationRanking: Int? = null
+        val launchAppIntent: Intent = Intent(context, SettingsActivity::class.java)
+        val launchAppDetailsIntent: Intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            .setData(Uri.parse("package:${context.packageName}"))
+
+        override fun matchesFilter(query: String): Boolean {
+            return label.containsIgnoreAccents(query)
+        }
+    }
+
     private fun ShortcutRepository.Shortcut.toShortcutLaunchItem(): ShortcutLaunchItem {
         return ShortcutLaunchItem(
             label = label,
@@ -373,4 +400,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val hasSeenRequestNotificationListenerPermissionBanner: Flow<Boolean> =
         settingsRepository.hasSeenRequestNotificationListenerPermissionBanner
+
+    val reverseLayout: Flow<Boolean> = settingsRepository.reverseLayout
 }

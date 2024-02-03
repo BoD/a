@@ -417,7 +417,10 @@ private fun LazyGridItemScope.LaunchItemItem(
                     onClick = { onLaunchItemPrimaryAction(launchItem) },
                     onLongClick = {
                         when (launchItem) {
-                            is MainViewModel.AppLaunchItem, is MainViewModel.ShortcutLaunchItem -> {
+                            is MainViewModel.AppLaunchItem,
+                            is MainViewModel.ShortcutLaunchItem,
+                            is MainViewModel.ASettingsLaunchItem,
+                            -> {
                                 dropdownMenuVisible = true
                             }
 
@@ -534,6 +537,40 @@ private fun LazyGridItemScope.LaunchItemItem(
                     )
                 }
             }
+
+            is MainViewModel.ASettingsLaunchItem -> {
+                DropdownMenu(
+                    expanded = dropdownMenuVisible,
+                    onDismissRequest = { dropdownMenuVisible = false },
+                    properties = PopupProperties(focusable = false),
+                ) {
+                    DropdownMenuItem(
+                        onClick = {
+                            onLaunchItemSecondaryAction(launchItem)
+                            dropdownMenuVisible = false
+                        },
+                        text = { Text(stringResource(R.string.main_list_app_appDetails)) }
+                    )
+                    DropdownMenuItem(
+                        onClick = {
+                            onLaunchItemTertiaryAction(launchItem)
+                            dropdownMenuVisible = false
+                        },
+                        text = {
+                            Text(
+                                stringResource(
+                                    if (launchItem.isDeprioritized) {
+                                        R.string.main_list_app_undeprioritize
+                                    } else {
+                                        R.string.main_list_app_deprioritize
+                                    }
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+
 
             is MainViewModel.ShortcutLaunchItem -> {
                 DropdownMenu(expanded = dropdownMenuVisible, onDismissRequest = { dropdownMenuVisible = false }) {
