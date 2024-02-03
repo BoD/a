@@ -249,6 +249,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val launchAppIntent: Intent
             get() = Intent()
                 .apply { setClassName(packageName, activityName) }
+                .setAction(Intent.ACTION_MAIN)
                 .addCategory(Intent.CATEGORY_LAUNCHER)
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
 
