@@ -214,7 +214,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onKeyboardActionButtonClick() {
         val launchItems = filteredLaunchItems.value
-        if (searchQuery.value.isBlank()) return
         if (launchItems.isEmpty()) {
             onWebSearchClick()
         } else {
