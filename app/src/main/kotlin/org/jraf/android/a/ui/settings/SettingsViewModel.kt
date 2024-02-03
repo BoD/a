@@ -35,7 +35,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     val reverseLayout: Flow<Boolean> = settingsRepository.reverseLayout
 
-    fun setReverseLayout(reverseLayout: Boolean) {
-        settingsRepository.reverseLayout.value = reverseLayout
+    fun toggleReverseLayout() {
+        settingsRepository.reverseLayout.value = !settingsRepository.reverseLayout.value
     }
 }

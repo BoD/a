@@ -42,7 +42,7 @@ class SettingsActivity : ComponentActivity() {
             SettingsLayout(
                 reverseLayout = reverseLayout,
                 onNavigateBack = { onBackPressedDispatcher.onBackPressed() },
-                onReverseLayoutClick = { viewModel.setReverseLayout(!reverseLayout) },
+                onReverseLayoutClick = { viewModel.toggleReverseLayout() },
             )
         }
     }
