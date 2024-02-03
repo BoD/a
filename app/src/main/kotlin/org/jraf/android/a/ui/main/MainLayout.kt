@@ -38,6 +38,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -100,8 +101,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.android.awaitFrame
 import org.jraf.android.a.R
 import org.jraf.android.a.ui.theme.ATheme
 import org.jraf.android.a.util.toDp
@@ -125,6 +127,7 @@ fun MainLayout(
     onRequestContactsPermissionClick: () -> Unit,
     showNotificationListenerPermissionBanner: Boolean,
     onRequestNotificationListenerPermissionClick: () -> Unit,
+    reverseLayout: Boolean,
     gridState: LazyGridState,
 ) {
     ATheme {
@@ -136,6 +139,17 @@ fun MainLayout(
                     .navigationBarsPadding()
                     .imePadding()
             ) {
+                if (reverseLayout) {
+                    LaunchItemList(
+                        launchItems = launchItems,
+                        onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
+                        onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
+                        onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
+                        onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
+                        reverseLayout = reverseLayout,
+                        gridState = gridState,
+                    )
+                }
                 SearchTextField(
                     searchQuery = searchQuery,
                     onSearchQueryChange = onSearchQueryChange,
@@ -156,15 +170,17 @@ fun MainLayout(
                         onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
                     )
                 }
-
-                LaunchItemList(
-                    launchItems = launchItems,
-                    onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
-                    onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
-                    onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
-                    onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
-                    gridState = gridState
-                )
+                if (!reverseLayout) {
+                    LaunchItemList(
+                        launchItems = launchItems,
+                        onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
+                        onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
+                        onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
+                        onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
+                        reverseLayout = reverseLayout,
+                        gridState = gridState,
+                    )
+                }
             }
         }
     }
@@ -263,22 +279,26 @@ private fun SearchTextField(
 }
 
 @Composable
-private fun LaunchItemList(
+private fun ColumnScope.LaunchItemList(
     launchItems: List<MainViewModel.LaunchItem>,
     onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
+    reverseLayout: Boolean,
     gridState: LazyGridState,
 ) {
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(1F)
     ) {
         LazyVerticalGrid(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 2.sp.toDp()),
+            contentPadding = if (reverseLayout) PaddingValues(bottom = 2.sp.toDp()) else PaddingValues(top = 2.sp.toDp()),
             columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
             state = gridState,
+            reverseLayout = reverseLayout,
         ) {
             items(launchItems, key = { it.id }) { launchItem ->
                 LaunchItemItem(
@@ -291,7 +311,7 @@ private fun LaunchItemList(
             }
         }
 
-        // Fading edge
+        // Top fading edge
         Spacer(
             Modifier
                 .fillMaxWidth()
@@ -301,6 +321,22 @@ private fun LaunchItemList(
                         colors = listOf(
                             MaterialTheme.colorScheme.surface.copy(alpha = .8f),
                             Color.Transparent,
+                        )
+                    )
+                )
+        )
+
+        // Bottom fading edge
+        Spacer(
+            Modifier
+                .fillMaxWidth()
+                .height(12.sp.toDp())
+                .align(Alignment.BottomStart)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            MaterialTheme.colorScheme.surface.copy(alpha = .8f),
                         )
                     )
                 )
@@ -402,7 +438,11 @@ private fun LazyGridItemScope.LaunchItemItem(
 
         when (launchItem) {
             is MainViewModel.AppLaunchItem -> {
-                DropdownMenu(expanded = dropdownMenuVisible, onDismissRequest = { dropdownMenuVisible = false }) {
+                DropdownMenu(
+                    expanded = dropdownMenuVisible,
+                    onDismissRequest = { dropdownMenuVisible = false },
+                    properties = PopupProperties(focusable = false),
+                ) {
                     DropdownMenuItem(
                         onClick = {
                             onLaunchItemSecondaryAction(launchItem)
@@ -493,6 +533,7 @@ private fun MainScreenPreview() {
         onRequestContactsPermissionClick = {},
         showNotificationListenerPermissionBanner = true,
         onRequestNotificationListenerPermissionClick = {},
+        reverseLayout = true,
         gridState = rememberLazyGridState(),
     )
 }

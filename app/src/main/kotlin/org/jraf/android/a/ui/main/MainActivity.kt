@@ -121,6 +121,7 @@ class MainActivity : ComponentActivity() {
                 },
                 showNotificationListenerPermissionBanner = !hasNotificationListenerPermission && !hasSeenRequestNotificationListenerPermissionBanner,
                 onRequestNotificationListenerPermissionClick = viewModel::onRequestNotificationListenerPermissionClick,
+                reverseLayout = true,
                 gridState = gridState,
             )
         }
