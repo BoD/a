@@ -35,7 +35,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -106,6 +108,7 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.android.awaitFrame
 import org.jraf.android.a.R
 import org.jraf.android.a.ui.theme.ATheme
+import org.jraf.android.a.util.keyboardAsState
 import org.jraf.android.a.util.toDp
 import kotlin.math.roundToInt
 import kotlin.random.Random
@@ -132,53 +135,87 @@ fun MainLayout(
 ) {
     ATheme {
         Surface {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
                     .navigationBarsPadding()
                     .imePadding()
             ) {
-                if (reverseLayout) {
-                    LaunchItemList(
-                        launchItems = launchItems,
-                        onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
-                        onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
-                        onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
-                        onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
-                        reverseLayout = reverseLayout,
-                        gridState = gridState,
-                    )
+                var dropdownMenuVisible by remember { mutableStateOf(false) }
+                val onDropdownMenuVisible: (Boolean) -> Unit = { visible ->
+                    dropdownMenuVisible = visible
                 }
-                SearchTextField(
-                    searchQuery = searchQuery,
-                    onSearchQueryChange = onSearchQueryChange,
-                    onResetSearchQueryClick = onResetSearchQueryClick,
-                    onWebSearchClick = onWebSearchClick,
-                    onKeyboardActionButtonClick = onKeyboardActionButtonClick,
-                    isKeyboardWebSearchActive = isKeyboardWebSearchActive,
-                )
-                if (showRequestContactsPermissionBanner) {
-                    RequestPermissionBanner(
-                        messageResId = R.string.main_requestContactsPermissionRationale_text,
-                        onRequestPermissionClick = onRequestContactsPermissionClick
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    if (reverseLayout) {
+                        LaunchItemList(
+                            launchItems = launchItems,
+                            onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
+                            onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
+                            onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
+                            onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
+                            onDropdownMenuVisible = onDropdownMenuVisible,
+                            reverseLayout = reverseLayout,
+                            gridState = gridState,
+                        )
+                    }
+                    SearchTextField(
+                        searchQuery = searchQuery,
+                        onSearchQueryChange = onSearchQueryChange,
+                        onResetSearchQueryClick = onResetSearchQueryClick,
+                        onWebSearchClick = onWebSearchClick,
+                        onKeyboardActionButtonClick = onKeyboardActionButtonClick,
+                        isKeyboardWebSearchActive = isKeyboardWebSearchActive,
                     )
+                    if (showRequestContactsPermissionBanner) {
+                        RequestPermissionBanner(
+                            messageResId = R.string.main_requestContactsPermissionRationale_text,
+                            onRequestPermissionClick = onRequestContactsPermissionClick
+                        )
+                    }
+                    if (showNotificationListenerPermissionBanner) {
+                        RequestPermissionBanner(
+                            messageResId = R.string.main_requestNotificationListenerPermission_text,
+                            onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
+                        )
+                    }
+                    if (!reverseLayout) {
+                        LaunchItemList(
+                            launchItems = launchItems,
+                            onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
+                            onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
+                            onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
+                            onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
+                            onDropdownMenuVisible = onDropdownMenuVisible,
+                            reverseLayout = reverseLayout,
+                            gridState = gridState,
+                        )
+                    }
                 }
-                if (showNotificationListenerPermissionBanner) {
-                    RequestPermissionBanner(
-                        messageResId = R.string.main_requestNotificationListenerPermission_text,
-                        onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
-                    )
-                }
-                if (!reverseLayout) {
-                    LaunchItemList(
-                        launchItems = launchItems,
-                        onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
-                        onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
-                        onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
-                        onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
-                        reverseLayout = reverseLayout,
-                        gridState = gridState,
+
+                // XXX Hack
+                // We need to pass focusable = false to DropdownMenu because otherwise it will steal the focus,
+                // which will close the keyboard, which will shift the whole grid down, and the DropdownMenu will
+                // appear a lot lower than expected.
+                // But when focusable = false, the DropdownMenu will not close when clicking outside of it, or
+                // when clicking the back button.
+                // So we need to manually close it when clicking "outside of it", which is done by adding
+                // this spacer under the whole grid, and intercepting the click on it, and closing the DropdownMenu.
+                // We also need to detect when the keyboard closes (see isKeyboardOpen below).
+                // Thanks, Compose!
+                if (dropdownMenuVisible) {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) {
+                                dropdownMenuVisible = false
+                            },
                     )
                 }
             }
@@ -286,6 +323,7 @@ private fun ColumnScope.LaunchItemList(
     onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onDropdownMenuVisible: (Boolean) -> Unit,
     reverseLayout: Boolean,
     gridState: LazyGridState,
 ) {
@@ -308,6 +346,7 @@ private fun ColumnScope.LaunchItemList(
                     onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
                     onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
                     onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
+                    onDropdownMenuVisible = onDropdownMenuVisible,
                 )
             }
         }
@@ -358,8 +397,14 @@ private fun LazyGridItemScope.LaunchItemItem(
     onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onDropdownMenuVisible: (Boolean) -> Unit,
 ) {
     var dropdownMenuVisible by remember { mutableStateOf(false) }
+    val isKeyboardOpen by keyboardAsState()
+    LaunchedEffect(isKeyboardOpen) {
+        if (!isKeyboardOpen) dropdownMenuVisible = false
+    }
+
     Box(
         modifier = Modifier
             .animateItemPlacement()
@@ -436,6 +481,8 @@ private fun LazyGridItemScope.LaunchItemItem(
                 fontSize = 12.sp,
             )
         }
+
+        onDropdownMenuVisible(dropdownMenuVisible)
 
         when (launchItem) {
             is MainViewModel.AppLaunchItem -> {
