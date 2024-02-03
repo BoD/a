@@ -223,7 +223,8 @@ private fun SearchTextField(
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         // No comment...
-        delay(1800)
+//        delay(1800)
+        awaitFrame()
         focusRequester.requestFocus()
     }
 
