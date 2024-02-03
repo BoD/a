@@ -354,7 +354,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) : LaunchItem() {
         override val drawable: Drawable = AppCompatResources.getDrawable(context, R.mipmap.ic_launcher)!!
         override val id = "aSettings"
-        override val label: String = context.getString(R.string.settings_reverseLayout_title)
+        override val label: String = context.getString(R.string.settings_title)
         override val ignoreNotifications: Boolean = false
         override val notificationRanking: Int? = null
         val launchAppIntent: Intent = Intent(context, SettingsActivity::class.java)
