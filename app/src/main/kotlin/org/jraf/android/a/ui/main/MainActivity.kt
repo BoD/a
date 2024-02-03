@@ -137,7 +137,6 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         viewModel.resetSearchQuery()
-        showKeyboardSupposedly()
     }
 
     override fun onResume() {
@@ -148,7 +147,6 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         viewModel.resetSearchQuery()
-        showKeyboardSupposedly()
     }
 
     private fun showKeyboardSupposedly() {
