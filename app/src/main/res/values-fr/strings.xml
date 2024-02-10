@@ -18,7 +18,13 @@
     <string name="shortcutAccept_toast_accepted">Raccourci ajouté</string>
 
     <string name="settings_title">Paramètres</string>
-    <string name="settings_reverseLayout_title">Position des éléments les plus utilisés</string>
-    <string name="settings_reverseLayout_top">EN HAUT</string>
-    <string name="settings_reverseLayout_bottom">EN BAS</string>
+
+    <string name="settings_alignmentBottom_title">Alignement vertical</string>
+    <string name="settings_alignmentBottom_top">HAUT</string>
+    <string name="settings_alignmentBottom_bottom">BAS</string>
+
+    <string name="settings_alignmentRight_title">Alignement horizontal</string>
+    <string name="settings_alignmentRight_right">DROITE</string>
+    <string name="settings_alignmentRight_left">GAUCHE</string>
+
 </resources>

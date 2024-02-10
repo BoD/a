@@ -19,7 +19,12 @@
     <string name="shortcutAccept_toast_accepted">Shortcut added</string>
 
     <string name="settings_title">Settings</string>
-    <string name="settings_reverseLayout_title">Most used items position</string>
-    <string name="settings_reverseLayout_top">TOP</string>
-    <string name="settings_reverseLayout_bottom">BOTTOM</string>
+
+    <string name="settings_alignmentBottom_title">Vertical alignment</string>
+    <string name="settings_alignmentBottom_top">TOP</string>
+    <string name="settings_alignmentBottom_bottom">BOTTOM</string>
+
+    <string name="settings_alignmentRight_title">Horizontal alignment</string>
+    <string name="settings_alignmentRight_right">RIGHT</string>
+    <string name="settings_alignmentRight_left">LEFT</string>
 </resources>

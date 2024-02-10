@@ -26,16 +26,21 @@ package org.jraf.android.a.ui.settings
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import org.jraf.android.a.data.SettingsRepository
 import org.jraf.android.a.get
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsRepository = application[SettingsRepository]
 
-    val reverseLayout: Flow<Boolean> = settingsRepository.reverseLayout
+    val alignmentBottom: StateFlow<Boolean> = settingsRepository.alignmentBottom
+    val alignmentRight: StateFlow<Boolean> = settingsRepository.alignmentRight
 
-    fun toggleReverseLayout() {
-        settingsRepository.reverseLayout.value = !settingsRepository.reverseLayout.value
+    fun toggleAlignmentBottom() {
+        settingsRepository.alignmentBottom.value = !settingsRepository.alignmentBottom.value
+    }
+
+    fun toggleAlignmentRight() {
+        settingsRepository.alignmentRight.value = !settingsRepository.alignmentRight.value
     }
 }

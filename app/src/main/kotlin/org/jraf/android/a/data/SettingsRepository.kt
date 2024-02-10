@@ -36,5 +36,6 @@ class SettingsRepository(context: Context) {
 
     val hasSeenRequestNotificationListenerPermissionBanner: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
 
-    val reverseLayout: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
+    val alignmentBottom: MutableStateFlow<Boolean> by prefs.BooleanFlow(false, org.jraf.android.kprefs.Key("reverseLayout"))
+    val alignmentRight: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
 }

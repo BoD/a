@@ -91,10 +91,9 @@ class MainActivity : ComponentActivity() {
             val hasNotificationListenerPermission: Boolean by viewModel.hasNotificationListenerPermission.collectAsState(
                 initial = true
             )
-            val hasSeenRequestNotificationListenerPermissionBanner: Boolean by viewModel.hasSeenRequestNotificationListenerPermissionBanner.collectAsState(
-                initial = false
-            )
-            val reverseLayout: Boolean by viewModel.reverseLayout.collectAsState(initial = false)
+            val hasSeenRequestNotificationListenerPermissionBanner: Boolean by viewModel.hasSeenRequestNotificationListenerPermissionBanner.collectAsState()
+            val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsState()
+            val alignmentRight: Boolean by viewModel.alignmentRight.collectAsState()
 
             val gridState = rememberLazyGridState()
 
@@ -122,7 +121,8 @@ class MainActivity : ComponentActivity() {
                 },
                 showNotificationListenerPermissionBanner = !hasNotificationListenerPermission && !hasSeenRequestNotificationListenerPermissionBanner,
                 onRequestNotificationListenerPermissionClick = viewModel::onRequestNotificationListenerPermissionClick,
-                reverseLayout = reverseLayout,
+                alignmentBottom = alignmentBottom,
+                alignmentRight = alignmentRight,
                 gridState = gridState,
             )
         }
