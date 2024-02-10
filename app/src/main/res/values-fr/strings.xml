@@ -17,4 +17,8 @@
 
     <string name="shortcutAccept_toast_accepted">Raccourci ajouté</string>
 
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_reverseLayout_title">Position des éléments les plus utilisés</string>
+    <string name="settings_reverseLayout_top">EN HAUT</string>
+    <string name="settings_reverseLayout_bottom">EN BAS</string>
 </resources>

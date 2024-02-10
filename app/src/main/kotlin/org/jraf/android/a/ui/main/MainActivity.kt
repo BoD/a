@@ -94,6 +94,7 @@ class MainActivity : ComponentActivity() {
             val hasSeenRequestNotificationListenerPermissionBanner: Boolean by viewModel.hasSeenRequestNotificationListenerPermissionBanner.collectAsState(
                 initial = false
             )
+            val reverseLayout: Boolean by viewModel.reverseLayout.collectAsState(initial = false)
 
             val gridState = rememberLazyGridState()
 
@@ -121,6 +122,7 @@ class MainActivity : ComponentActivity() {
                 },
                 showNotificationListenerPermissionBanner = !hasNotificationListenerPermission && !hasSeenRequestNotificationListenerPermissionBanner,
                 onRequestNotificationListenerPermissionClick = viewModel::onRequestNotificationListenerPermissionClick,
+                reverseLayout = reverseLayout,
                 gridState = gridState,
             )
         }
@@ -135,7 +137,6 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         viewModel.resetSearchQuery()
-        showKeyboardSupposedly()
     }
 
     override fun onResume() {
@@ -146,7 +147,6 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         viewModel.resetSearchQuery()
-        showKeyboardSupposedly()
     }
 
     private fun showKeyboardSupposedly() {

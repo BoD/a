@@ -13,8 +13,8 @@ android {
         applicationId = "a.a.a.a"
         minSdk = 26
         targetSdk = 34
-        versionCode = 17
-        versionName = "1.9.5"
+        versionCode = 18
+        versionName = "1.10.0"
     }
 
     signingConfigs {
@@ -34,7 +34,9 @@ android {
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Don't use the optimized version as it causes issues with KPrefs (?!)
+//            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
         }
     }

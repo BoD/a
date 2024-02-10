@@ -35,9 +35,12 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -100,10 +103,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.android.awaitFrame
 import org.jraf.android.a.R
 import org.jraf.android.a.ui.theme.ATheme
+import org.jraf.android.a.util.keyboardAsState
 import org.jraf.android.a.util.toDp
 import kotlin.math.roundToInt
 import kotlin.random.Random
@@ -125,46 +130,94 @@ fun MainLayout(
     onRequestContactsPermissionClick: () -> Unit,
     showNotificationListenerPermissionBanner: Boolean,
     onRequestNotificationListenerPermissionClick: () -> Unit,
+    reverseLayout: Boolean,
     gridState: LazyGridState,
 ) {
     ATheme {
         Surface {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
                     .navigationBarsPadding()
                     .imePadding()
             ) {
-                SearchTextField(
-                    searchQuery = searchQuery,
-                    onSearchQueryChange = onSearchQueryChange,
-                    onResetSearchQueryClick = onResetSearchQueryClick,
-                    onWebSearchClick = onWebSearchClick,
-                    onKeyboardActionButtonClick = onKeyboardActionButtonClick,
-                    isKeyboardWebSearchActive = isKeyboardWebSearchActive,
-                )
-                if (showRequestContactsPermissionBanner) {
-                    RequestPermissionBanner(
-                        messageResId = R.string.main_requestContactsPermissionRationale_text,
-                        onRequestPermissionClick = onRequestContactsPermissionClick
-                    )
+                var dropdownMenuVisible by remember { mutableStateOf(false) }
+                val onDropdownMenuVisible: (Boolean) -> Unit = { visible ->
+                    dropdownMenuVisible = visible
                 }
-                if (showNotificationListenerPermissionBanner) {
-                    RequestPermissionBanner(
-                        messageResId = R.string.main_requestNotificationListenerPermission_text,
-                        onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    if (reverseLayout) {
+                        LaunchItemList(
+                            launchItems = launchItems,
+                            onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
+                            onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
+                            onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
+                            onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
+                            onDropdownMenuVisible = onDropdownMenuVisible,
+                            reverseLayout = reverseLayout,
+                            gridState = gridState,
+                        )
+                    }
+                    SearchTextField(
+                        searchQuery = searchQuery,
+                        onSearchQueryChange = onSearchQueryChange,
+                        onResetSearchQueryClick = onResetSearchQueryClick,
+                        onWebSearchClick = onWebSearchClick,
+                        onKeyboardActionButtonClick = onKeyboardActionButtonClick,
+                        isKeyboardWebSearchActive = isKeyboardWebSearchActive,
                     )
+                    if (showRequestContactsPermissionBanner) {
+                        RequestPermissionBanner(
+                            messageResId = R.string.main_requestContactsPermissionRationale_text,
+                            onRequestPermissionClick = onRequestContactsPermissionClick
+                        )
+                    }
+                    if (showNotificationListenerPermissionBanner) {
+                        RequestPermissionBanner(
+                            messageResId = R.string.main_requestNotificationListenerPermission_text,
+                            onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
+                        )
+                    }
+                    if (!reverseLayout) {
+                        LaunchItemList(
+                            launchItems = launchItems,
+                            onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
+                            onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
+                            onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
+                            onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
+                            onDropdownMenuVisible = onDropdownMenuVisible,
+                            reverseLayout = reverseLayout,
+                            gridState = gridState,
+                        )
+                    }
                 }
 
-                LaunchItemList(
-                    launchItems = launchItems,
-                    onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
-                    onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
-                    onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
-                    onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
-                    gridState = gridState
-                )
+                // XXX Hack
+                // We need to pass focusable = false to DropdownMenu because otherwise it will steal the focus,
+                // which will close the keyboard, which will shift the whole grid down, and the DropdownMenu will
+                // appear a lot lower than expected.
+                // But when focusable = false, the DropdownMenu will not close when clicking outside of it, or
+                // when clicking the back button.
+                // So we need to manually close it when clicking "outside of it", which is done by adding
+                // this spacer under the whole grid, and intercepting the click on it, and closing the DropdownMenu.
+                // We also need to detect when the keyboard closes (see isKeyboardOpen below).
+                // Thanks, Compose!
+                if (dropdownMenuVisible) {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() }
+                            ) {
+                                dropdownMenuVisible = false
+                            },
+                    )
+                }
             }
         }
     }
@@ -207,7 +260,8 @@ private fun SearchTextField(
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) {
         // No comment...
-        delay(1800)
+//        delay(1800)
+        awaitFrame()
         focusRequester.requestFocus()
     }
 
@@ -263,22 +317,27 @@ private fun SearchTextField(
 }
 
 @Composable
-private fun LaunchItemList(
+private fun ColumnScope.LaunchItemList(
     launchItems: List<MainViewModel.LaunchItem>,
     onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onDropdownMenuVisible: (Boolean) -> Unit,
+    reverseLayout: Boolean,
     gridState: LazyGridState,
 ) {
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxWidth()
+            .weight(1F)
     ) {
         LazyVerticalGrid(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(top = 2.sp.toDp()),
+            contentPadding = if (reverseLayout) PaddingValues(bottom = 2.sp.toDp()) else PaddingValues(top = 2.sp.toDp()),
             columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
             state = gridState,
+            reverseLayout = reverseLayout,
         ) {
             items(launchItems, key = { it.id }) { launchItem ->
                 LaunchItemItem(
@@ -287,11 +346,12 @@ private fun LaunchItemList(
                     onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
                     onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
                     onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
+                    onDropdownMenuVisible = onDropdownMenuVisible,
                 )
             }
         }
 
-        // Fading edge
+        // Top fading edge
         Spacer(
             Modifier
                 .fillMaxWidth()
@@ -301,6 +361,22 @@ private fun LaunchItemList(
                         colors = listOf(
                             MaterialTheme.colorScheme.surface.copy(alpha = .8f),
                             Color.Transparent,
+                        )
+                    )
+                )
+        )
+
+        // Bottom fading edge
+        Spacer(
+            Modifier
+                .fillMaxWidth()
+                .height(12.sp.toDp())
+                .align(Alignment.BottomStart)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            MaterialTheme.colorScheme.surface.copy(alpha = .8f),
                         )
                     )
                 )
@@ -321,8 +397,14 @@ private fun LazyGridItemScope.LaunchItemItem(
     onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onDropdownMenuVisible: (Boolean) -> Unit,
 ) {
     var dropdownMenuVisible by remember { mutableStateOf(false) }
+    val isKeyboardOpen by keyboardAsState()
+    LaunchedEffect(isKeyboardOpen) {
+        if (!isKeyboardOpen) dropdownMenuVisible = false
+    }
+
     Box(
         modifier = Modifier
             .animateItemPlacement()
@@ -335,7 +417,10 @@ private fun LazyGridItemScope.LaunchItemItem(
                     onClick = { onLaunchItemPrimaryAction(launchItem) },
                     onLongClick = {
                         when (launchItem) {
-                            is MainViewModel.AppLaunchItem, is MainViewModel.ShortcutLaunchItem -> {
+                            is MainViewModel.AppLaunchItem,
+                            is MainViewModel.ShortcutLaunchItem,
+                            is MainViewModel.ASettingsLaunchItem,
+                            -> {
                                 dropdownMenuVisible = true
                             }
 
@@ -400,9 +485,15 @@ private fun LazyGridItemScope.LaunchItemItem(
             )
         }
 
+        onDropdownMenuVisible(dropdownMenuVisible)
+
         when (launchItem) {
             is MainViewModel.AppLaunchItem -> {
-                DropdownMenu(expanded = dropdownMenuVisible, onDismissRequest = { dropdownMenuVisible = false }) {
+                DropdownMenu(
+                    expanded = dropdownMenuVisible,
+                    onDismissRequest = { dropdownMenuVisible = false },
+                    properties = PopupProperties(focusable = false),
+                ) {
                     DropdownMenuItem(
                         onClick = {
                             onLaunchItemSecondaryAction(launchItem)
@@ -446,6 +537,40 @@ private fun LazyGridItemScope.LaunchItemItem(
                     )
                 }
             }
+
+            is MainViewModel.ASettingsLaunchItem -> {
+                DropdownMenu(
+                    expanded = dropdownMenuVisible,
+                    onDismissRequest = { dropdownMenuVisible = false },
+                    properties = PopupProperties(focusable = false),
+                ) {
+                    DropdownMenuItem(
+                        onClick = {
+                            onLaunchItemSecondaryAction(launchItem)
+                            dropdownMenuVisible = false
+                        },
+                        text = { Text(stringResource(R.string.main_list_app_appDetails)) }
+                    )
+                    DropdownMenuItem(
+                        onClick = {
+                            onLaunchItemTertiaryAction(launchItem)
+                            dropdownMenuVisible = false
+                        },
+                        text = {
+                            Text(
+                                stringResource(
+                                    if (launchItem.isDeprioritized) {
+                                        R.string.main_list_app_undeprioritize
+                                    } else {
+                                        R.string.main_list_app_deprioritize
+                                    }
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+
 
             is MainViewModel.ShortcutLaunchItem -> {
                 DropdownMenu(expanded = dropdownMenuVisible, onDismissRequest = { dropdownMenuVisible = false }) {
@@ -493,6 +618,7 @@ private fun MainScreenPreview() {
         onRequestContactsPermissionClick = {},
         showNotificationListenerPermissionBanner = true,
         onRequestNotificationListenerPermissionClick = {},
+        reverseLayout = true,
         gridState = rememberLazyGridState(),
     )
 }
