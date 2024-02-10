@@ -16,7 +16,7 @@ androidx-compose-bom = "2024.02.00"
 google-material = "1.11.0"
 benManes-versions = "0.51.0"
 sqldelight = "2.0.1"
-kprefs = "1.7.0"
+kprefs = "1.7.2"
 
 [plugins]
 benManes-versions = { id = "com.github.ben-manes.versions", version.ref = "benManes-versions" }

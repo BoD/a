@@ -173,7 +173,7 @@ private fun GridPreview(alignmentBottom: Boolean, alignmentRight: Boolean) {
             columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
             reverseLayout = alignmentBottom,
         ) {
-            for (i in 1..15) {
+            for (i in 1..17) {
                 item {
                     PreviewItem(id = i)
                 }
