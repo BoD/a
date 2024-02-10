@@ -398,8 +398,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         notificationRepository.hasNotificationListenerPermission()
     }.distinctUntilChanged()
 
-    val hasSeenRequestNotificationListenerPermissionBanner: Flow<Boolean> =
+    val hasSeenRequestNotificationListenerPermissionBanner: StateFlow<Boolean> =
         settingsRepository.hasSeenRequestNotificationListenerPermissionBanner
 
-    val reverseLayout: Flow<Boolean> = settingsRepository.reverseLayout
+    val alignmentBottom: StateFlow<Boolean> = settingsRepository.alignmentBottom
+    val alignmentRight: StateFlow<Boolean> = settingsRepository.alignmentRight
 }

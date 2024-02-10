@@ -38,11 +38,14 @@ class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val reverseLayout: Boolean by viewModel.reverseLayout.collectAsState(initial = false)
+            val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsState()
+            val rightHanded: Boolean by viewModel.alignmentRight.collectAsState()
             SettingsLayout(
-                reverseLayout = reverseLayout,
+                alignmentBottom = alignmentBottom,
+                rightHanded = rightHanded,
+                onAlignmentBottomClick = { viewModel.toggleAlignmentBottom() },
+                onAlignmentRightClick = { viewModel.toggleAlignmentRight() },
                 onNavigateBack = { onBackPressedDispatcher.onBackPressed() },
-                onReverseLayoutClick = { viewModel.toggleReverseLayout() },
             )
         }
     }

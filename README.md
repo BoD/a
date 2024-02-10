@@ -29,6 +29,7 @@ Probably the simplest and quickest way to launch apps:
 - De-prioritize apps to make them appear at the bottom of the list (for apps that aren't used often but can't be uninstalled, e.g. Samsung Browser)
 - Shortcuts support
 - Dark mode support
+- Show most used items at the bottom instead (there's a setting)
 - No widgets, no wallpaper, no nonsense (yes, that's a feature)
 
 

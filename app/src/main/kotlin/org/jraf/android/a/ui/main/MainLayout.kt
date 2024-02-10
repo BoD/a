@@ -73,6 +73,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -95,12 +96,14 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
@@ -130,7 +133,8 @@ fun MainLayout(
     onRequestContactsPermissionClick: () -> Unit,
     showNotificationListenerPermissionBanner: Boolean,
     onRequestNotificationListenerPermissionClick: () -> Unit,
-    reverseLayout: Boolean,
+    alignmentBottom: Boolean,
+    alignmentRight: Boolean,
     gridState: LazyGridState,
 ) {
     ATheme {
@@ -150,7 +154,7 @@ fun MainLayout(
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    if (reverseLayout) {
+                    if (alignmentBottom) {
                         LaunchItemList(
                             launchItems = launchItems,
                             onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
@@ -158,7 +162,8 @@ fun MainLayout(
                             onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
                             onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
                             onDropdownMenuVisible = onDropdownMenuVisible,
-                            reverseLayout = reverseLayout,
+                            alignmentBottom = alignmentBottom,
+                            alignmentRight = alignmentRight,
                             gridState = gridState,
                         )
                     }
@@ -182,7 +187,7 @@ fun MainLayout(
                             onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
                         )
                     }
-                    if (!reverseLayout) {
+                    if (!alignmentBottom) {
                         LaunchItemList(
                             launchItems = launchItems,
                             onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
@@ -190,7 +195,8 @@ fun MainLayout(
                             onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
                             onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
                             onDropdownMenuVisible = onDropdownMenuVisible,
-                            reverseLayout = reverseLayout,
+                            alignmentBottom = alignmentBottom,
+                            alignmentRight = alignmentRight,
                             gridState = gridState,
                         )
                     }
@@ -324,7 +330,8 @@ private fun ColumnScope.LaunchItemList(
     onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
     onDropdownMenuVisible: (Boolean) -> Unit,
-    reverseLayout: Boolean,
+    alignmentBottom: Boolean,
+    alignmentRight: Boolean,
     gridState: LazyGridState,
 ) {
     Box(
@@ -332,22 +339,24 @@ private fun ColumnScope.LaunchItemList(
             .fillMaxWidth()
             .weight(1F)
     ) {
-        LazyVerticalGrid(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = if (reverseLayout) PaddingValues(bottom = 2.sp.toDp()) else PaddingValues(top = 2.sp.toDp()),
-            columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
-            state = gridState,
-            reverseLayout = reverseLayout,
-        ) {
-            items(launchItems, key = { it.id }) { launchItem ->
-                LaunchItemItem(
-                    launchItem = launchItem,
-                    onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
-                    onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
-                    onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
-                    onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
-                    onDropdownMenuVisible = onDropdownMenuVisible,
-                )
+        CompositionLocalProvider(LocalLayoutDirection provides if (alignmentRight) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+            LazyVerticalGrid(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = if (alignmentBottom) PaddingValues(bottom = 2.sp.toDp()) else PaddingValues(top = 2.sp.toDp()),
+                columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
+                state = gridState,
+                reverseLayout = alignmentBottom,
+            ) {
+                items(launchItems, key = { it.id }) { launchItem ->
+                    LaunchItemItem(
+                        launchItem = launchItem,
+                        onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
+                        onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
+                        onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
+                        onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
+                        onDropdownMenuVisible = onDropdownMenuVisible,
+                    )
+                }
             }
         }
 
@@ -405,186 +414,188 @@ private fun LazyGridItemScope.LaunchItemItem(
         if (!isKeyboardOpen) dropdownMenuVisible = false
     }
 
-    Box(
-        modifier = Modifier
-            .animateItemPlacement()
-            .padding(vertical = 6.sp.toDp()),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Box(
             modifier = Modifier
-                .combinedClickable(
-                    onClick = { onLaunchItemPrimaryAction(launchItem) },
-                    onLongClick = {
-                        when (launchItem) {
-                            is MainViewModel.AppLaunchItem,
-                            is MainViewModel.ShortcutLaunchItem,
-                            is MainViewModel.ASettingsLaunchItem,
-                            -> {
-                                dropdownMenuVisible = true
-                            }
+                .animateItemPlacement()
+                .padding(vertical = 6.sp.toDp()),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(
+                modifier = Modifier
+                    .combinedClickable(
+                        onClick = { onLaunchItemPrimaryAction(launchItem) },
+                        onLongClick = {
+                            when (launchItem) {
+                                is MainViewModel.AppLaunchItem,
+                                is MainViewModel.ShortcutLaunchItem,
+                                is MainViewModel.ASettingsLaunchItem,
+                                -> {
+                                    dropdownMenuVisible = true
+                                }
 
-                            is MainViewModel.ContactLaunchItem -> {
-                                onLaunchItemSecondaryAction(launchItem)
+                                is MainViewModel.ContactLaunchItem -> {
+                                    onLaunchItemSecondaryAction(launchItem)
+                                }
                             }
                         }
-                    }
-                )
-                .let {
-                    if (launchItem.isDeprioritized) {
-                        it.alpha(.5f)
-                    } else {
-                        it
-                    }
-                },
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.sp.toDp())
+                    )
+                    .let {
+                        if (launchItem.isDeprioritized) {
+                            it.alpha(.5f)
+                        } else {
+                            it
+                        }
+                    },
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Image(
+                Box(
                     modifier = Modifier
                         .size(48.sp.toDp())
-                        .let {
-                            if (launchItem is MainViewModel.ContactLaunchItem) {
-                                // Contact photos are square, but we want circles
-                                it.clip(CircleShape)
-                            } else {
-                                it
-                            }
-                        },
-                    painter = DrawablePainter(launchItem.drawable),
-                    contentDescription = launchItem.label,
-                    colorFilter = if (launchItem.isDeprioritized) {
-                        deprioritizedColorFilter
-                    } else {
-                        null
-                    },
-                )
-                if (launchItem.hasNotification) {
-                    Box(
+                ) {
+                    Image(
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(16.sp.toDp())
-                            .border(1.dp, Color.White, CircleShape)
-                            .padding(1.dp)
-                            .shadow(4.dp, CircleShape)
-                            .background(Color.Red),
+                            .size(48.sp.toDp())
+                            .let {
+                                if (launchItem is MainViewModel.ContactLaunchItem) {
+                                    // Contact photos are square, but we want circles
+                                    it.clip(CircleShape)
+                                } else {
+                                    it
+                                }
+                            },
+                        painter = DrawablePainter(launchItem.drawable),
+                        contentDescription = launchItem.label,
+                        colorFilter = if (launchItem.isDeprioritized) {
+                            deprioritizedColorFilter
+                        } else {
+                            null
+                        },
                     )
+                    if (launchItem.hasNotification) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .size(16.sp.toDp())
+                                .border(1.dp, Color.White, CircleShape)
+                                .padding(1.dp)
+                                .shadow(4.dp, CircleShape)
+                                .background(Color.Red),
+                        )
+                    }
                 }
+                Spacer(modifier = Modifier.height(4.sp.toDp()))
+                Text(
+                    modifier = Modifier.padding(horizontal = 2.sp.toDp()),
+                    text = launchItem.label,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                    fontSize = 12.sp,
+                )
             }
-            Spacer(modifier = Modifier.height(4.sp.toDp()))
-            Text(
-                modifier = Modifier.padding(horizontal = 2.sp.toDp()),
-                text = launchItem.label,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                fontSize = 12.sp,
-            )
-        }
 
-        onDropdownMenuVisible(dropdownMenuVisible)
+            onDropdownMenuVisible(dropdownMenuVisible)
 
-        when (launchItem) {
-            is MainViewModel.AppLaunchItem -> {
-                DropdownMenu(
-                    expanded = dropdownMenuVisible,
-                    onDismissRequest = { dropdownMenuVisible = false },
-                    properties = PopupProperties(focusable = false),
-                ) {
-                    DropdownMenuItem(
-                        onClick = {
-                            onLaunchItemSecondaryAction(launchItem)
-                            dropdownMenuVisible = false
-                        },
-                        text = { Text(stringResource(R.string.main_list_app_appDetails)) }
-                    )
-                    DropdownMenuItem(
-                        onClick = {
-                            onLaunchItemQuaternaryAction(launchItem)
-                            dropdownMenuVisible = false
-                        },
-                        text = {
-                            Text(
-                                stringResource(
-                                    if (launchItem.ignoreNotifications) {
-                                        R.string.main_list_app_unignoreNotifications
-                                    } else {
-                                        R.string.main_list_app_ignoreNotifications
-                                    }
+            when (launchItem) {
+                is MainViewModel.AppLaunchItem -> {
+                    DropdownMenu(
+                        expanded = dropdownMenuVisible,
+                        onDismissRequest = { dropdownMenuVisible = false },
+                        properties = PopupProperties(focusable = false),
+                    ) {
+                        DropdownMenuItem(
+                            onClick = {
+                                onLaunchItemSecondaryAction(launchItem)
+                                dropdownMenuVisible = false
+                            },
+                            text = { Text(stringResource(R.string.main_list_app_appDetails)) }
+                        )
+                        DropdownMenuItem(
+                            onClick = {
+                                onLaunchItemQuaternaryAction(launchItem)
+                                dropdownMenuVisible = false
+                            },
+                            text = {
+                                Text(
+                                    stringResource(
+                                        if (launchItem.ignoreNotifications) {
+                                            R.string.main_list_app_unignoreNotifications
+                                        } else {
+                                            R.string.main_list_app_ignoreNotifications
+                                        }
+                                    )
                                 )
-                            )
-                        }
-                    )
-                    DropdownMenuItem(
-                        onClick = {
-                            onLaunchItemTertiaryAction(launchItem)
-                            dropdownMenuVisible = false
-                        },
-                        text = {
-                            Text(
-                                stringResource(
-                                    if (launchItem.isDeprioritized) {
-                                        R.string.main_list_app_undeprioritize
-                                    } else {
-                                        R.string.main_list_app_deprioritize
-                                    }
+                            }
+                        )
+                        DropdownMenuItem(
+                            onClick = {
+                                onLaunchItemTertiaryAction(launchItem)
+                                dropdownMenuVisible = false
+                            },
+                            text = {
+                                Text(
+                                    stringResource(
+                                        if (launchItem.isDeprioritized) {
+                                            R.string.main_list_app_undeprioritize
+                                        } else {
+                                            R.string.main_list_app_deprioritize
+                                        }
+                                    )
                                 )
-                            )
-                        }
-                    )
+                            }
+                        )
+                    }
                 }
-            }
 
-            is MainViewModel.ASettingsLaunchItem -> {
-                DropdownMenu(
-                    expanded = dropdownMenuVisible,
-                    onDismissRequest = { dropdownMenuVisible = false },
-                    properties = PopupProperties(focusable = false),
-                ) {
-                    DropdownMenuItem(
-                        onClick = {
-                            onLaunchItemSecondaryAction(launchItem)
-                            dropdownMenuVisible = false
-                        },
-                        text = { Text(stringResource(R.string.main_list_app_appDetails)) }
-                    )
-                    DropdownMenuItem(
-                        onClick = {
-                            onLaunchItemTertiaryAction(launchItem)
-                            dropdownMenuVisible = false
-                        },
-                        text = {
-                            Text(
-                                stringResource(
-                                    if (launchItem.isDeprioritized) {
-                                        R.string.main_list_app_undeprioritize
-                                    } else {
-                                        R.string.main_list_app_deprioritize
-                                    }
+                is MainViewModel.ASettingsLaunchItem -> {
+                    DropdownMenu(
+                        expanded = dropdownMenuVisible,
+                        onDismissRequest = { dropdownMenuVisible = false },
+                        properties = PopupProperties(focusable = false),
+                    ) {
+                        DropdownMenuItem(
+                            onClick = {
+                                onLaunchItemSecondaryAction(launchItem)
+                                dropdownMenuVisible = false
+                            },
+                            text = { Text(stringResource(R.string.main_list_app_appDetails)) }
+                        )
+                        DropdownMenuItem(
+                            onClick = {
+                                onLaunchItemTertiaryAction(launchItem)
+                                dropdownMenuVisible = false
+                            },
+                            text = {
+                                Text(
+                                    stringResource(
+                                        if (launchItem.isDeprioritized) {
+                                            R.string.main_list_app_undeprioritize
+                                        } else {
+                                            R.string.main_list_app_deprioritize
+                                        }
+                                    )
                                 )
-                            )
-                        }
-                    )
+                            }
+                        )
+                    }
                 }
-            }
 
 
-            is MainViewModel.ShortcutLaunchItem -> {
-                DropdownMenu(expanded = dropdownMenuVisible, onDismissRequest = { dropdownMenuVisible = false }) {
-                    DropdownMenuItem(
-                        onClick = {
-                            onLaunchItemSecondaryAction(launchItem)
-                            dropdownMenuVisible = false
-                        },
-                        text = { Text(stringResource(R.string.main_list_shortcut_deleteShortcut)) }
-                    )
+                is MainViewModel.ShortcutLaunchItem -> {
+                    DropdownMenu(expanded = dropdownMenuVisible, onDismissRequest = { dropdownMenuVisible = false }) {
+                        DropdownMenuItem(
+                            onClick = {
+                                onLaunchItemSecondaryAction(launchItem)
+                                dropdownMenuVisible = false
+                            },
+                            text = { Text(stringResource(R.string.main_list_shortcut_deleteShortcut)) }
+                        )
+                    }
                 }
-            }
 
-            is MainViewModel.ContactLaunchItem -> {}
+                is MainViewModel.ContactLaunchItem -> {}
+            }
         }
     }
 }
@@ -618,7 +629,8 @@ private fun MainScreenPreview() {
         onRequestContactsPermissionClick = {},
         showNotificationListenerPermissionBanner = true,
         onRequestNotificationListenerPermissionClick = {},
-        reverseLayout = true,
+        alignmentBottom = true,
+        alignmentRight = false,
         gridState = rememberLazyGridState(),
     )
 }
