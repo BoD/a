@@ -72,6 +72,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -87,7 +88,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -111,6 +111,7 @@ import androidx.core.content.ContextCompat
 import kotlinx.coroutines.android.awaitFrame
 import org.jraf.android.a.R
 import org.jraf.android.a.ui.theme.ATheme
+import org.jraf.android.a.util.fadingEdges
 import org.jraf.android.a.util.keyboardAsState
 import org.jraf.android.a.util.toDp
 import kotlin.math.roundToInt
@@ -135,10 +136,14 @@ fun MainLayout(
     onRequestNotificationListenerPermissionClick: () -> Unit,
     alignmentBottom: Boolean,
     alignmentRight: Boolean,
+    wallpaperOpacity: Float,
     gridState: LazyGridState,
 ) {
     ATheme {
-        Surface {
+        Surface(
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 1F - wallpaperOpacity),
+            contentColor = contentColorFor(MaterialTheme.colorScheme.surface),
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -336,6 +341,7 @@ private fun ColumnScope.LaunchItemList(
 ) {
     Box(
         modifier = Modifier
+            .fadingEdges()
             .fillMaxWidth()
             .weight(1F)
     ) {
@@ -359,37 +365,6 @@ private fun ColumnScope.LaunchItemList(
                 }
             }
         }
-
-        // Top fading edge
-        Spacer(
-            Modifier
-                .fillMaxWidth()
-                .height(12.sp.toDp())
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surface.copy(alpha = .8f),
-                            Color.Transparent,
-                        )
-                    )
-                )
-        )
-
-        // Bottom fading edge
-        Spacer(
-            Modifier
-                .fillMaxWidth()
-                .height(12.sp.toDp())
-                .align(Alignment.BottomStart)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            MaterialTheme.colorScheme.surface.copy(alpha = .8f),
-                        )
-                    )
-                )
-        )
     }
 }
 
@@ -631,6 +606,7 @@ private fun MainScreenPreview() {
         onRequestNotificationListenerPermissionClick = {},
         alignmentBottom = true,
         alignmentRight = false,
+        wallpaperOpacity = .10F,
         gridState = rememberLazyGridState(),
     )
 }

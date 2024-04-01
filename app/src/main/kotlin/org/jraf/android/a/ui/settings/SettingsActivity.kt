@@ -40,12 +40,15 @@ class SettingsActivity : ComponentActivity() {
         setContent {
             val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsState()
             val rightHanded: Boolean by viewModel.alignmentRight.collectAsState()
+            val wallpaperOpacity: Float by viewModel.wallpaperOpacity.collectAsState()
             SettingsLayout(
+                onNavigateBack = onBackPressedDispatcher::onBackPressed,
                 alignmentBottom = alignmentBottom,
+                onAlignmentBottomClick = viewModel::toggleAlignmentBottom,
                 rightHanded = rightHanded,
-                onAlignmentBottomClick = { viewModel.toggleAlignmentBottom() },
-                onAlignmentRightClick = { viewModel.toggleAlignmentRight() },
-                onNavigateBack = { onBackPressedDispatcher.onBackPressed() },
+                onAlignmentRightClick = viewModel::toggleAlignmentRight,
+                wallpaperOpacity = wallpaperOpacity,
+                onWallpaperOpacityChange = viewModel::setWallpaperOpacity
             )
         }
     }

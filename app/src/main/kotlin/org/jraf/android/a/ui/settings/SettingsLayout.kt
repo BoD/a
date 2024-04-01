@@ -50,8 +50,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -69,15 +71,18 @@ import androidx.compose.ui.unit.sp
 import org.jraf.android.a.R
 import org.jraf.android.a.ui.theme.ATheme
 import org.jraf.android.a.util.toDp
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsLayout(
-    alignmentBottom: Boolean,
-    rightHanded: Boolean,
-    onAlignmentBottomClick: () -> Unit,
-    onAlignmentRightClick: () -> Unit,
     onNavigateBack: () -> Unit,
+    alignmentBottom: Boolean,
+    onAlignmentBottomClick: () -> Unit,
+    rightHanded: Boolean,
+    onAlignmentRightClick: () -> Unit,
+    wallpaperOpacity: Float,
+    onWallpaperOpacityChange: (Float) -> Unit,
 ) {
     ATheme {
         Scaffold(
@@ -98,6 +103,8 @@ fun SettingsLayout(
                     title = { Text(stringResource(id = R.string.settings_title)) }
                 )
             },
+            containerColor = MaterialTheme.colorScheme.background.copy(alpha = 1F - wallpaperOpacity),
+            contentColor = contentColorFor(MaterialTheme.colorScheme.background),
         ) { paddingValues ->
             Column(
                 modifier = Modifier
@@ -117,6 +124,10 @@ fun SettingsLayout(
                     titleResId = R.string.settings_alignmentRight_title,
                     trueLabelResId = R.string.settings_alignmentRight_right,
                     falseLabelResId = R.string.settings_alignmentRight_left
+                )
+                WallpaperOpacitySetting(
+                    wallpaperOpacity = wallpaperOpacity,
+                    onWallpaperOpacityChange = onWallpaperOpacityChange,
                 )
                 GridPreview(
                     alignmentBottom = alignmentBottom,
@@ -162,6 +173,35 @@ private fun SwitchSetting(
             style = MaterialTheme.typography.labelLarge,
         )
     }
+}
+
+@Composable
+fun WallpaperOpacitySetting(
+    wallpaperOpacity: Float,
+    onWallpaperOpacityChange: (Float) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .padding(16.dp),
+    ) {
+        val value = if (wallpaperOpacity == 0F) {
+            stringResource(R.string.settings_wallpaperOpacity_none)
+        } else {
+            stringResource(R.string.settings_wallpaperOpacity_percent, (wallpaperOpacity * 100).roundToInt())
+        }
+        Text(
+            text = stringResource(R.string.settings_wallpaperOpacity_title, value),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Spacer(
+            modifier = Modifier.size(4.dp)
+        )
+        Slider(
+            value = wallpaperOpacity,
+            onValueChange = onWallpaperOpacityChange,
+        )
+    }
+
 }
 
 @Composable
@@ -218,10 +258,12 @@ private fun PreviewItem(id: Int) {
 @Composable
 private fun SettingsLayoutPreview() {
     SettingsLayout(
-        alignmentBottom = true,
-        rightHanded = true,
-        onAlignmentBottomClick = {},
-        onAlignmentRightClick = {},
         onNavigateBack = {},
+        alignmentBottom = true,
+        onAlignmentBottomClick = {},
+        rightHanded = true,
+        onAlignmentRightClick = {},
+        wallpaperOpacity = 0.4F,
+        onWallpaperOpacityChange = {},
     )
 }

@@ -27,4 +27,7 @@
     <string name="settings_alignmentRight_right">DROITE</string>
     <string name="settings_alignmentRight_left">GAUCHE</string>
 
+    <string name="settings_wallpaperOpacity_title">Opacité du papier peint : %1$s</string>
+    <string name="settings_wallpaperOpacity_none">aucune</string>
+
 </resources>

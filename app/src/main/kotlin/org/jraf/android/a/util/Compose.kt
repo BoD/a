@@ -29,9 +29,17 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun TextUnit.toDp(): Dp = with(LocalDensity.current) { toDp() }
@@ -42,4 +50,34 @@ fun TextUnit.toDp(): Dp = with(LocalDensity.current) { toDp() }
 fun keyboardAsState(): State<Boolean> {
     val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     return rememberUpdatedState(isImeVisible)
+}
+
+@Composable
+fun Modifier.fadingEdges(): Modifier {
+    val heightPx = with(LocalDensity.current) { 12.sp.toDp().toPx() }
+    val almostTransparent = Color.Red.copy(alpha = .2F)
+    return this
+        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+        .drawWithContent {
+            val topFadeBrush = Brush.verticalGradient(
+                colors = listOf(almostTransparent, Color.Red),
+                endY = heightPx,
+
+                )
+            val bottomFadeBrush = Brush.verticalGradient(
+                colors = listOf(Color.Red, almostTransparent),
+                startY = size.height - 1 - heightPx,
+                endY = size.height - 1,
+            )
+
+            drawContent()
+            drawRect(
+                brush = topFadeBrush,
+                blendMode = BlendMode.DstIn,
+            )
+            drawRect(
+                brush = bottomFadeBrush,
+                blendMode = BlendMode.DstIn,
+            )
+        }
 }

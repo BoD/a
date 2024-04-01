@@ -35,6 +35,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     val alignmentBottom: StateFlow<Boolean> = settingsRepository.alignmentBottom
     val alignmentRight: StateFlow<Boolean> = settingsRepository.alignmentRight
+    val wallpaperOpacity: StateFlow<Float> = settingsRepository.wallpaperOpacity
 
     fun toggleAlignmentBottom() {
         settingsRepository.alignmentBottom.value = !settingsRepository.alignmentBottom.value
@@ -42,5 +43,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun toggleAlignmentRight() {
         settingsRepository.alignmentRight.value = !settingsRepository.alignmentRight.value
+    }
+
+    fun setWallpaperOpacity(opacity: Float) {
+        settingsRepository.wallpaperOpacity.value = opacity
     }
 }
