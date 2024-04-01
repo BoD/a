@@ -30,7 +30,7 @@ Probably the simplest and quickest way to launch apps:
 - Shortcuts support
 - Dark mode support
 - Show most used items at the bottom instead (there's a setting)
-- No widgets, no wallpaper, no nonsense (yes, that's a feature)
+- No widgets, no nonsense (yes, that's a feature)
 
 
 ## Available on Google Play
