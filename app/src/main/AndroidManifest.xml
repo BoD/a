@@ -9,7 +9,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.A">
+        android:theme="@style/Theme.A.NoActionBar">
 
         <activity
             android:name=".ui.main.MainActivity"
@@ -38,7 +38,9 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".ui.settings.SettingsActivity" />
+        <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:theme="@style/Theme.A" />
 
         <service
             android:name=".notification.NotificationListenerService"

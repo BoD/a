@@ -38,4 +38,6 @@ class SettingsRepository(context: Context) {
 
     val alignmentBottom: MutableStateFlow<Boolean> by prefs.BooleanFlow(false, org.jraf.android.kprefs.Key("reverseLayout"))
     val alignmentRight: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
+
+    val wallpaperOpacity: MutableStateFlow<Float> by prefs.FloatFlow(0F)
 }

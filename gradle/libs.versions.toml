@@ -1,17 +1,17 @@
 [versions]
-kotlin = "1.9.22"
-agp = "8.2.2"
-coroutines = "1.7.3"
+kotlin = "1.9.23"
+agp = "8.3.1"
+coroutines = "1.8.0"
 timber = "5.0.1"
 junit = "4.13.2"
 androidx-activity = "1.8.2"
 androidx-lifecycle = "2.7.0"
 
 # See https://developer.android.com/jetpack/androidx/releases/compose-kotlin
-androidx-compose-compiler = "1.5.9"
+androidx-compose-compiler = "1.5.11"
 
 # See https://developer.android.com/jetpack/compose/bom/bom-mapping
-androidx-compose-bom = "2024.02.00"
+androidx-compose-bom = "2024.03.00"
 
 google-material = "1.11.0"
 benManes-versions = "0.51.0"

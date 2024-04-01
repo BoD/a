@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.A" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.A.NoActionBar" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:statusBarColor">#0000</item>
         <item name="android:windowLightStatusBar">true</item>
+
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowShowWallpaper">true</item>
+    </style>
+
+    <style name="Theme.A" parent="Theme.Material3.DayNight">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowShowWallpaper">true</item>
     </style>
 
 </resources>

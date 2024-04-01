@@ -403,4 +403,5 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val alignmentBottom: StateFlow<Boolean> = settingsRepository.alignmentBottom
     val alignmentRight: StateFlow<Boolean> = settingsRepository.alignmentRight
+    val wallpaperOpacity: StateFlow<Float> = settingsRepository.wallpaperOpacity
 }

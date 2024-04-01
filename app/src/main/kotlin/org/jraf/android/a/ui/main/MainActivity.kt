@@ -94,6 +94,7 @@ class MainActivity : ComponentActivity() {
             val hasSeenRequestNotificationListenerPermissionBanner: Boolean by viewModel.hasSeenRequestNotificationListenerPermissionBanner.collectAsState()
             val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsState()
             val alignmentRight: Boolean by viewModel.alignmentRight.collectAsState()
+            val wallpaperOpacity: Float by viewModel.wallpaperOpacity.collectAsState()
 
             val gridState = rememberLazyGridState()
 
@@ -123,6 +124,7 @@ class MainActivity : ComponentActivity() {
                 onRequestNotificationListenerPermissionClick = viewModel::onRequestNotificationListenerPermissionClick,
                 alignmentBottom = alignmentBottom,
                 alignmentRight = alignmentRight,
+                wallpaperOpacity = wallpaperOpacity,
                 gridState = gridState,
             )
         }
