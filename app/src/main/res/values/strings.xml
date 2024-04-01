@@ -27,4 +27,9 @@
     <string name="settings_alignmentRight_title">Horizontal alignment</string>
     <string name="settings_alignmentRight_right">RIGHT</string>
     <string name="settings_alignmentRight_left">LEFT</string>
+
+    <string name="settings_wallpaperOpacity_title">Wallpaper opacity: %1$s</string>
+    <string name="settings_wallpaperOpacity_percent" translatable="false">%1$d%%</string>
+    <string name="settings_wallpaperOpacity_none">OFF</string>
+
 </resources>
