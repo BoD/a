@@ -556,9 +556,12 @@ private fun LazyGridItemScope.LaunchItemItem(
                     }
                 }
 
-
                 is MainViewModel.ShortcutLaunchItem -> {
-                    DropdownMenu(expanded = dropdownMenuVisible, onDismissRequest = { dropdownMenuVisible = false }) {
+                    DropdownMenu(
+                        expanded = dropdownMenuVisible,
+                        onDismissRequest = { dropdownMenuVisible = false },
+                        properties = PopupProperties(focusable = false),
+                    ) {
                         DropdownMenuItem(
                             onClick = {
                                 onLaunchItemSecondaryAction(launchItem)
