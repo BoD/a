@@ -316,7 +316,7 @@ private fun SearchTextField(
             }
         },
         keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Password,
+            keyboardType = if (isKeyboardWebSearchActive) KeyboardType.Text else KeyboardType.Password,
             imeAction = if (isKeyboardWebSearchActive) ImeAction.Search else ImeAction.Go,
             autoCorrect = false,
         ),
