@@ -79,15 +79,13 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val searchQuery: String by viewModel.searchQuery.collectAsState(initial = "")
-            val launchItems: List<LaunchItem> by viewModel.filteredLaunchItems.collectAsState(initial = emptyList())
+            val searchQuery: String by viewModel.searchQuery.collectAsState()
+            val launchItems: List<LaunchItem> by viewModel.filteredLaunchItems.collectAsState()
             val isKeyboardWebSearchActive: Boolean by viewModel.isKeyboardWebSearchActive.collectAsState(
                 initial = false
             )
-            val scrollUp: Any by viewModel.onScrollUp.collectAsState(initial = Unit)
-            val shouldShowRequestPermissionRationale: Boolean by viewModel.shouldShowRequestPermissionRationale.collectAsState(
-                initial = false
-            )
+            val scrollUp: Any by viewModel.onScrollUp.collectAsState()
+            val shouldShowRequestPermissionRationale: Boolean by viewModel.shouldShowRequestPermissionRationale.collectAsState()
             val hasNotificationListenerPermission: Boolean by viewModel.hasNotificationListenerPermission.collectAsState(
                 initial = true
             )
@@ -146,7 +144,7 @@ class MainActivity : ComponentActivity() {
         viewModel.hasNotificationListenerPermissionSignal()
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         viewModel.resetSearchQuery()
     }

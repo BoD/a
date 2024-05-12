@@ -113,8 +113,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             searchQuery,
             launchItemRepository.counters,
             deletedLaunchItems,
-        ) { allLaunchedItems, verbatimQuery, counters, deletedLaunchItems ->
-            val query = verbatimQuery.trim()
+        ) { allLaunchedItems, searchQuery, counters, deletedLaunchItems ->
+            val query = searchQuery.trim()
             allLaunchedItems
                 .asSequence()
                 .map {
@@ -144,7 +144,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    val isKeyboardWebSearchActive: Flow<Boolean> = filteredLaunchItems.map { it.isEmpty() }
+    val isKeyboardWebSearchActive: Flow<Boolean> = combine(filteredLaunchItems, searchQuery) { launchItems, query ->
+        launchItems.isEmpty() && query.isNotBlank()
+    }
 
     val intentToStart = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
     val onScrollUp = signalStateFlow()

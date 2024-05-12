@@ -64,6 +64,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -318,7 +319,7 @@ private fun SearchTextField(
         keyboardOptions = KeyboardOptions(
             keyboardType = if (isKeyboardWebSearchActive) KeyboardType.Text else KeyboardType.Password,
             imeAction = if (isKeyboardWebSearchActive) ImeAction.Search else ImeAction.Go,
-            autoCorrect = false,
+            autoCorrect = isKeyboardWebSearchActive,
         ),
         keyboardActions = KeyboardActions(
             onSearch = { onKeyboardActionButtonClick() },
@@ -399,6 +400,11 @@ private fun LazyGridItemScope.LaunchItemItem(
             Column(
                 modifier = Modifier
                     .combinedClickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = rememberRipple(
+                            bounded = false,
+                            radius = 56.sp.toDp(),
+                        ),
                         onClick = { onLaunchItemPrimaryAction(launchItem) },
                         onLongClick = {
                             when (launchItem) {
