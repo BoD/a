@@ -68,6 +68,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.jraf.android.a.BuildConfig
 import org.jraf.android.a.R
 import org.jraf.android.a.ui.theme.ATheme
 import org.jraf.android.a.util.toDp
@@ -100,7 +101,8 @@ fun SettingsLayout(
                             )
                         }
                     },
-                    title = { Text(stringResource(id = R.string.settings_title)) }
+                    title = { Text(stringResource(id = R.string.settings_title)) },
+                    actions = { Text("v${BuildConfig.VERSION_NAME}") },
                 )
             },
             containerColor = MaterialTheme.colorScheme.background.copy(alpha = 1F - wallpaperOpacity),
