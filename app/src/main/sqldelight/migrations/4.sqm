@@ -1,0 +1,4 @@
+CREATE TABLE RenamedItems (
+    id TEXT NOT NULL,
+    label TEXT NOT NULL
+);

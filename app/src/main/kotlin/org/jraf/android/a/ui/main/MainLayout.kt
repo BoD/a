@@ -65,14 +65,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -99,8 +102,11 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -127,10 +133,11 @@ fun MainLayout(
     onWebSearchClick: () -> Unit,
     onKeyboardActionButtonClick: () -> Unit,
     isKeyboardWebSearchActive: Boolean,
-    onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction1: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction2: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction3: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction4: (MainViewModel.LaunchItem) -> Unit,
+    onRenameLaunchItem: (MainViewModel.LaunchItem, label: String?) -> Unit,
     showRequestContactsPermissionBanner: Boolean,
     onRequestContactsPermissionClick: () -> Unit,
     showNotificationListenerPermissionBanner: Boolean,
@@ -163,10 +170,11 @@ fun MainLayout(
                     if (alignmentBottom) {
                         LaunchItemList(
                             launchItems = launchItems,
-                            onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
-                            onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
-                            onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
-                            onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
+                            onLaunchItemAction1 = onLaunchItemAction1,
+                            onLaunchItemAction2 = onLaunchItemAction2,
+                            onLaunchItemAction3 = onLaunchItemAction3,
+                            onLaunchItemAction4 = onLaunchItemAction4,
+                            onRenameLaunchItem = onRenameLaunchItem,
                             onDropdownMenuVisible = onDropdownMenuVisible,
                             alignmentBottom = alignmentBottom,
                             alignmentRight = alignmentRight,
@@ -196,10 +204,11 @@ fun MainLayout(
                     if (!alignmentBottom) {
                         LaunchItemList(
                             launchItems = launchItems,
-                            onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
-                            onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
-                            onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
-                            onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
+                            onLaunchItemAction1 = onLaunchItemAction1,
+                            onLaunchItemAction2 = onLaunchItemAction2,
+                            onLaunchItemAction3 = onLaunchItemAction3,
+                            onLaunchItemAction4 = onLaunchItemAction4,
+                            onRenameLaunchItem = onRenameLaunchItem,
                             onDropdownMenuVisible = onDropdownMenuVisible,
                             alignmentBottom = alignmentBottom,
                             alignmentRight = alignmentRight,
@@ -331,10 +340,11 @@ private fun SearchTextField(
 @Composable
 private fun ColumnScope.LaunchItemList(
     launchItems: List<MainViewModel.LaunchItem>,
-    onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction1: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction2: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction3: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction4: (MainViewModel.LaunchItem) -> Unit,
+    onRenameLaunchItem: (MainViewModel.LaunchItem, label: String?) -> Unit,
     onDropdownMenuVisible: (Boolean) -> Unit,
     alignmentBottom: Boolean,
     alignmentRight: Boolean,
@@ -357,10 +367,11 @@ private fun ColumnScope.LaunchItemList(
                 items(launchItems, key = { it.id }) { launchItem ->
                     LaunchItemItem(
                         launchItem = launchItem,
-                        onLaunchItemPrimaryAction = onLaunchItemPrimaryAction,
-                        onLaunchItemSecondaryAction = onLaunchItemSecondaryAction,
-                        onLaunchItemTertiaryAction = onLaunchItemTertiaryAction,
-                        onLaunchItemQuaternaryAction = onLaunchItemQuaternaryAction,
+                        onLaunchItemAction1 = onLaunchItemAction1,
+                        onLaunchItemAction2 = onLaunchItemAction2,
+                        onLaunchItemAction3 = onLaunchItemAction3,
+                        onLaunchItemAction4 = onLaunchItemAction4,
+                        onRenameLaunchItem = onRenameLaunchItem,
                         onDropdownMenuVisible = onDropdownMenuVisible,
                     )
                 }
@@ -378,13 +389,15 @@ private val deprioritizedColorFilter = ColorFilter.colorMatrix(
 @Composable
 private fun LazyGridItemScope.LaunchItemItem(
     launchItem: MainViewModel.LaunchItem,
-    onLaunchItemPrimaryAction: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemSecondaryAction: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemTertiaryAction: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemQuaternaryAction: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction1: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction2: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction3: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction4: (MainViewModel.LaunchItem) -> Unit,
+    onRenameLaunchItem: (MainViewModel.LaunchItem, label: String?) -> Unit,
     onDropdownMenuVisible: (Boolean) -> Unit,
 ) {
     var dropdownMenuVisible by remember { mutableStateOf(false) }
+    var renameDialogVisible by remember { mutableStateOf(false) }
     val isKeyboardOpen by keyboardAsState()
     LaunchedEffect(isKeyboardOpen) {
         if (!isKeyboardOpen) dropdownMenuVisible = false
@@ -405,18 +418,18 @@ private fun LazyGridItemScope.LaunchItemItem(
                             bounded = false,
                             radius = 56.sp.toDp(),
                         ),
-                        onClick = { onLaunchItemPrimaryAction(launchItem) },
+                        onClick = { onLaunchItemAction1(launchItem) },
                         onLongClick = {
                             when (launchItem) {
                                 is MainViewModel.AppLaunchItem,
                                 is MainViewModel.ShortcutLaunchItem,
                                 is MainViewModel.ASettingsLaunchItem,
-                                -> {
+                                    -> {
                                     dropdownMenuVisible = true
                                 }
 
                                 is MainViewModel.ContactLaunchItem -> {
-                                    onLaunchItemSecondaryAction(launchItem)
+                                    onLaunchItemAction2(launchItem)
                                 }
                             }
                         }
@@ -487,14 +500,35 @@ private fun LazyGridItemScope.LaunchItemItem(
                     ) {
                         DropdownMenuItem(
                             onClick = {
-                                onLaunchItemSecondaryAction(launchItem)
+                                onLaunchItemAction2(launchItem)
                                 dropdownMenuVisible = false
                             },
                             text = { Text(stringResource(R.string.main_list_app_appDetails)) }
                         )
                         DropdownMenuItem(
                             onClick = {
-                                onLaunchItemQuaternaryAction(launchItem)
+                                if (launchItem.isRenamed) {
+                                    onRenameLaunchItem(launchItem, null)
+                                } else {
+                                    renameDialogVisible = true
+                                }
+                                dropdownMenuVisible = false
+                            },
+                            text = {
+                                Text(
+                                    stringResource(
+                                        if (launchItem.isRenamed) {
+                                            R.string.main_list_app_unrename
+                                        } else {
+                                            R.string.main_list_app_rename
+                                        }
+                                    )
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            onClick = {
+                                onLaunchItemAction4(launchItem)
                                 dropdownMenuVisible = false
                             },
                             text = {
@@ -511,7 +545,7 @@ private fun LazyGridItemScope.LaunchItemItem(
                         )
                         DropdownMenuItem(
                             onClick = {
-                                onLaunchItemTertiaryAction(launchItem)
+                                onLaunchItemAction3(launchItem)
                                 dropdownMenuVisible = false
                             },
                             text = {
@@ -537,14 +571,14 @@ private fun LazyGridItemScope.LaunchItemItem(
                     ) {
                         DropdownMenuItem(
                             onClick = {
-                                onLaunchItemSecondaryAction(launchItem)
+                                onLaunchItemAction2(launchItem)
                                 dropdownMenuVisible = false
                             },
                             text = { Text(stringResource(R.string.main_list_app_appDetails)) }
                         )
                         DropdownMenuItem(
                             onClick = {
-                                onLaunchItemTertiaryAction(launchItem)
+                                onLaunchItemAction3(launchItem)
                                 dropdownMenuVisible = false
                             },
                             text = {
@@ -570,7 +604,7 @@ private fun LazyGridItemScope.LaunchItemItem(
                     ) {
                         DropdownMenuItem(
                             onClick = {
-                                onLaunchItemSecondaryAction(launchItem)
+                                onLaunchItemAction2(launchItem)
                                 dropdownMenuVisible = false
                             },
                             text = { Text(stringResource(R.string.main_list_shortcut_deleteShortcut)) }
@@ -582,6 +616,70 @@ private fun LazyGridItemScope.LaunchItemItem(
             }
         }
     }
+    if (renameDialogVisible) {
+        RenameDialog(
+            onDismissRequest = { renameDialogVisible = false },
+            launchItem = launchItem,
+            onConfirm = { label ->
+                renameDialogVisible = false
+                onRenameLaunchItem(launchItem, label)
+            }
+        )
+    }
+}
+
+@Composable
+private fun RenameDialog(
+    onDismissRequest: () -> Unit,
+    launchItem: MainViewModel.LaunchItem,
+    onConfirm: (String) -> Unit,
+) {
+    var value by remember { mutableStateOf(TextFieldValue(launchItem.label, TextRange(launchItem.label.length))) }
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(stringResource(R.string.main_list_app_rename)) },
+        text = {
+            val focusRequester = remember { FocusRequester() }
+            OutlinedTextField(
+                modifier = Modifier
+                    .focusRequester(focusRequester),
+                value = value,
+                singleLine = true,
+                onValueChange = { value = it },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Done,
+                    capitalization = KeyboardCapitalization.Words,
+                    autoCorrect = false,
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { onConfirm(value.text.trim()) },
+                ),
+            )
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm(value.text.trim())
+                },
+                enabled = value.text.isNotBlank(),
+            ) {
+                Text(stringResource(R.string.main_renameDialog_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                }
+            ) {
+                Text(stringResource(R.string.main_renameDialog_cancel))
+            }
+        }
+    )
 }
 
 @Preview(showSystemUi = true, showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
@@ -605,10 +703,11 @@ private fun MainScreenPreview() {
         onWebSearchClick = {},
         onKeyboardActionButtonClick = {},
         isKeyboardWebSearchActive = false,
-        onLaunchItemPrimaryAction = {},
-        onLaunchItemSecondaryAction = {},
-        onLaunchItemTertiaryAction = {},
-        onLaunchItemQuaternaryAction = {},
+        onLaunchItemAction1 = {},
+        onLaunchItemAction2 = {},
+        onLaunchItemAction3 = {},
+        onLaunchItemAction4 = {},
+        onRenameLaunchItem = { _, _ -> },
         showRequestContactsPermissionBanner = false,
         onRequestContactsPermissionClick = {},
         showNotificationListenerPermissionBanner = true,
@@ -631,6 +730,7 @@ private fun fakeApp() = MainViewModel.AppLaunchItem(
     )!!,
     isDeprioritized = false,
     notificationRanking = 42,
+    isRenamed = false,
     ignoreNotifications = false,
 )
 

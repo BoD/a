@@ -124,4 +124,21 @@ class LaunchItemRepository(private val context: Context) {
     fun getDeletedItems(): Flow<List<String>> = database.deletedItemsQueries.select()
         .asFlow()
         .mapToList(Dispatchers.IO)
+
+    fun getRenamedItems(): Flow<Map<String, String>> = database.renamedItemsQueries.select()
+        .asFlow()
+        .mapToList(Dispatchers.IO)
+        .map { it.associate { renamedItem -> renamedItem.id to renamedItem.label } }
+
+    suspend fun renameItem(id: String, label: String) {
+        withContext(Dispatchers.IO) {
+            database.renamedItemsQueries.insert(id, label)
+        }
+    }
+
+    suspend fun unrenameItem(id: String) {
+        withContext(Dispatchers.IO) {
+            database.renamedItemsQueries.delete(id)
+        }
+    }
 }

@@ -13,8 +13,13 @@
     <string name="main_list_app_undeprioritize">Un-de-prioritize</string>
     <string name="main_list_app_ignoreNotifications">Ignore notifications</string>
     <string name="main_list_app_unignoreNotifications">Unignore notifications</string>
+    <string name="main_list_app_rename">Rename</string>
+    <string name="main_list_app_unrename">Reset name</string>
 
     <string name="main_list_shortcut_deleteShortcut">Delete shortcut</string>
+
+    <string name="main_renameDialog_confirm">Confirm</string>
+    <string name="main_renameDialog_cancel">Cancel</string>
 
     <string name="shortcutAccept_toast_accepted">Shortcut added</string>
 

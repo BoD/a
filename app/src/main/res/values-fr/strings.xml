@@ -12,8 +12,13 @@
     <string name="main_list_app_undeprioritize">Dé-déprioritiser</string>
     <string name="main_list_app_ignoreNotifications">Ignorer les notifications</string>
     <string name="main_list_app_unignoreNotifications">Désignorer les notifications</string>
+    <string name="main_list_app_rename">Renommer</string>
+    <string name="main_list_app_unrename">Réinitialiser le nom</string>
 
     <string name="main_list_shortcut_deleteShortcut">Supprimer le raccourci</string>
+
+    <string name="main_renameDialog_confirm">Confirmer</string>
+    <string name="main_renameDialog_cancel">Annuler</string>
 
     <string name="shortcutAccept_toast_accepted">Raccourci ajouté</string>
 

@@ -109,10 +109,11 @@ class MainActivity : ComponentActivity() {
                 onWebSearchClick = viewModel::onWebSearchClick,
                 onKeyboardActionButtonClick = viewModel::onKeyboardActionButtonClick,
                 isKeyboardWebSearchActive = isKeyboardWebSearchActive,
-                onLaunchItemPrimaryAction = viewModel::onLaunchItemPrimaryAction,
-                onLaunchItemSecondaryAction = viewModel::onLaunchItemSecondaryAction,
-                onLaunchItemTertiaryAction = viewModel::onLaunchItemTertiaryAction,
-                onLaunchItemQuaternaryAction = viewModel::onLaunchItemQuaternaryAction,
+                onLaunchItemAction1 = viewModel::onLaunchItemAction1,
+                onLaunchItemAction2 = viewModel::onLaunchItemAction2,
+                onLaunchItemAction3 = viewModel::onLaunchItemAction3,
+                onLaunchItemAction4 = viewModel::onLaunchItemAction4,
+                onRenameLaunchItem = viewModel::onRenameLaunchItem,
                 showRequestContactsPermissionBanner = shouldShowRequestPermissionRationale,
                 onRequestContactsPermissionClick = {
                     viewModel.shouldShowRequestPermissionRationale.value = false

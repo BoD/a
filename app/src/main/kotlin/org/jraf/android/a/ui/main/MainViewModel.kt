@@ -73,6 +73,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val settingsRepository = application[SettingsRepository]
 
     private val ignoredNotificationsItems = launchItemRepository.getIgnoredNotificationsItems()
+    private val renamedItems = launchItemRepository.getRenamedItems()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val allLaunchItems: Flow<List<LaunchItem>> = appRepository.allApps.flatMapLatest { allApps ->
@@ -81,12 +82,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             allShortcutsFlow,
             contactRepository.starredContacts,
             notificationRepository.notificationRankings,
-            ignoredNotificationsItems,
+            // combine() accepts at most 5 flows, so we "overcombine"
+            combine(
+                ignoredNotificationsItems,
+                renamedItems
+            ) { ignoredNotificationsItems, renamedItems -> ignoredNotificationsItems to renamedItems },
             hasNotificationListenerPermission,
-        ) { allShortcuts, starredContacts, notificationRankings, ignoredNotificationsItems, hasNotificationListenerPermission ->
+        ) { allShortcuts, starredContacts, notificationRankings, (ignoredNotificationsItems, renamedItems), hasNotificationListenerPermission ->
             allApps.map { app ->
-                val ignoreNotifications =
-                    AppLaunchItem.getId(packageName = app.packageName, activityName = app.activityName) in ignoredNotificationsItems
+                val id = AppLaunchItem.getId(packageName = app.packageName, activityName = app.activityName)
+                val ignoreNotifications = id in ignoredNotificationsItems
+                val label = renamedItems[id]
                 val notificationRanking = if (!hasNotificationListenerPermission || ignoreNotifications) {
                     null
                 } else {
@@ -95,9 +101,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 app.toAppLaunchItem(
                     ignoreNotifications = ignoreNotifications,
                     notificationRanking = notificationRanking,
+                    label = label,
                 )
             } +
-                    allShortcuts.map { it.toShortcutLaunchItem() } +
+                    allShortcuts.map {
+                        val id = ShortcutLaunchItem.getId(it.id)
+                        val label = renamedItems[id]
+                        it.toShortcutLaunchItem(label = label)
+                    } +
                     starredContacts.map { it.toContactLaunchItem() } +
                     ASettingsLaunchItem(context = getApplication(), isDeprioritized = false)
         }
@@ -158,7 +169,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         onScrollUp()
     }
 
-    fun onLaunchItemPrimaryAction(launchedItem: LaunchItem) {
+    fun onLaunchItemAction1(launchedItem: LaunchItem) {
         when (launchedItem) {
             is AppLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppIntent)
             is ASettingsLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppIntent)
@@ -175,7 +186,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun onLaunchItemSecondaryAction(launchedItem: LaunchItem) {
+    fun onLaunchItemAction2(launchedItem: LaunchItem) {
         when (launchedItem) {
             is AppLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppDetailsIntent)
             is ASettingsLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppDetailsIntent)
@@ -193,7 +204,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun onLaunchItemTertiaryAction(launchedItem: LaunchItem) {
+    fun onLaunchItemAction3(launchedItem: LaunchItem) {
         viewModelScope.launch {
             if (launchedItem.isDeprioritized) {
                 launchItemRepository.undeprioritizeItem(launchedItem.id)
@@ -203,12 +214,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun onLaunchItemQuaternaryAction(launchedItem: LaunchItem) {
+    fun onLaunchItemAction4(launchedItem: LaunchItem) {
         viewModelScope.launch {
             if (launchedItem.ignoreNotifications) {
                 launchItemRepository.unignoreNotifications(launchedItem.id)
             } else {
                 launchItemRepository.ignoreNotifications(launchedItem.id)
+            }
+        }
+    }
+
+    fun onRenameLaunchItem(launchedItem: LaunchItem, label: String?) {
+        viewModelScope.launch {
+            if (label == null) {
+                launchItemRepository.unrenameItem(launchedItem.id)
+            } else {
+                launchItemRepository.renameItem(launchedItem.id, label)
             }
         }
     }
@@ -228,7 +249,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (launchItems.isEmpty()) {
             onWebSearchClick()
         } else {
-            onLaunchItemPrimaryAction(launchItems.first())
+            onLaunchItemAction1(launchItems.first())
         }
     }
 
@@ -237,6 +258,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         abstract val drawable: Drawable
         abstract val id: String
         abstract val isDeprioritized: Boolean
+        abstract val isRenamed: Boolean
         abstract val ignoreNotifications: Boolean
         abstract val notificationRanking: Int?
 
@@ -251,6 +273,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private val activityName: String,
         override val drawable: Drawable,
         override val isDeprioritized: Boolean,
+        override val isRenamed: Boolean,
         override val ignoreNotifications: Boolean,
         override val notificationRanking: Int?,
     ) : LaunchItem() {
@@ -280,13 +303,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun AppRepository.App.toAppLaunchItem(
         ignoreNotifications: Boolean,
         notificationRanking: Int?,
+        label: String?,
     ): AppLaunchItem {
         return AppLaunchItem(
-            label = label,
+            label = label ?: this.label,
             packageName = packageName,
             activityName = activityName,
             drawable = drawable,
             isDeprioritized = false,
+            isRenamed = label != null,
             ignoreNotifications = ignoreNotifications,
             notificationRanking = notificationRanking,
         )
@@ -317,6 +342,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         override val isDeprioritized: Boolean = false
 
+        override val isRenamed: Boolean = false
+
         override val ignoreNotifications: Boolean = false
 
         override val notificationRanking: Int? = null
@@ -335,9 +362,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     data class ShortcutLaunchItem(
         override val label: String,
         override val drawable: Drawable,
+        override val isRenamed: Boolean,
         val shortcut: ShortcutRepository.Shortcut,
     ) : LaunchItem() {
-        override val id = "shortcut/${shortcut.id}"
+        override val id = getId(shortcut.id)
 
         override fun matchesFilter(query: String): Boolean {
             return label.containsIgnoreAccents(query)
@@ -348,6 +376,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         override val ignoreNotifications: Boolean = false
 
         override val notificationRanking: Int? = null
+
+        companion object {
+            fun getId(id: String) = "shortcut/${id}"
+        }
     }
 
     data class ASettingsLaunchItem(
@@ -359,6 +391,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         override val label: String = context.getString(R.string.settings_title)
         override val ignoreNotifications: Boolean = false
         override val notificationRanking: Int? = null
+        override val isRenamed: Boolean = false
         val launchAppIntent: Intent = Intent(context, SettingsActivity::class.java)
         val launchAppDetailsIntent: Intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
             .setData(Uri.parse("package:${context.packageName}"))
@@ -368,10 +401,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun ShortcutRepository.Shortcut.toShortcutLaunchItem(): ShortcutLaunchItem {
+    private fun ShortcutRepository.Shortcut.toShortcutLaunchItem(label: String?): ShortcutLaunchItem {
         return ShortcutLaunchItem(
-            label = label,
+            label = label ?: this.label,
             drawable = drawable,
+            isRenamed = label != null,
             shortcut = this,
         )
     }
