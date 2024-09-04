@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinAndroid)
+    alias(libs.plugins.kotlinCompose)
     alias(libs.plugins.sqldelight)
 }
 
@@ -13,8 +14,8 @@ android {
         applicationId = "a.a.a.a"
         minSdk = 26
         targetSdk = 34
-        versionCode = 20
-        versionName = "1.12.0"
+        versionCode = 21
+        versionName = "1.12.1"
     }
 
     signingConfigs {
@@ -44,17 +45,13 @@ android {
         buildConfig = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.androidx.compose.compiler.get()
-    }
-
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = JavaVersion.VERSION_11.toString()
         freeCompilerArgs = listOf("-Xcontext-receivers")
     }
 }
