@@ -604,6 +604,27 @@ private fun LazyGridItemScope.LaunchItemItem(
                     ) {
                         DropdownMenuItem(
                             onClick = {
+                                if (launchItem.isRenamed) {
+                                    onRenameLaunchItem(launchItem, null)
+                                } else {
+                                    renameDialogVisible = true
+                                }
+                                dropdownMenuVisible = false
+                            },
+                            text = {
+                                Text(
+                                    stringResource(
+                                        if (launchItem.isRenamed) {
+                                            R.string.main_list_app_unrename
+                                        } else {
+                                            R.string.main_list_app_rename
+                                        }
+                                    )
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            onClick = {
                                 onLaunchItemAction2(launchItem)
                                 dropdownMenuVisible = false
                             },
