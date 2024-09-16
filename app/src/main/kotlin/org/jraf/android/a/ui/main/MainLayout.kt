@@ -117,16 +117,21 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.android.awaitFrame
 import org.jraf.android.a.R
+import org.jraf.android.a.ui.components.DenseButton
+import org.jraf.android.a.ui.components.UltraDenseOutlinedTextField
 import org.jraf.android.a.ui.theme.ATheme
 import org.jraf.android.a.util.fadingEdges
 import org.jraf.android.a.util.keyboardAsState
+import org.jraf.android.a.util.logw
 import org.jraf.android.a.util.toDp
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
+
 @Composable
 fun MainLayout(
     searchQuery: String,
+    hasNotifications: Boolean,
     launchItems: List<MainViewModel.LaunchItem>,
     onSearchQueryChange: (String) -> Unit,
     onResetSearchQueryClick: () -> Unit,
@@ -145,6 +150,7 @@ fun MainLayout(
     alignmentBottom: Boolean,
     alignmentRight: Boolean,
     wallpaperOpacity: Float,
+    showNotificationsButton: Boolean,
     gridState: LazyGridState,
 ) {
     ATheme {
@@ -165,7 +171,7 @@ fun MainLayout(
                 }
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxSize(),
                 ) {
                     if (alignmentBottom) {
                         LaunchItemList(
@@ -180,28 +186,60 @@ fun MainLayout(
                             alignmentRight = alignmentRight,
                             gridState = gridState,
                         )
-                    }
-                    SearchTextField(
-                        searchQuery = searchQuery,
-                        onSearchQueryChange = onSearchQueryChange,
-                        onResetSearchQueryClick = onResetSearchQueryClick,
-                        onWebSearchClick = onWebSearchClick,
-                        onKeyboardActionButtonClick = onKeyboardActionButtonClick,
-                        isKeyboardWebSearchActive = isKeyboardWebSearchActive,
-                    )
-                    if (showRequestContactsPermissionBanner) {
-                        RequestPermissionBanner(
-                            messageResId = R.string.main_requestContactsPermissionRationale_text,
-                            onRequestPermissionClick = onRequestContactsPermissionClick
+
+
+                        SearchTextField(
+                            searchQuery = searchQuery,
+                            onSearchQueryChange = onSearchQueryChange,
+                            onResetSearchQueryClick = onResetSearchQueryClick,
+                            onWebSearchClick = onWebSearchClick,
+                            onKeyboardActionButtonClick = onKeyboardActionButtonClick,
+                            isKeyboardWebSearchActive = isKeyboardWebSearchActive,
                         )
-                    }
-                    if (showNotificationListenerPermissionBanner) {
-                        RequestPermissionBanner(
-                            messageResId = R.string.main_requestNotificationListenerPermission_text,
-                            onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
+
+                        if (showNotificationsButton && hasNotifications) {
+                            ShowNotificationsButton()
+                        }
+
+                        if (showRequestContactsPermissionBanner) {
+                            RequestPermissionBanner(
+                                messageResId = R.string.main_requestContactsPermissionRationale_text,
+                                onRequestPermissionClick = onRequestContactsPermissionClick
+                            )
+                        }
+                        if (showNotificationListenerPermissionBanner) {
+                            RequestPermissionBanner(
+                                messageResId = R.string.main_requestNotificationListenerPermission_text,
+                                onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
+                            )
+                        }
+                    } else {
+                        if (showRequestContactsPermissionBanner) {
+                            RequestPermissionBanner(
+                                messageResId = R.string.main_requestContactsPermissionRationale_text,
+                                onRequestPermissionClick = onRequestContactsPermissionClick
+                            )
+                        }
+                        if (showNotificationListenerPermissionBanner) {
+                            RequestPermissionBanner(
+                                messageResId = R.string.main_requestNotificationListenerPermission_text,
+                                onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
+                            )
+                        }
+
+                        if (showNotificationsButton && hasNotifications) {
+                            ShowNotificationsButton()
+                        }
+
+                        SearchTextField(
+                            searchQuery = searchQuery,
+                            onSearchQueryChange = onSearchQueryChange,
+                            onResetSearchQueryClick = onResetSearchQueryClick,
+                            onWebSearchClick = onWebSearchClick,
+                            onKeyboardActionButtonClick = onKeyboardActionButtonClick,
+                            isKeyboardWebSearchActive = isKeyboardWebSearchActive,
                         )
-                    }
-                    if (!alignmentBottom) {
+
                         LaunchItemList(
                             launchItems = launchItems,
                             onLaunchItemAction1 = onLaunchItemAction1,
@@ -240,6 +278,31 @@ fun MainLayout(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ShowNotificationsButton() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.sp.toDp()),
+    ) {
+        val context = LocalContext.current
+        DenseButton(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                // Well OF COURSE there's no public API for this :(
+                try {
+                    val statusBarManager = Class.forName("android.app.StatusBarManager")
+                    val expandNotificationsPanelMethod = statusBarManager.getMethod("expandNotificationsPanel")
+                    expandNotificationsPanelMethod.invoke(context.getSystemService("statusbar"))
+                } catch (e: Exception) {
+                    logw(e, "Can't call expandNotificationsPanel")
+                }
+            }) {
+            Text(text = stringResource(R.string.main_showNotifications))
         }
     }
 }
@@ -356,6 +419,7 @@ private fun ColumnScope.LaunchItemList(
             .fillMaxWidth()
             .weight(1F)
     ) {
+        val originalLayoutDirection = LocalLayoutDirection.current
         CompositionLocalProvider(LocalLayoutDirection provides if (alignmentRight) LayoutDirection.Rtl else LayoutDirection.Ltr) {
             LazyVerticalGrid(
                 modifier = Modifier.fillMaxSize(),
@@ -367,6 +431,7 @@ private fun ColumnScope.LaunchItemList(
                 items(launchItems, key = { it.id }) { launchItem ->
                     LaunchItemItem(
                         launchItem = launchItem,
+                        originalLayoutDirection = originalLayoutDirection,
                         onLaunchItemAction1 = onLaunchItemAction1,
                         onLaunchItemAction2 = onLaunchItemAction2,
                         onLaunchItemAction3 = onLaunchItemAction3,
@@ -389,6 +454,7 @@ private val deprioritizedColorFilter = ColorFilter.colorMatrix(
 @Composable
 private fun LazyGridItemScope.LaunchItemItem(
     launchItem: MainViewModel.LaunchItem,
+    originalLayoutDirection: LayoutDirection,
     onLaunchItemAction1: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemAction2: (MainViewModel.LaunchItem) -> Unit,
     onLaunchItemAction3: (MainViewModel.LaunchItem) -> Unit,
@@ -403,7 +469,7 @@ private fun LazyGridItemScope.LaunchItemItem(
         if (!isKeyboardOpen) dropdownMenuVisible = false
     }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+    CompositionLocalProvider(LocalLayoutDirection provides originalLayoutDirection) {
         Box(
             modifier = Modifier
                 .animateItemPlacement()
@@ -636,16 +702,16 @@ private fun LazyGridItemScope.LaunchItemItem(
                 is MainViewModel.ContactLaunchItem -> {}
             }
         }
-    }
-    if (renameDialogVisible) {
-        RenameDialog(
-            onDismissRequest = { renameDialogVisible = false },
-            launchItem = launchItem,
-            onConfirm = { label ->
-                renameDialogVisible = false
-                onRenameLaunchItem(launchItem, label)
-            }
-        )
+        if (renameDialogVisible) {
+            RenameDialog(
+                onDismissRequest = { renameDialogVisible = false },
+                launchItem = launchItem,
+                onConfirm = { label ->
+                    renameDialogVisible = false
+                    onRenameLaunchItem(launchItem, label)
+                }
+            )
+        }
     }
 }
 
@@ -708,6 +774,7 @@ private fun RenameDialog(
 private fun MainScreenPreview() {
     MainLayout(
         searchQuery = "",
+        hasNotifications = true,
         launchItems = listOf(
             fakeApp(),
             fakeApp(),
@@ -736,6 +803,7 @@ private fun MainScreenPreview() {
         alignmentBottom = true,
         alignmentRight = false,
         wallpaperOpacity = .10F,
+        showNotificationsButton = true,
         gridState = rememberLazyGridState(),
     )
 }

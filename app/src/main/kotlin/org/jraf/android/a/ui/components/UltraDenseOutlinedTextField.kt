@@ -7,7 +7,7 @@
  *                              /___/
  * repository.
  *
- * Copyright (C) 2023-present Benoit 'BoD' Lubek (BoD@JRAF.org)
+ * Copyright (C) 2024-present Benoit 'BoD' Lubek (BoD@JRAF.org)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.jraf.android.a.ui.main
+package org.jraf.android.a.ui.components
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke

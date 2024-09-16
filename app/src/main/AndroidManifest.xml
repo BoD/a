@@ -3,6 +3,9 @@
 
     <uses-permission android:name="android.permission.READ_CONTACTS" />
 
+    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+
+
     <application
         android:name=".AApplication"
         android:allowBackup="true"

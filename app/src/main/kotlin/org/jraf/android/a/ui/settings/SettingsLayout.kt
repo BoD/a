@@ -51,6 +51,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.contentColorFor
@@ -62,6 +63,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -84,6 +86,8 @@ fun SettingsLayout(
     onAlignmentRightClick: () -> Unit,
     wallpaperOpacity: Float,
     onWallpaperOpacityChange: (Float) -> Unit,
+    showNotificationsButton: Boolean,
+    onShowNotificationsButtonClick: () -> Unit,
 ) {
     ATheme {
         Scaffold(
@@ -113,19 +117,24 @@ fun SettingsLayout(
                     .fillMaxWidth()
                     .padding(paddingValues)
             ) {
-                SwitchSetting(
+                TextSwitchSetting(
                     value = alignmentBottom,
                     onClick = onAlignmentBottomClick,
                     titleResId = R.string.settings_alignmentBottom_title,
                     trueLabelResId = R.string.settings_alignmentBottom_bottom,
                     falseLabelResId = R.string.settings_alignmentBottom_top,
                 )
-                SwitchSetting(
+                TextSwitchSetting(
                     value = rightHanded,
                     onClick = onAlignmentRightClick,
                     titleResId = R.string.settings_alignmentRight_title,
                     trueLabelResId = R.string.settings_alignmentRight_right,
                     falseLabelResId = R.string.settings_alignmentRight_left
+                )
+                SwitchSetting(
+                    value = showNotificationsButton,
+                    onClick = onShowNotificationsButtonClick,
+                    titleResId = R.string.settings_showNotificationsButton_title,
                 )
                 WallpaperOpacitySetting(
                     wallpaperOpacity = wallpaperOpacity,
@@ -141,7 +150,7 @@ fun SettingsLayout(
 }
 
 @Composable
-private fun SwitchSetting(
+private fun TextSwitchSetting(
     value: Boolean,
     onClick: () -> Unit,
     @StringRes titleResId: Int,
@@ -173,6 +182,39 @@ private fun SwitchSetting(
             color = MaterialTheme.colorScheme.onPrimaryContainer,
             text = stringResource(if (value) trueLabelResId else falseLabelResId),
             style = MaterialTheme.typography.labelLarge,
+        )
+    }
+}
+
+@Composable
+private fun SwitchSetting(
+    value: Boolean,
+    onClick: () -> Unit,
+    @StringRes titleResId: Int,
+) {
+    Row(
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.extraLarge)
+            .clickable(
+                role = Role.Switch,
+                onClick = {
+                    onClick()
+                }
+            )
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            modifier = Modifier.weight(1F),
+            text = stringResource(titleResId),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Spacer(
+            modifier = Modifier.width(16.dp)
+        )
+        Switch(
+            checked = value,
+            onCheckedChange = null,
         )
     }
 }
@@ -238,7 +280,7 @@ private fun PreviewItem(id: Int) {
                         .clip(CircleShape)
                         .background(colorResource(R.color.ic_launcher_background).copy(alpha = 1F - id / 18F))
                         .wrapContentHeight(align = Alignment.CenterVertically),
-                    text = id.toString(),
+                    text = ('A'.code + id - 1).toChar().toString(),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.headlineSmall
                 )
@@ -267,5 +309,7 @@ private fun SettingsLayoutPreview() {
         onAlignmentRightClick = {},
         wallpaperOpacity = 0.4F,
         onWallpaperOpacityChange = {},
+        showNotificationsButton = true,
+        onShowNotificationsButtonClick = {},
     )
 }

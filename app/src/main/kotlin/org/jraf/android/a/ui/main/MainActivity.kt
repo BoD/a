@@ -80,6 +80,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val searchQuery: String by viewModel.searchQuery.collectAsState()
+            val hasNotifications: Boolean by viewModel.hasNotifications.collectAsState()
             val launchItems: List<LaunchItem> by viewModel.filteredLaunchItems.collectAsState()
             val isKeyboardWebSearchActive: Boolean by viewModel.isKeyboardWebSearchActive.collectAsState(
                 initial = false
@@ -93,6 +94,7 @@ class MainActivity : ComponentActivity() {
             val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsState()
             val alignmentRight: Boolean by viewModel.alignmentRight.collectAsState()
             val wallpaperOpacity: Float by viewModel.wallpaperOpacity.collectAsState()
+            val showNotificationsButton: Boolean by viewModel.showNotificationsButton.collectAsState()
 
             val gridState = rememberLazyGridState()
 
@@ -103,6 +105,7 @@ class MainActivity : ComponentActivity() {
 
             MainLayout(
                 searchQuery = searchQuery,
+                hasNotifications = hasNotifications,
                 launchItems = launchItems,
                 onSearchQueryChange = viewModel::onSearchQueryChange,
                 onResetSearchQueryClick = viewModel::resetSearchQuery,
@@ -124,6 +127,7 @@ class MainActivity : ComponentActivity() {
                 alignmentBottom = alignmentBottom,
                 alignmentRight = alignmentRight,
                 wallpaperOpacity = wallpaperOpacity,
+                showNotificationsButton = showNotificationsButton,
                 gridState = gridState,
             )
         }

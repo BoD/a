@@ -40,4 +40,5 @@ class SettingsRepository(context: Context) {
     val alignmentRight: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
 
     val wallpaperOpacity: MutableStateFlow<Float> by prefs.FloatFlow(0F)
+    val showNotificationsButton: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
 }

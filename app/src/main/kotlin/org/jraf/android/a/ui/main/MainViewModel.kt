@@ -164,6 +164,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val shouldShowRequestPermissionRationale = MutableStateFlow(false)
 
+    val hasNotifications: StateFlow<Boolean> = notificationRepository.notificationRankings
+        .map { it.isNotEmpty() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     fun onSearchQueryChange(query: String) {
         searchQuery.value = query
         onScrollUp()
@@ -440,4 +444,5 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val alignmentBottom: StateFlow<Boolean> = settingsRepository.alignmentBottom
     val alignmentRight: StateFlow<Boolean> = settingsRepository.alignmentRight
     val wallpaperOpacity: StateFlow<Float> = settingsRepository.wallpaperOpacity
+    val showNotificationsButton: StateFlow<Boolean> = settingsRepository.showNotificationsButton
 }

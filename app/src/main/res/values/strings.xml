@@ -21,6 +21,8 @@
     <string name="main_renameDialog_confirm">Confirm</string>
     <string name="main_renameDialog_cancel">Cancel</string>
 
+    <string name="main_showNotifications">Notifications!</string>
+
     <string name="shortcutAccept_toast_accepted">Shortcut added</string>
 
     <string name="settings_title">Settings</string>
@@ -36,5 +38,6 @@
     <string name="settings_wallpaperOpacity_title">Wallpaper opacity: %1$s</string>
     <string name="settings_wallpaperOpacity_percent" translatable="false">%1$d%%</string>
     <string name="settings_wallpaperOpacity_none">OFF</string>
+    <string name="settings_showNotificationsButton_title">\'Notifications!\' button</string>
 
 </resources>

@@ -41,6 +41,7 @@ class SettingsActivity : ComponentActivity() {
             val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsState()
             val rightHanded: Boolean by viewModel.alignmentRight.collectAsState()
             val wallpaperOpacity: Float by viewModel.wallpaperOpacity.collectAsState()
+            val showNotificationsButton: Boolean by viewModel.showNotificationsButton.collectAsState()
             SettingsLayout(
                 onNavigateBack = onBackPressedDispatcher::onBackPressed,
                 alignmentBottom = alignmentBottom,
@@ -48,7 +49,9 @@ class SettingsActivity : ComponentActivity() {
                 rightHanded = rightHanded,
                 onAlignmentRightClick = viewModel::toggleAlignmentRight,
                 wallpaperOpacity = wallpaperOpacity,
-                onWallpaperOpacityChange = viewModel::setWallpaperOpacity
+                onWallpaperOpacityChange = viewModel::setWallpaperOpacity,
+                showNotificationsButton = showNotificationsButton,
+                onShowNotificationsButtonClick = viewModel::toggleShowNotificationsButton,
             )
         }
     }
