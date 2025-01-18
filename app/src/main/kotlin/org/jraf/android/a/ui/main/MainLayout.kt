@@ -53,7 +53,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -64,7 +66,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -77,6 +78,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.contentColorFor
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -100,6 +102,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
@@ -110,6 +113,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -391,7 +395,7 @@ private fun SearchTextField(
         keyboardOptions = KeyboardOptions(
             keyboardType = if (isKeyboardWebSearchActive) KeyboardType.Text else KeyboardType.Password,
             imeAction = if (isKeyboardWebSearchActive) ImeAction.Search else ImeAction.Go,
-            autoCorrect = isKeyboardWebSearchActive,
+            autoCorrectEnabled = isKeyboardWebSearchActive,
         ),
         keyboardActions = KeyboardActions(
             onSearch = { onKeyboardActionButtonClick() },
@@ -428,7 +432,17 @@ private fun ColumnScope.LaunchItemList(
                 state = gridState,
                 reverseLayout = alignmentBottom,
             ) {
-                items(launchItems, key = { it.id }) { launchItem ->
+                mostUsedItemsRow(
+                    launchItems,
+                    originalLayoutDirection,
+                    onLaunchItemAction1,
+                    onLaunchItemAction2,
+                    onLaunchItemAction3,
+                    onLaunchItemAction4,
+                    onRenameLaunchItem,
+                    onDropdownMenuVisible,
+                )
+                items(launchItems.takeLast((launchItems.size - 4).coerceAtLeast(0)), key = { it.id }) { launchItem ->
                     LaunchItemItem(
                         launchItem = launchItem,
                         originalLayoutDirection = originalLayoutDirection,
@@ -439,6 +453,45 @@ private fun ColumnScope.LaunchItemList(
                         onRenameLaunchItem = onRenameLaunchItem,
                         onDropdownMenuVisible = onDropdownMenuVisible,
                     )
+                }
+            }
+        }
+    }
+}
+
+private fun LazyGridScope.mostUsedItemsRow(
+    launchItems: List<MainViewModel.LaunchItem>,
+    originalLayoutDirection: LayoutDirection,
+    onLaunchItemAction1: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction2: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction3: (MainViewModel.LaunchItem) -> Unit,
+    onLaunchItemAction4: (MainViewModel.LaunchItem) -> Unit,
+    onRenameLaunchItem: (MainViewModel.LaunchItem, String?) -> Unit,
+    onDropdownMenuVisible: (Boolean) -> Unit,
+) {
+    item(span = { GridItemSpan(maxLineSpan) }, key = "mostUsed") {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            CompositionLocalProvider(
+                LocalDensity provides Density(LocalDensity.current.density * 1.25f, LocalDensity.current.fontScale),
+            ) {
+                for (launchItem in launchItems.take(4)) {
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        LaunchItemItem(
+                            launchItem = launchItem,
+                            originalLayoutDirection = originalLayoutDirection,
+                            onLaunchItemAction1 = onLaunchItemAction1,
+                            onLaunchItemAction2 = onLaunchItemAction2,
+                            onLaunchItemAction3 = onLaunchItemAction3,
+                            onLaunchItemAction4 = onLaunchItemAction4,
+                            onRenameLaunchItem = onRenameLaunchItem,
+                            onDropdownMenuVisible = onDropdownMenuVisible,
+                        )
+                    }
                 }
             }
         }
@@ -472,7 +525,7 @@ private fun LazyGridItemScope.LaunchItemItem(
     CompositionLocalProvider(LocalLayoutDirection provides originalLayoutDirection) {
         Box(
             modifier = Modifier
-                .animateItemPlacement()
+                .animateItem()
                 .padding(vertical = 6.sp.toDp()),
             contentAlignment = Alignment.Center,
         ) {
@@ -480,7 +533,7 @@ private fun LazyGridItemScope.LaunchItemItem(
                 modifier = Modifier
                     .combinedClickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = rememberRipple(
+                        indication = ripple(
                             bounded = false,
                             radius = 56.sp.toDp(),
                         ),
@@ -498,7 +551,7 @@ private fun LazyGridItemScope.LaunchItemItem(
                                     onLaunchItemAction2(launchItem)
                                 }
                             }
-                        }
+                        },
                     )
                     .let {
                         if (launchItem.isDeprioritized) {
@@ -737,7 +790,7 @@ private fun RenameDialog(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Done,
                     capitalization = KeyboardCapitalization.Words,
-                    autoCorrect = false,
+                    autoCorrectEnabled = false,
                 ),
                 keyboardActions = KeyboardActions(
                     onDone = { onConfirm(value.text.trim()) },
@@ -765,27 +818,23 @@ private fun RenameDialog(
             ) {
                 Text(stringResource(R.string.main_renameDialog_cancel))
             }
-        }
+        },
     )
 }
 
-@Preview(showSystemUi = true, showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(
+    showSystemUi = true,
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
 @Composable
 private fun MainScreenPreview() {
     MainLayout(
         searchQuery = "",
         hasNotifications = true,
-        launchItems = listOf(
-            fakeApp(),
-            fakeApp(),
-            fakeApp(),
-            fakeApp(),
-            fakeApp(),
-            fakeApp(),
-            fakeApp(),
-            fakeApp(),
-            fakeApp(),
-        ),
+        launchItems = List(25) {
+            fakeApp()
+        },
         onSearchQueryChange = {},
         onResetSearchQueryClick = {},
         onWebSearchClick = {},
@@ -810,7 +859,7 @@ private fun MainScreenPreview() {
 
 @Composable
 private fun fakeApp() = MainViewModel.AppLaunchItem(
-    label = "My App" * Random.nextInt(1, 4),
+    label = "My App" + " " + Random.nextInt(1, 4),
     packageName = Random.nextInt().toString(),
     activityName = Random.nextInt().toString(),
     drawable = ContextCompat.getDrawable(
