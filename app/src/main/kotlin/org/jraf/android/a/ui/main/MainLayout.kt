@@ -442,7 +442,10 @@ private fun ColumnScope.LaunchItemList(
                     onRenameLaunchItem,
                     onDropdownMenuVisible,
                 )
-                items(launchItems.takeLast((launchItems.size - 4).coerceAtLeast(0)), key = { it.id }) { launchItem ->
+                items(
+                    launchItems.takeLast((launchItems.size - MainViewModel.MOST_USED_ITEMS_COUNT).coerceAtLeast(0)),
+                    key = { it.id },
+                ) { launchItem ->
                     LaunchItemItem(
                         launchItem = launchItem,
                         originalLayoutDirection = originalLayoutDirection,
@@ -470,13 +473,11 @@ private fun LazyGridScope.mostUsedItemsRow(
     onDropdownMenuVisible: (Boolean) -> Unit,
 ) {
     item(span = { GridItemSpan(maxLineSpan) }, key = "mostUsed") {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-        ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
             CompositionLocalProvider(
                 LocalDensity provides Density(LocalDensity.current.density * 1.25f, LocalDensity.current.fontScale),
             ) {
-                for (launchItem in launchItems.take(4)) {
+                for (launchItem in launchItems.take(MainViewModel.MOST_USED_ITEMS_COUNT)) {
                     Box(
                         modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.Center,

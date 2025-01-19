@@ -30,11 +30,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.os.Build
 import android.provider.ContactsContract
 import android.provider.Settings
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -54,6 +54,7 @@ import org.jraf.android.a.R
 import org.jraf.android.a.data.AppRepository
 import org.jraf.android.a.data.ContactRepository
 import org.jraf.android.a.data.LaunchItemRepository
+import org.jraf.android.a.data.LaunchItemRepository.Counter
 import org.jraf.android.a.data.NotificationRepository
 import org.jraf.android.a.data.SettingsRepository
 import org.jraf.android.a.data.ShortcutRepository
@@ -65,6 +66,10 @@ import org.jraf.android.a.util.invoke
 import org.jraf.android.a.util.signalStateFlow
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+    companion object {
+        const val MOST_USED_ITEMS_COUNT = 5
+    }
+
     private val launchItemRepository = LaunchItemRepository(application)
     private val appRepository = application[AppRepository]
     private val contactRepository = application[ContactRepository]
@@ -85,7 +90,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             // combine() accepts at most 5 flows, so we "overcombine"
             combine(
                 ignoredNotificationsItems,
-                renamedItems
+                renamedItems,
             ) { ignoredNotificationsItems, renamedItems -> ignoredNotificationsItems to renamedItems },
             hasNotificationListenerPermission,
         ) { allShortcuts, starredContacts, notificationRankings, (ignoredNotificationsItems, renamedItems), hasNotificationListenerPermission ->
@@ -126,12 +131,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             deletedLaunchItems,
         ) { allLaunchedItems, searchQuery, counters, deletedLaunchItems ->
             val query = searchQuery.trim()
-            allLaunchedItems
-                .asSequence()
+            val filteredItems = allLaunchedItems
                 .map {
-                    if (it is AppLaunchItem && counters[it.id] == -1L) {
+                    if (it is AppLaunchItem && counters[it.id] is Counter.Deprioritized) {
                         it.copy(isDeprioritized = true)
-                    } else if (it is ASettingsLaunchItem && counters[it.id] == -1L) {
+                    } else if (it is ASettingsLaunchItem && counters[it.id] is Counter.Deprioritized) {
                         it.copy(isDeprioritized = true)
                     } else {
                         it
@@ -139,11 +143,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 .filterNot { it.id in deletedLaunchItems }
                 .filter { it.matchesFilter(query) }
-                // First sort by counter (descending)
+
+            val mostUsedItems = filteredItems
+                // Get the most used items, sorted by counter long term, without short term boost (descending)
                 .sortedByDescending {
-                    counters[it.id] ?: 0
-                }
-                // then by notification rank (ascending)
+                    when (val counter = counters[it.id]) {
+                        is Counter.ShortAndLongTerm -> counter.longTerm
+                        is Counter.Deprioritized -> -1
+                        null -> 0
+                    }
+                }.take(MOST_USED_ITEMS_COUNT)
+
+            // Add the most used items at the top
+            (mostUsedItems +
+                    // Sort the rest by counter with short term boost (descending)
+                    (filteredItems - mostUsedItems)
+                        .sortedByDescending {
+                            when (val counter = counters[it.id]) {
+                                is Counter.ShortAndLongTerm -> counter.combined
+                                is Counter.Deprioritized -> -1
+                                null -> 0
+                            }
+                        }
+                    )
+                // Then sort by notification rank (ascending)
                 .sortedBy {
                     if (it.notificationRanking != null && !it.ignoreNotifications) {
                         it.notificationRanking!!
@@ -151,7 +174,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         Integer.MAX_VALUE
                     }
                 }
-                .toList()
         }
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
@@ -292,7 +314,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         val launchAppDetailsIntent: Intent
             get() = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                .setData(Uri.parse("package:$packageName"))
+                .setData("package:$packageName".toUri())
 
         override fun matchesFilter(query: String): Boolean {
             return label.containsIgnoreAccents(query) ||
@@ -337,7 +359,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val sendSmsIntent: Intent?
             get() = phoneNumber?.let {
                 Intent(Intent.ACTION_SENDTO)
-                    .setData(Uri.parse("smsto:$it"))
+                    .setData("smsto:$it".toUri())
             }
 
         override fun matchesFilter(query: String): Boolean {
@@ -398,7 +420,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         override val isRenamed: Boolean = false
         val launchAppIntent: Intent = Intent(context, SettingsActivity::class.java)
         val launchAppDetailsIntent: Intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-            .setData(Uri.parse("package:${context.packageName}"))
+            .setData("package:${context.packageName}".toUri())
 
         override fun matchesFilter(query: String): Boolean {
             return label.containsIgnoreAccents(query)
@@ -425,11 +447,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
                     .putExtra(
                         Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
-                        ComponentName(getApplication(), NotificationListenerService::class.java).flattenToString()
+                        ComponentName(getApplication(), NotificationListenerService::class.java).flattenToString(),
                     )
             } else {
                 Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-            }
+            },
         )
     }
 
