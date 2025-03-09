@@ -88,6 +88,8 @@ fun SettingsLayout(
     onWallpaperOpacityChange: (Float) -> Unit,
     showNotificationsButton: Boolean,
     onShowNotificationsButtonClick: () -> Unit,
+    keyboardHack: Boolean,
+    onKeyboardHackClick: () -> Unit,
 ) {
     ATheme {
         Scaffold(
@@ -136,6 +138,11 @@ fun SettingsLayout(
                     onClick = onShowNotificationsButtonClick,
                     titleResId = R.string.settings_showNotificationsButton_title,
                 )
+                SwitchSetting(
+                    value = keyboardHack,
+                    onClick = onKeyboardHackClick,
+                    titleResId = R.string.settings_keyboardHack_title,
+                )
                 WallpaperOpacitySetting(
                     wallpaperOpacity = wallpaperOpacity,
                     onWallpaperOpacityChange = onWallpaperOpacityChange,
@@ -160,9 +167,11 @@ private fun TextSwitchSetting(
     Row(
         modifier = Modifier
             .clip(MaterialTheme.shapes.extraLarge)
-            .clickable(onClick = {
-                onClick()
-            })
+            .clickable(
+                onClick = {
+                    onClick()
+                }
+            )
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -311,5 +320,7 @@ private fun SettingsLayoutPreview() {
         onWallpaperOpacityChange = {},
         showNotificationsButton = true,
         onShowNotificationsButtonClick = {},
+        keyboardHack = true,
+        onKeyboardHackClick = {},
     )
 }

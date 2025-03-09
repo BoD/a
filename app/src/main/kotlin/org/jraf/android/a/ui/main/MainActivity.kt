@@ -30,7 +30,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.view.inputmethod.InputMethodManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -42,6 +41,8 @@ import androidx.compose.runtime.getValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.postDelayed
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -83,18 +84,19 @@ class MainActivity : ComponentActivity() {
             val hasNotifications: Boolean by viewModel.hasNotifications.collectAsState()
             val launchItems: List<LaunchItem> by viewModel.filteredLaunchItems.collectAsState()
             val isKeyboardWebSearchActive: Boolean by viewModel.isKeyboardWebSearchActive.collectAsState(
-                initial = false
+                initial = false,
             )
             val scrollUp: Any by viewModel.onScrollUp.collectAsState()
             val shouldShowRequestPermissionRationale: Boolean by viewModel.shouldShowRequestPermissionRationale.collectAsState()
             val hasNotificationListenerPermission: Boolean by viewModel.hasNotificationListenerPermission.collectAsState(
-                initial = true
+                initial = true,
             )
             val hasSeenRequestNotificationListenerPermissionBanner: Boolean by viewModel.hasSeenRequestNotificationListenerPermissionBanner.collectAsState()
             val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsState()
             val alignmentRight: Boolean by viewModel.alignmentRight.collectAsState()
             val wallpaperOpacity: Float by viewModel.wallpaperOpacity.collectAsState()
             val showNotificationsButton: Boolean by viewModel.showNotificationsButton.collectAsState()
+            val keyboardHack: Boolean by viewModel.keyboardHack.collectAsState()
 
             val gridState = rememberLazyGridState()
 
@@ -128,6 +130,7 @@ class MainActivity : ComponentActivity() {
                 alignmentRight = alignmentRight,
                 wallpaperOpacity = wallpaperOpacity,
                 showNotificationsButton = showNotificationsButton,
+                keyboardHack = keyboardHack,
                 gridState = gridState,
             )
         }
@@ -147,6 +150,11 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.hasNotificationListenerPermissionSignal()
+        window.decorView.postDelayed(300) {
+            if (!WindowInsetsCompat.toWindowInsetsCompat(window.decorView.rootWindowInsets).isVisible(WindowInsetsCompat.Type.ime())) {
+                showKeyboardSupposedly()
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -156,10 +164,7 @@ class MainActivity : ComponentActivity() {
 
     private fun showKeyboardSupposedly() {
         // Force showing the keyboard, supposedly.  This works 93.78% of the time.  Shout out to /r/mAndroidDev!
-        val imm: InputMethodManager = getSystemService(InputMethodManager::class.java)
-        imm.hideSoftInputFromWindow(window.decorView.windowToken, 0)
-        @Suppress("DEPRECATION")
-        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
+        WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.ime())
     }
 
     @SuppressLint("MissingSuperCall")

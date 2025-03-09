@@ -37,6 +37,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val alignmentRight: StateFlow<Boolean> = settingsRepository.alignmentRight
     val wallpaperOpacity: StateFlow<Float> = settingsRepository.wallpaperOpacity
     val showNotificationsButton: StateFlow<Boolean> = settingsRepository.showNotificationsButton
+    val keyboardHack: StateFlow<Boolean> = settingsRepository.keyboardHack
 
     fun toggleAlignmentBottom() {
         settingsRepository.alignmentBottom.value = !settingsRepository.alignmentBottom.value
@@ -52,5 +53,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun toggleShowNotificationsButton() {
         settingsRepository.showNotificationsButton.value = !settingsRepository.showNotificationsButton.value
+    }
+
+    fun toggleKeyboardHack() {
+        settingsRepository.keyboardHack.value = !settingsRepository.keyboardHack.value
     }
 }

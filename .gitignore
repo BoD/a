@@ -12,3 +12,5 @@ etc/proguard
 .idea/*
 !.idea/codeStyles
 !.idea/copyright
+
+.kotlin

@@ -37,5 +37,6 @@
     <string name="settings_wallpaperOpacity_title">Opacité du papier peint : %1$s</string>
     <string name="settings_wallpaperOpacity_none">aucune</string>
     <string name="settings_showNotificationsButton_title">Bouton \'Notifications !\'</string>
+    <string name="settings_keyboardHack_title">Hack du clavier</string>
 
 </resources>

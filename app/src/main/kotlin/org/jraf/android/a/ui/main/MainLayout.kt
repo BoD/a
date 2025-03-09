@@ -41,17 +41,21 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.imeAnimationTarget
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
@@ -83,6 +87,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -119,7 +124,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.android.awaitFrame
 import org.jraf.android.a.R
 import org.jraf.android.a.ui.components.DenseButton
 import org.jraf.android.a.ui.components.UltraDenseOutlinedTextField
@@ -131,7 +135,7 @@ import org.jraf.android.a.util.toDp
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
-
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MainLayout(
     searchQuery: String,
@@ -155,6 +159,7 @@ fun MainLayout(
     alignmentRight: Boolean,
     wallpaperOpacity: Float,
     showNotificationsButton: Boolean,
+    keyboardHack: Boolean,
     gridState: LazyGridState,
 ) {
     ATheme {
@@ -162,12 +167,28 @@ fun MainLayout(
             color = MaterialTheme.colorScheme.surface.copy(alpha = 1F - wallpaperOpacity),
             contentColor = contentColorFor(MaterialTheme.colorScheme.surface),
         ) {
+            val windowInsetsPadding = if (keyboardHack && alignmentBottom) {
+                var maxImeBottomPadding by remember { mutableIntStateOf(0) }
+                val imeBottomPadding = WindowInsets.imeAnimationTarget.getBottom(LocalDensity.current)
+                if (imeBottomPadding > 0) {
+                    maxImeBottomPadding = imeBottomPadding
+                }
+                WindowInsets.imeAnimationTarget.union(WindowInsets(0, 0, 0, maxImeBottomPadding))
+            } else {
+                WindowInsets.imeAnimationTarget
+            }
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
                     .navigationBarsPadding()
-                    .imePadding()
+//                    .imePadding()
+                    // We actually don't want an animation (via imePadding()) because trying to click on an icon that is slowly
+                    // moving to its end position is a horrible experience.
+                    // If only there was a way to start an Activity with the keyboard already open without an animation, that
+                    // would be great, but alas, it doesn't seem to be possible.
+                    // Using the inset padding directly at least places the icons at their end position immediately.
+                    .windowInsetsPadding(windowInsetsPadding),
             ) {
                 var dropdownMenuVisible by remember { mutableStateOf(false) }
                 val onDropdownMenuVisible: (Boolean) -> Unit = { visible ->
@@ -208,7 +229,7 @@ fun MainLayout(
                         if (showRequestContactsPermissionBanner) {
                             RequestPermissionBanner(
                                 messageResId = R.string.main_requestContactsPermissionRationale_text,
-                                onRequestPermissionClick = onRequestContactsPermissionClick
+                                onRequestPermissionClick = onRequestContactsPermissionClick,
                             )
                         }
                         if (showNotificationListenerPermissionBanner) {
@@ -221,7 +242,7 @@ fun MainLayout(
                         if (showRequestContactsPermissionBanner) {
                             RequestPermissionBanner(
                                 messageResId = R.string.main_requestContactsPermissionRationale_text,
-                                onRequestPermissionClick = onRequestContactsPermissionClick
+                                onRequestPermissionClick = onRequestContactsPermissionClick,
                             )
                         }
                         if (showNotificationListenerPermissionBanner) {
@@ -275,7 +296,7 @@ fun MainLayout(
                             .fillMaxSize()
                             .clickable(
                                 indication = null,
-                                interactionSource = remember { MutableInteractionSource() }
+                                interactionSource = remember { MutableInteractionSource() },
                             ) {
                                 dropdownMenuVisible = false
                             },
@@ -305,7 +326,8 @@ private fun ShowNotificationsButton() {
                 } catch (e: Exception) {
                     logw(e, "Can't call expandNotificationsPanel")
                 }
-            }) {
+            },
+        ) {
             Text(text = stringResource(R.string.main_showNotifications))
         }
     }
@@ -346,13 +368,6 @@ private fun SearchTextField(
     isKeyboardWebSearchActive: Boolean,
 ) {
     val focusRequester = remember { FocusRequester() }
-    LaunchedEffect(Unit) {
-        // No comment...
-//        delay(1800)
-        awaitFrame()
-        focusRequester.requestFocus()
-    }
-
     UltraDenseOutlinedTextField(
         modifier = Modifier
             .focusRequester(focusRequester)
@@ -371,7 +386,7 @@ private fun SearchTextField(
                     Row {
                         IconButton(
                             modifier = Modifier.height(32.sp.toDp()),
-                            onClick = { onResetSearchQueryClick() }
+                            onClick = { onResetSearchQueryClick() },
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Clear,
@@ -381,7 +396,7 @@ private fun SearchTextField(
 
                         IconButton(
                             modifier = Modifier.height(32.sp.toDp()),
-                            onClick = { onWebSearchClick() }
+                            onClick = { onWebSearchClick() },
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Search,
@@ -402,6 +417,13 @@ private fun SearchTextField(
             onGo = { onKeyboardActionButtonClick() },
         ),
     )
+
+    LaunchedEffect(Unit) {
+//     No comment...
+//        delay(1800)
+//        awaitFrame()
+        focusRequester.requestFocus()
+    }
 }
 
 @Composable
@@ -421,7 +443,7 @@ private fun ColumnScope.LaunchItemList(
         modifier = Modifier
             .fadingEdges()
             .fillMaxWidth()
-            .weight(1F)
+            .weight(1F),
     ) {
         val originalLayoutDirection = LocalLayoutDirection.current
         CompositionLocalProvider(LocalLayoutDirection provides if (alignmentRight) LayoutDirection.Rtl else LayoutDirection.Ltr) {
@@ -502,7 +524,7 @@ private fun LazyGridScope.mostUsedItemsRow(
 private val deprioritizedColorFilter = ColorFilter.colorMatrix(
     ColorMatrix().apply {
         setToSaturation(0F)
-    }
+    },
 )
 
 @Composable
@@ -565,7 +587,7 @@ private fun LazyGridItemScope.LaunchItemItem(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(48.sp.toDp())
+                        .size(48.sp.toDp()),
                 ) {
                     Image(
                         modifier = Modifier
@@ -623,7 +645,7 @@ private fun LazyGridItemScope.LaunchItemItem(
                                 onLaunchItemAction2(launchItem)
                                 dropdownMenuVisible = false
                             },
-                            text = { Text(stringResource(R.string.main_list_app_appDetails)) }
+                            text = { Text(stringResource(R.string.main_list_app_appDetails)) },
                         )
                         DropdownMenuItem(
                             onClick = {
@@ -641,10 +663,10 @@ private fun LazyGridItemScope.LaunchItemItem(
                                             R.string.main_list_app_unrename
                                         } else {
                                             R.string.main_list_app_rename
-                                        }
-                                    )
+                                        },
+                                    ),
                                 )
-                            }
+                            },
                         )
                         DropdownMenuItem(
                             onClick = {
@@ -658,10 +680,10 @@ private fun LazyGridItemScope.LaunchItemItem(
                                             R.string.main_list_app_unignoreNotifications
                                         } else {
                                             R.string.main_list_app_ignoreNotifications
-                                        }
-                                    )
+                                        },
+                                    ),
                                 )
-                            }
+                            },
                         )
                         DropdownMenuItem(
                             onClick = {
@@ -675,10 +697,10 @@ private fun LazyGridItemScope.LaunchItemItem(
                                             R.string.main_list_app_undeprioritize
                                         } else {
                                             R.string.main_list_app_deprioritize
-                                        }
-                                    )
+                                        },
+                                    ),
                                 )
-                            }
+                            },
                         )
                     }
                 }
@@ -694,7 +716,7 @@ private fun LazyGridItemScope.LaunchItemItem(
                                 onLaunchItemAction2(launchItem)
                                 dropdownMenuVisible = false
                             },
-                            text = { Text(stringResource(R.string.main_list_app_appDetails)) }
+                            text = { Text(stringResource(R.string.main_list_app_appDetails)) },
                         )
                         DropdownMenuItem(
                             onClick = {
@@ -708,10 +730,10 @@ private fun LazyGridItemScope.LaunchItemItem(
                                             R.string.main_list_app_undeprioritize
                                         } else {
                                             R.string.main_list_app_deprioritize
-                                        }
-                                    )
+                                        },
+                                    ),
                                 )
-                            }
+                            },
                         )
                     }
                 }
@@ -738,17 +760,17 @@ private fun LazyGridItemScope.LaunchItemItem(
                                             R.string.main_list_app_unrename
                                         } else {
                                             R.string.main_list_app_rename
-                                        }
-                                    )
+                                        },
+                                    ),
                                 )
-                            }
+                            },
                         )
                         DropdownMenuItem(
                             onClick = {
                                 onLaunchItemAction2(launchItem)
                                 dropdownMenuVisible = false
                             },
-                            text = { Text(stringResource(R.string.main_list_shortcut_deleteShortcut)) }
+                            text = { Text(stringResource(R.string.main_list_shortcut_deleteShortcut)) },
                         )
                     }
                 }
@@ -763,7 +785,7 @@ private fun LazyGridItemScope.LaunchItemItem(
                 onConfirm = { label ->
                     renameDialogVisible = false
                     onRenameLaunchItem(launchItem, label)
-                }
+                },
             )
         }
     }
@@ -815,7 +837,7 @@ private fun RenameDialog(
             TextButton(
                 onClick = {
                     onDismissRequest()
-                }
+                },
             ) {
                 Text(stringResource(R.string.main_renameDialog_cancel))
             }
@@ -854,6 +876,7 @@ private fun MainScreenPreview() {
         alignmentRight = false,
         wallpaperOpacity = .10F,
         showNotificationsButton = true,
+        keyboardHack = true,
         gridState = rememberLazyGridState(),
     )
 }
@@ -865,7 +888,7 @@ private fun fakeApp() = MainViewModel.AppLaunchItem(
     activityName = Random.nextInt().toString(),
     drawable = ContextCompat.getDrawable(
         LocalContext.current,
-        R.mipmap.ic_launcher
+        R.mipmap.ic_launcher,
     )!!,
     isDeprioritized = false,
     notificationRanking = 42,

@@ -467,4 +467,5 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val alignmentRight: StateFlow<Boolean> = settingsRepository.alignmentRight
     val wallpaperOpacity: StateFlow<Float> = settingsRepository.wallpaperOpacity
     val showNotificationsButton: StateFlow<Boolean> = settingsRepository.showNotificationsButton
+    val keyboardHack: StateFlow<Boolean> = settingsRepository.keyboardHack
 }
