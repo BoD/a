@@ -43,7 +43,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.LocalMinimumInteractiveComponentEnforcement
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -59,6 +59,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import org.jraf.android.a.R
 import org.jraf.android.a.ui.theme.ATheme
@@ -119,7 +120,7 @@ fun UltraDenseOutlinedTextField(
             )
         }
         CompositionLocalProvider(
-            LocalMinimumInteractiveComponentEnforcement provides false,
+            LocalMinimumInteractiveComponentSize provides Dp.Unspecified,
             LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant,
         ) {
             trailingIcon?.invoke()

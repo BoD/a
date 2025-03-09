@@ -62,12 +62,22 @@ class LaunchItemRepository(private val context: Context) {
         }
     }
 
-    val counters: Flow<Map<String, Long>> = run {
+    sealed interface Counter {
+        data class ShortAndLongTerm(
+            val longTerm: Long,
+            val combined: Long,
+        ) : Counter
+
+        object Deprioritized : Counter
+    }
+
+    val counters: Flow<Map<String, Counter>> = run {
         val longTermCounters = getCounters(LONG_TERM_HISTORY_SIZE, LONG_TERM_WEIGHT)
         val shortTermCounters = getCounters(SHORT_TERM_HISTORY_SIZE, SHORT_TERM_WEIGHT)
         val deprioritizedItems = getDeprioritizedItems()
         combine(longTermCounters, shortTermCounters, deprioritizedItems) { longTerm, shortTerm, deprioritized ->
-            longTerm.mapValues { it.value + shortTerm.getOrDefault(it.key, 0) } + deprioritized.map { it to -1L }
+            longTerm.mapValues { Counter.ShortAndLongTerm(longTerm = it.value, combined = it.value + shortTerm.getOrDefault(it.key, 0)) } +
+                    deprioritized.map { it to Counter.Deprioritized }
         }
     }
 
