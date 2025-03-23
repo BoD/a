@@ -40,7 +40,9 @@ import org.jraf.android.a.util.logw
 import org.jraf.android.a.util.signalStateFlow
 
 class ShortcutRepository(context: Context) {
-    companion object : Key<ShortcutRepository>
+    companion object : Key<ShortcutRepository> {
+        fun getId(id: String) = "shortcut/${id}"
+    }
 
     private val launcherApps: LauncherApps = context.getSystemService(LauncherApps::class.java)
 

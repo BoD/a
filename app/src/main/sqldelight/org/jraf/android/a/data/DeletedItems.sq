@@ -9,5 +9,8 @@ INSERT OR REPLACE INTO DeletedItems (
     :id
 );
 
+delete:
+DELETE FROM DeletedItems WHERE id = :id;
+
 select:
 SELECT id FROM DeletedItems;

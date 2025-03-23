@@ -29,8 +29,11 @@ import android.content.pm.LauncherApps
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import org.jraf.android.a.R
 import org.jraf.android.a.app
+import org.jraf.android.a.data.LaunchItemRepository
 import org.jraf.android.a.data.ShortcutRepository
 
 class ShortcutAcceptActivity : ComponentActivity() {
@@ -38,7 +41,14 @@ class ShortcutAcceptActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val launcherApps = getSystemService(LauncherApps::class.java)
         val pinItemRequest = launcherApps.getPinItemRequest(intent)
-        pinItemRequest.accept()
+        lifecycleScope.launch {
+            val launchItemRepository = app[LaunchItemRepository]
+            if (launchItemRepository.isShortcutDeleted(pinItemRequest.shortcutInfo!!.id)) {
+                launchItemRepository.undeleteShortcut(pinItemRequest.shortcutInfo!!.id)
+            } else {
+                pinItemRequest.accept()
+            }
+        }
         app[ShortcutRepository].notifyShortcutsChanged()
         Toast.makeText(this, getString(R.string.shortcutAccept_toast_accepted), Toast.LENGTH_SHORT).show()
         finish()

@@ -151,4 +151,16 @@ class LaunchItemRepository(private val context: Context) {
             database.renamedItemsQueries.delete(id)
         }
     }
+
+    suspend fun isShortcutDeleted(id: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            database.deletedItemsQueries.select().executeAsList().contains(ShortcutRepository.getId(id))
+        }
+    }
+
+    suspend fun undeleteShortcut(id: String) {
+        withContext(Dispatchers.IO) {
+            database.deletedItemsQueries.delete(ShortcutRepository.getId(id))
+        }
+    }
 }

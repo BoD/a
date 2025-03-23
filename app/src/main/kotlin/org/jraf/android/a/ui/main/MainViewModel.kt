@@ -70,7 +70,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         const val MOST_USED_ITEMS_COUNT = 5
     }
 
-    private val launchItemRepository = LaunchItemRepository(application)
+    private val launchItemRepository = application[LaunchItemRepository]
     private val appRepository = application[AppRepository]
     private val contactRepository = application[ContactRepository]
     private val shortcutRepository = application[ShortcutRepository]
@@ -404,7 +404,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         override val notificationRanking: Int? = null
 
         companion object {
-            fun getId(id: String) = "shortcut/${id}"
+            fun getId(id: String) = ShortcutRepository.getId(id)
         }
     }
 
