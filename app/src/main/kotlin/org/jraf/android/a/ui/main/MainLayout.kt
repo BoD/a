@@ -27,6 +27,7 @@
 
 package org.jraf.android.a.ui.main
 
+import android.content.ComponentName
 import android.content.res.Configuration
 import android.graphics.drawable.Drawable
 import androidx.annotation.StringRes
@@ -894,6 +895,8 @@ private fun fakeApp() = MainViewModel.AppLaunchItem(
     notificationRanking = 42,
     isRenamed = false,
     ignoreNotifications = false,
+    componentName = ComponentName(Random.nextInt().toString(), Random.nextInt().toString()),
+    user = null,
 )
 
 

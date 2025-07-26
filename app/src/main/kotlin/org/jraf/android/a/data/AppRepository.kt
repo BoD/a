@@ -24,10 +24,12 @@
  */
 package org.jraf.android.a.data
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.graphics.drawable.Drawable
+import android.os.Process;
 import android.os.UserHandle
 import android.util.DisplayMetrics
 import androidx.core.content.ContextCompat
@@ -89,6 +91,8 @@ class AppRepository(context: Context) {
         val packageName: String,
         val activityName: String,
         val drawable: Drawable,
+        val componentName: ComponentName,
+        val user: UserHandle?,
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -100,6 +104,8 @@ class AppRepository(context: Context) {
             if (packageName != other.packageName) return false
             if (activityName != other.activityName) return false
             if (drawable::class.java != other.drawable::class.java) return false
+            if (componentName != other.componentName) return false
+            if (user != other.user) return false
 
             return true
         }
@@ -109,6 +115,10 @@ class AppRepository(context: Context) {
             result = 31 * result + packageName.hashCode()
             result = 31 * result + activityName.hashCode()
             result = 31 * result + drawable::class.java.hashCode()
+            result = 31 * result + componentName::class.java.hashCode()
+            if (user != null) {
+                result = 31 * result + user::class.java.hashCode()
+            }
             return result
         }
     }
@@ -119,21 +129,29 @@ class AppRepository(context: Context) {
     val allApps: Flow<List<App>> = onPackagesChanged.flatMapLatest {
         flow {
             // On the first load, we first emit the apps without their icons to get something as fast as possible
-            val launcherActivityInfos: List<LauncherActivityInfo> = launcherApps.getActivityList(null, launcherApps.profiles[0])
+            val launcherActivityInfos: List<LauncherActivityInfo> = launcherApps.profiles.flatMap { profile ->
+                launcherApps.getActivityList(null, profile)
                 .filter { launcherActivityInfo ->
                     // Don't show ourselves, unless we're in debug mode
                     BuildConfig.DEBUG || launcherActivityInfo.applicationInfo.packageName != context.packageName
                 }
+            }
             if (firstLoad) {
                 firstLoad = false
                 val pendingDrawable = ContextCompat.getDrawable(context, R.drawable.pending)!!
                 emit(
                     launcherActivityInfos.map { launcherActivityInfo ->
+                        var user = launcherActivityInfo.getUser()
+                        if (user.equals(Process.myUserHandle())) {
+                            user = null
+                        }
                         App(
                             label = launcherActivityInfo.label.toString(),
                             packageName = launcherActivityInfo.applicationInfo.packageName,
                             activityName = launcherActivityInfo.name,
-                            drawable = pendingDrawable
+                            drawable = pendingDrawable,
+                            componentName = launcherActivityInfo.getComponentName(),
+                            user = user,
                         )
                     }
                 )
@@ -141,11 +159,17 @@ class AppRepository(context: Context) {
 
             emit(
                 launcherActivityInfos.map { launcherActivityInfo ->
+                    var user = launcherActivityInfo.getUser()
+                    if (user.equals(Process.myUserHandle())) {
+                        user = null
+                    }
                     App(
                         label = launcherActivityInfo.label.toString(),
                         packageName = launcherActivityInfo.applicationInfo.packageName,
                         activityName = launcherActivityInfo.name,
-                        drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH)
+                        drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH),
+                        componentName = launcherActivityInfo.getComponentName(),
+                        user = user,
                     )
                 }
             )

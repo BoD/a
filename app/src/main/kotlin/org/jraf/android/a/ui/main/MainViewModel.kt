@@ -31,6 +31,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Build
+import android.os.UserHandle
 import android.provider.ContactsContract
 import android.provider.Settings
 import androidx.appcompat.content.res.AppCompatResources
@@ -95,7 +96,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             hasNotificationListenerPermission,
         ) { allShortcuts, starredContacts, notificationRankings, (ignoredNotificationsItems, renamedItems), hasNotificationListenerPermission ->
             allApps.map { app ->
-                val id = AppLaunchItem.getId(packageName = app.packageName, activityName = app.activityName)
+                val id = AppLaunchItem.getId(packageName = app.packageName, activityName = app.activityName, user = app.user.toString())
                 val ignoreNotifications = id in ignoredNotificationsItems
                 val label = renamedItems[id]
                 val notificationRanking = if (!hasNotificationListenerPermission || ignoreNotifications) {
@@ -181,7 +182,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         launchItems.isEmpty() && query.isNotBlank()
     }
 
-    val intentToStart = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
+    val intentToStart = MutableSharedFlow<Pair<Intent, UserHandle?>>(extraBufferCapacity = 1)
     val onScrollUp = signalStateFlow()
 
     val shouldShowRequestPermissionRationale = MutableStateFlow(false)
@@ -197,9 +198,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onLaunchItemAction1(launchedItem: LaunchItem) {
         when (launchedItem) {
-            is AppLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppIntent)
-            is ASettingsLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppIntent)
-            is ContactLaunchItem -> intentToStart.tryEmit(launchedItem.viewContactIntent)
+            is AppLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppIntentUser)
+            is ASettingsLaunchItem -> intentToStart.tryEmit(Pair(launchedItem.launchAppIntent, null))
+            is ContactLaunchItem -> intentToStart.tryEmit(Pair(launchedItem.viewContactIntent, null))
             is ShortcutLaunchItem -> shortcutRepository.launchShortcut(launchedItem.shortcut)
         }
         // Don't record the launch if there's a notification, as it's likely the user just wants to read it, that shouldn't count as a "real" launch
@@ -214,10 +215,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onLaunchItemAction2(launchedItem: LaunchItem) {
         when (launchedItem) {
-            is AppLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppDetailsIntent)
-            is ASettingsLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppDetailsIntent)
+            is AppLaunchItem -> intentToStart.tryEmit(Pair(launchedItem.launchAppDetailsIntent, null)) // TODO: launch details for user
+            is ASettingsLaunchItem -> intentToStart.tryEmit(Pair(launchedItem.launchAppDetailsIntent, null))
             is ContactLaunchItem -> {
-                launchedItem.sendSmsIntent?.let { intentToStart.tryEmit(it) }
+                launchedItem.sendSmsIntent?.let { intentToStart.tryEmit(Pair(it, null)) }
 
                 // Long clicking on a contact counts as a primary action
                 viewModelScope.launch {
@@ -267,7 +268,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onWebSearchClick() {
         val intent = Intent(Intent.ACTION_WEB_SEARCH)
             .putExtra(SearchManager.QUERY, searchQuery.value)
-        intentToStart.tryEmit(intent)
+        intentToStart.tryEmit(Pair(intent, null))
     }
 
     fun onKeyboardActionButtonClick() {
@@ -297,20 +298,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         override val label: String,
         private val packageName: String,
         private val activityName: String,
+        private val componentName: ComponentName,
+        private val user: UserHandle?,
         override val drawable: Drawable,
         override val isDeprioritized: Boolean,
         override val isRenamed: Boolean,
         override val ignoreNotifications: Boolean,
         override val notificationRanking: Int?,
     ) : LaunchItem() {
-        override val id = getId(packageName, activityName)
+        override val id = getId(packageName, activityName, user.toString())
 
-        val launchAppIntent: Intent
-            get() = Intent()
-                .apply { setClassName(packageName, activityName) }
+        val launchAppIntentUser: Pair<Intent, UserHandle?>
+            get() =
+                Pair(Intent()
+                .setComponent(componentName)
                 .setAction(Intent.ACTION_MAIN)
                 .addCategory(Intent.CATEGORY_LAUNCHER)
-                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED), user)
+
 
         val launchAppDetailsIntent: Intent
             get() = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
@@ -322,7 +327,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         companion object {
-            fun getId(packageName: String, activityName: String) = "${packageName}/${activityName}"
+            fun getId(packageName: String, activityName: String, user: String) = "${user}/${packageName}/${activityName}"
         }
     }
 
@@ -335,6 +340,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             label = label ?: this.label,
             packageName = packageName,
             activityName = activityName,
+            componentName = componentName,
+            user = user,
             drawable = drawable,
             isDeprioritized = false,
             isRenamed = label != null,
@@ -443,7 +450,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onRequestNotificationListenerPermissionClick() {
         settingsRepository.hasSeenRequestNotificationListenerPermissionBanner.value = true
         intentToStart.tryEmit(
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Pair(
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
                     .putExtra(
                         Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
@@ -452,6 +460,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } else {
                 Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
             },
+            null)
         )
     }
 

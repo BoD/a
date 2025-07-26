@@ -28,6 +28,7 @@ package org.jraf.android.a.ui.main
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -52,6 +53,7 @@ import org.jraf.android.a.util.logd
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
+    private var launcherApps: LauncherApps? = null
 
     private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         logd("Permission granted: $granted")
@@ -61,6 +63,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        addOnContextAvailableListener({ context -> launcherApps = context.getSystemService(LauncherApps::class.java) })
         super.onCreate(savedInstanceState)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -74,8 +77,12 @@ class MainActivity : ComponentActivity() {
         }
 
         lifecycleScope.launch {
-            viewModel.intentToStart.collect { intent ->
-                startActivity(intent)
+            viewModel.intentToStart.collect { (intent, user) ->
+                if (user == null) {
+                    startActivity(intent)
+                } else {
+                    launcherApps?.startMainActivity(intent.getComponent(), user, intent.getSourceBounds(), null);
+                }
             }
         }
 
