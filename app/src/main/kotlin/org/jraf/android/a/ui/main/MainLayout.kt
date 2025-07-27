@@ -885,8 +885,6 @@ private fun MainScreenPreview() {
 @Composable
 private fun fakeApp() = MainViewModel.AppLaunchItem(
     label = "My App" + " " + Random.nextInt(1, 4),
-    packageName = Random.nextInt().toString(),
-    activityName = Random.nextInt().toString(),
     drawable = ContextCompat.getDrawable(
         LocalContext.current,
         R.mipmap.ic_launcher,

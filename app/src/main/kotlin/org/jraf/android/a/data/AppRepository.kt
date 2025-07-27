@@ -88,8 +88,6 @@ class AppRepository(context: Context) {
 
     data class App(
         val label: String,
-        val packageName: String,
-        val activityName: String,
         val drawable: Drawable,
         val componentName: ComponentName,
         val user: UserHandle?,
@@ -101,8 +99,6 @@ class AppRepository(context: Context) {
             other as App
 
             if (label != other.label) return false
-            if (packageName != other.packageName) return false
-            if (activityName != other.activityName) return false
             if (drawable::class.java != other.drawable::class.java) return false
             if (componentName != other.componentName) return false
             if (user != other.user) return false
@@ -112,8 +108,6 @@ class AppRepository(context: Context) {
 
         override fun hashCode(): Int {
             var result = label.hashCode()
-            result = 31 * result + packageName.hashCode()
-            result = 31 * result + activityName.hashCode()
             result = 31 * result + drawable::class.java.hashCode()
             result = 31 * result + componentName::class.java.hashCode()
             if (user != null) {
@@ -147,8 +141,6 @@ class AppRepository(context: Context) {
                         }
                         App(
                             label = launcherActivityInfo.label.toString(),
-                            packageName = launcherActivityInfo.applicationInfo.packageName,
-                            activityName = launcherActivityInfo.name,
                             drawable = pendingDrawable,
                             componentName = launcherActivityInfo.getComponentName(),
                             user = user,
@@ -165,8 +157,6 @@ class AppRepository(context: Context) {
                     }
                     App(
                         label = launcherActivityInfo.label.toString(),
-                        packageName = launcherActivityInfo.applicationInfo.packageName,
-                        activityName = launcherActivityInfo.name,
                         drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH),
                         componentName = launcherActivityInfo.getComponentName(),
                         user = user,

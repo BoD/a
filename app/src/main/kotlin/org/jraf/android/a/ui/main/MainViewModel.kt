@@ -83,7 +83,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val allLaunchItems: Flow<List<LaunchItem>> = appRepository.allApps.flatMapLatest { allApps ->
-        val allShortcutsFlow = shortcutRepository.getAllShortcuts(allApps.map { it.packageName })
+        val allShortcutsFlow = shortcutRepository.getAllShortcuts(allApps.map { it.componentName.getPackageName() })
         combine(
             allShortcutsFlow,
             contactRepository.starredContacts,
@@ -96,13 +96,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             hasNotificationListenerPermission,
         ) { allShortcuts, starredContacts, notificationRankings, (ignoredNotificationsItems, renamedItems), hasNotificationListenerPermission ->
             allApps.map { app ->
-                val id = AppLaunchItem.getId(packageName = app.packageName, activityName = app.activityName, user = app.user.toString())
+                val id = AppLaunchItem.getId(component = app.componentName.toString(), user = app.user.toString())
                 val ignoreNotifications = id in ignoredNotificationsItems
                 val label = renamedItems[id]
                 val notificationRanking = if (!hasNotificationListenerPermission || ignoreNotifications) {
                     null
                 } else {
-                    notificationRankings[app.packageName]
+                    notificationRankings[app.componentName.getPackageName()]
                 }
                 app.toAppLaunchItem(
                     ignoreNotifications = ignoreNotifications,
@@ -296,8 +296,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     data class AppLaunchItem(
         override val label: String,
-        private val packageName: String,
-        private val activityName: String,
         private val componentName: ComponentName,
         private val user: UserHandle?,
         override val drawable: Drawable,
@@ -306,7 +304,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         override val ignoreNotifications: Boolean,
         override val notificationRanking: Int?,
     ) : LaunchItem() {
-        override val id = getId(packageName, activityName, user.toString())
+        override val id = getId(componentName.toString(), user.toString())
 
         val launchAppIntentUser: Pair<Intent, UserHandle?>
             get() =
@@ -319,15 +317,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         val launchAppDetailsIntent: Intent
             get() = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                .setData("package:$packageName".toUri())
+                .setData("package:${componentName.getPackageName()}".toUri())
 
         override fun matchesFilter(query: String): Boolean {
             return label.containsIgnoreAccents(query) ||
-                    packageName.contains(query, true)
+                    componentName.getPackageName().contains(query, true)
         }
 
         companion object {
-            fun getId(packageName: String, activityName: String, user: String) = "${user}/${packageName}/${activityName}"
+            fun getId(component: String, user: String) = "${user}/${component}"
         }
     }
 
@@ -338,8 +336,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ): AppLaunchItem {
         return AppLaunchItem(
             label = label ?: this.label,
-            packageName = packageName,
-            activityName = activityName,
             componentName = componentName,
             user = user,
             drawable = drawable,
