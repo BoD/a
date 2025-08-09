@@ -14,6 +14,7 @@
     <string name="main_list_app_unignoreNotifications">Désignorer les notifications</string>
     <string name="main_list_app_rename">Renommer</string>
     <string name="main_list_app_unrename">Réinitialiser le nom</string>
+    <string name="main_list_app_privateSpaceApp">App privée</string>
 
     <string name="main_list_shortcut_deleteShortcut">Supprimer le raccourci</string>
 

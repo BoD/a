@@ -306,6 +306,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         override val notificationRanking: Int?,
     ) : LaunchItem() {
         override val id = getId(componentName, user)
+        val isPrivateSpaceApp: Boolean = user != Process.myUserHandle()
 
         val launchAppDestination: Destination
             get() = Destination(
@@ -331,11 +332,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         companion object {
             fun getId(componentName: ComponentName, user: UserHandle): String {
-                return if (user == Process.myUserHandle()) {
-                    // Keep the old format without the user when it's the current process' user
-                    "${componentName.packageName}/${componentName.className}"
-                } else {
+                val isPrivateSpaceApp = user != Process.myUserHandle()
+                return if (isPrivateSpaceApp) {
                     "${componentName.packageName}/${componentName.className}/$user"
+                } else {
+                    // Keep the old format without the user when it's the current process' user (i.e. NOT a private space app)
+                    "${componentName.packageName}/${componentName.className}"
                 }
             }
         }

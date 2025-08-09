@@ -15,6 +15,7 @@
     <string name="main_list_app_unignoreNotifications">Unignore notifications</string>
     <string name="main_list_app_rename">Rename</string>
     <string name="main_list_app_unrename">Reset name</string>
+    <string name="main_list_app_privateSpaceApp">Private space app</string>
 
     <string name="main_list_shortcut_deleteShortcut">Delete shortcut</string>
 
