@@ -25,6 +25,7 @@
 package org.jraf.android.a.data
 
 import android.content.Context
+import android.os.UserHandle
 import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,13 +34,18 @@ import org.jraf.android.a.util.Key
 class NotificationRepository(private val context: Context) {
     companion object : Key<NotificationRepository>
 
-    private val _notificationRankings: MutableStateFlow<Map<String, Int>> = MutableStateFlow(emptyMap())
-    val notificationRankings: Flow<Map<String, Int>> = _notificationRankings
+    private val _notificationRankings: MutableStateFlow<Map<NotificationKey, Int>> = MutableStateFlow(emptyMap())
+    val notificationRankings: Flow<Map<NotificationKey, Int>> = _notificationRankings
 
-    fun updateNotificationRankings(notificationRankings: Map<String, Int>) {
+    fun updateNotificationRankings(notificationRankings: Map<NotificationKey, Int>) {
         _notificationRankings.value = notificationRankings
     }
 
     fun hasNotificationListenerPermission(): Boolean =
         NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+
+    data class NotificationKey(
+        val packageName: String,
+        val user: UserHandle,
+    )
 }

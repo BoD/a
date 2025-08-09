@@ -144,7 +144,12 @@ class NotificationListenerService : NotificationListenerService() {
             // associate() will keep the last value in case of a collision, so put the highest (well, lowest, since rank 0 is the highest rank) ranking at the end of the list
             .sortedByDescending { statusBarNotification -> summaryNotificationsSortedByRanking.indexOf(statusBarNotification) }
             .associate { statusBarNotification ->
-                statusBarNotification.packageName to summaryNotificationsSortedByRanking.indexOf(statusBarNotification)
+                NotificationRepository.NotificationKey(
+                    packageName = statusBarNotification.packageName,
+                    user = statusBarNotification.user,
+                ) to summaryNotificationsSortedByRanking.indexOf(
+                    statusBarNotification,
+                )
             }
         app[NotificationRepository].updateNotificationRankings(notificationRankings)
     }

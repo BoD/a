@@ -103,7 +103,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val notificationRanking = if (!hasNotificationListenerPermission || ignoreNotifications) {
                     null
                 } else {
-                    notificationRankings[app.componentName.packageName]
+                    notificationRankings[
+                        NotificationRepository.NotificationKey(
+                            packageName = app.componentName.packageName,
+                            user = app.user,
+                        ),
+                    ]
                 }
                 app.toAppLaunchItem(
                     ignoreNotifications = ignoreNotifications,
