@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinAndroid)
@@ -8,12 +10,12 @@ plugins {
 android {
     namespace = "org.jraf.android.a"
 
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "a.a.a.a"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 26
         versionName = "1.16.1"
     }
@@ -50,9 +52,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
-        freeCompilerArgs = listOf("-Xcontext-receivers")
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+            freeCompilerArgs = listOf("-Xcontext-receivers")
+        }
     }
 }
 
