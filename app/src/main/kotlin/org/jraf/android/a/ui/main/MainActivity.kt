@@ -41,6 +41,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.getSystemService
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.postDelayed
@@ -53,7 +54,6 @@ import org.jraf.android.a.util.logd
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
-    private var launcherApps: LauncherApps? = null
 
     private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         logd("Permission granted: $granted")
@@ -63,7 +63,6 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        addOnContextAvailableListener({ context -> launcherApps = context.getSystemService(LauncherApps::class.java) })
         super.onCreate(savedInstanceState)
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -77,11 +76,11 @@ class MainActivity : ComponentActivity() {
         }
 
         lifecycleScope.launch {
-            viewModel.intentToStart.collect { (intent, user) ->
+            viewModel.destination.collect { (intent, user) ->
                 if (user == null) {
                     startActivity(intent)
                 } else {
-                    launcherApps?.startMainActivity(intent.getComponent(), user, intent.getSourceBounds(), null);
+                    getSystemService<LauncherApps>()!!.startMainActivity(intent.component, user, intent.sourceBounds, null);
                 }
             }
         }

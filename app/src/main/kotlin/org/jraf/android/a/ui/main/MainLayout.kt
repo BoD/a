@@ -30,6 +30,7 @@ package org.jraf.android.a.ui.main
 import android.content.ComponentName
 import android.content.res.Configuration
 import android.graphics.drawable.Drawable
+import android.os.Process
 import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -894,7 +895,7 @@ private fun fakeApp() = MainViewModel.AppLaunchItem(
     isRenamed = false,
     ignoreNotifications = false,
     componentName = ComponentName(Random.nextInt().toString(), Random.nextInt().toString()),
-    user = null,
+    user = Process.myUserHandle(),
 )
 
 

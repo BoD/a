@@ -29,7 +29,6 @@ import android.content.Context
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.graphics.drawable.Drawable
-import android.os.Process;
 import android.os.UserHandle
 import android.util.DisplayMetrics
 import androidx.core.content.ContextCompat
@@ -71,7 +70,7 @@ class AppRepository(context: Context) {
                 override fun onPackagesAvailable(
                     packageNames: Array<out String>?,
                     user: UserHandle?,
-                    replacing: Boolean
+                    replacing: Boolean,
                 ) {
                     onPackagesChanged()
                 }
@@ -79,43 +78,20 @@ class AppRepository(context: Context) {
                 override fun onPackagesUnavailable(
                     packageNames: Array<out String>?,
                     user: UserHandle?,
-                    replacing: Boolean
+                    replacing: Boolean,
                 ) {
                     onPackagesChanged()
                 }
-            })
+            },
+        )
     }
 
     data class App(
         val label: String,
         val drawable: Drawable,
         val componentName: ComponentName,
-        val user: UserHandle?,
-    ) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as App
-
-            if (label != other.label) return false
-            if (drawable::class.java != other.drawable::class.java) return false
-            if (componentName != other.componentName) return false
-            if (user != other.user) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = label.hashCode()
-            result = 31 * result + drawable::class.java.hashCode()
-            result = 31 * result + componentName::class.java.hashCode()
-            if (user != null) {
-                result = 31 * result + user::class.java.hashCode()
-            }
-            return result
-        }
-    }
+        val user: UserHandle,
+    )
 
     private var firstLoad = true
 
@@ -125,43 +101,35 @@ class AppRepository(context: Context) {
             // On the first load, we first emit the apps without their icons to get something as fast as possible
             val launcherActivityInfos: List<LauncherActivityInfo> = launcherApps.profiles.flatMap { profile ->
                 launcherApps.getActivityList(null, profile)
-                .filter { launcherActivityInfo ->
-                    // Don't show ourselves, unless we're in debug mode
-                    BuildConfig.DEBUG || launcherActivityInfo.applicationInfo.packageName != context.packageName
-                }
+                    .filter { launcherActivityInfo ->
+                        // Don't show ourselves, unless we're in debug mode
+                        BuildConfig.DEBUG || launcherActivityInfo.applicationInfo.packageName != context.packageName
+                    }
             }
             if (firstLoad) {
                 firstLoad = false
                 val pendingDrawable = ContextCompat.getDrawable(context, R.drawable.pending)!!
                 emit(
                     launcherActivityInfos.map { launcherActivityInfo ->
-                        var user = launcherActivityInfo.getUser()
-                        if (user.equals(Process.myUserHandle())) {
-                            user = null
-                        }
                         App(
                             label = launcherActivityInfo.label.toString(),
                             drawable = pendingDrawable,
                             componentName = launcherActivityInfo.getComponentName(),
-                            user = user,
+                            user = launcherActivityInfo.user,
                         )
-                    }
+                    },
                 )
             }
 
             emit(
                 launcherActivityInfos.map { launcherActivityInfo ->
-                    var user = launcherActivityInfo.getUser()
-                    if (user.equals(Process.myUserHandle())) {
-                        user = null
-                    }
                     App(
                         label = launcherActivityInfo.label.toString(),
                         drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH),
                         componentName = launcherActivityInfo.getComponentName(),
-                        user = user,
+                        user = launcherActivityInfo.user,
                     )
-                }
+                },
             )
         }
     }

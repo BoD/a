@@ -31,6 +31,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Build
+import android.os.Process
 import android.os.UserHandle
 import android.provider.ContactsContract
 import android.provider.Settings
@@ -83,7 +84,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val allLaunchItems: Flow<List<LaunchItem>> = appRepository.allApps.flatMapLatest { allApps ->
-        val allShortcutsFlow = shortcutRepository.getAllShortcuts(allApps.map { it.componentName.getPackageName() })
+        val allShortcutsFlow = shortcutRepository.getAllShortcuts(allApps.map { it.componentName.packageName })
         combine(
             allShortcutsFlow,
             contactRepository.starredContacts,
@@ -96,13 +97,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             hasNotificationListenerPermission,
         ) { allShortcuts, starredContacts, notificationRankings, (ignoredNotificationsItems, renamedItems), hasNotificationListenerPermission ->
             allApps.map { app ->
-                val id = AppLaunchItem.getId(component = app.componentName.toString(), user = app.user.toString())
+                val id = AppLaunchItem.getId(componentName = app.componentName, user = app.user)
                 val ignoreNotifications = id in ignoredNotificationsItems
                 val label = renamedItems[id]
                 val notificationRanking = if (!hasNotificationListenerPermission || ignoreNotifications) {
                     null
                 } else {
-                    notificationRankings[app.componentName.getPackageName()]
+                    notificationRankings[app.componentName.packageName]
                 }
                 app.toAppLaunchItem(
                     ignoreNotifications = ignoreNotifications,
@@ -182,7 +183,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         launchItems.isEmpty() && query.isNotBlank()
     }
 
-    val intentToStart = MutableSharedFlow<Pair<Intent, UserHandle?>>(extraBufferCapacity = 1)
+    val destination = MutableSharedFlow<Destination>(extraBufferCapacity = 1)
     val onScrollUp = signalStateFlow()
 
     val shouldShowRequestPermissionRationale = MutableStateFlow(false)
@@ -198,9 +199,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onLaunchItemAction1(launchedItem: LaunchItem) {
         when (launchedItem) {
-            is AppLaunchItem -> intentToStart.tryEmit(launchedItem.launchAppIntentUser)
-            is ASettingsLaunchItem -> intentToStart.tryEmit(Pair(launchedItem.launchAppIntent, null))
-            is ContactLaunchItem -> intentToStart.tryEmit(Pair(launchedItem.viewContactIntent, null))
+            is AppLaunchItem -> destination.tryEmit(launchedItem.launchAppDestination)
+            is ASettingsLaunchItem -> destination.tryEmit(launchedItem.launchAppDestination)
+            is ContactLaunchItem -> destination.tryEmit(launchedItem.viewContactDestination)
             is ShortcutLaunchItem -> shortcutRepository.launchShortcut(launchedItem.shortcut)
         }
         // Don't record the launch if there's a notification, as it's likely the user just wants to read it, that shouldn't count as a "real" launch
@@ -215,10 +216,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onLaunchItemAction2(launchedItem: LaunchItem) {
         when (launchedItem) {
-            is AppLaunchItem -> intentToStart.tryEmit(Pair(launchedItem.launchAppDetailsIntent, null)) // TODO: launch details for user
-            is ASettingsLaunchItem -> intentToStart.tryEmit(Pair(launchedItem.launchAppDetailsIntent, null))
+            is AppLaunchItem -> destination.tryEmit(launchedItem.launchAppDetailsDestination)
+            is ASettingsLaunchItem -> destination.tryEmit(launchedItem.launchAppDetailsDestination)
             is ContactLaunchItem -> {
-                launchedItem.sendSmsIntent?.let { intentToStart.tryEmit(Pair(it, null)) }
+                launchedItem.sendSmsDestination?.let { destination.tryEmit(it) }
 
                 // Long clicking on a contact counts as a primary action
                 viewModelScope.launch {
@@ -268,7 +269,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onWebSearchClick() {
         val intent = Intent(Intent.ACTION_WEB_SEARCH)
             .putExtra(SearchManager.QUERY, searchQuery.value)
-        intentToStart.tryEmit(Pair(intent, null))
+        destination.tryEmit(Destination(intent))
     }
 
     fun onKeyboardActionButtonClick() {
@@ -297,35 +298,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     data class AppLaunchItem(
         override val label: String,
         private val componentName: ComponentName,
-        private val user: UserHandle?,
+        private val user: UserHandle,
         override val drawable: Drawable,
         override val isDeprioritized: Boolean,
         override val isRenamed: Boolean,
         override val ignoreNotifications: Boolean,
         override val notificationRanking: Int?,
     ) : LaunchItem() {
-        override val id = getId(componentName.toString(), user.toString())
+        override val id = getId(componentName, user)
 
-        val launchAppIntentUser: Pair<Intent, UserHandle?>
-            get() =
-                Pair(Intent()
-                .setComponent(componentName)
-                .setAction(Intent.ACTION_MAIN)
-                .addCategory(Intent.CATEGORY_LAUNCHER)
-                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED), user)
+        val launchAppDestination: Destination
+            get() = Destination(
+                intent = Intent()
+                    .setComponent(componentName)
+                    .setAction(Intent.ACTION_MAIN)
+                    .addCategory(Intent.CATEGORY_LAUNCHER)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED),
+                user = user,
+            )
 
-
-        val launchAppDetailsIntent: Intent
-            get() = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                .setData("package:${componentName.getPackageName()}".toUri())
+        val launchAppDetailsDestination: Destination
+            get() = Destination(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData("package:${componentName.packageName}".toUri()),
+                // TODO When user is not the current process' user, is there an intent to go to the Private Space settings?
+            )
 
         override fun matchesFilter(query: String): Boolean {
             return label.containsIgnoreAccents(query) ||
-                    componentName.getPackageName().contains(query, true)
+                    componentName.packageName.contains(query, true)
         }
 
         companion object {
-            fun getId(component: String, user: String) = "${user}/${component}"
+            fun getId(componentName: ComponentName, user: UserHandle): String {
+                return if (user == Process.myUserHandle()) {
+                    // Keep the old format without the user when it's the current process' user
+                    "${componentName.packageName}/${componentName.className}"
+                } else {
+                    "${componentName.packageName}/${componentName.className}/$user"
+                }
+            }
         }
     }
 
@@ -355,14 +367,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) : LaunchItem() {
         override val id = lookupKey
 
-        val viewContactIntent: Intent
-            get() = Intent(Intent.ACTION_VIEW)
-                .setData(ContactsContract.Contacts.getLookupUri(contactId, lookupKey))
+        val viewContactDestination: Destination
+            get() = Destination(
+                Intent(Intent.ACTION_VIEW)
+                    .setData(ContactsContract.Contacts.getLookupUri(contactId, lookupKey)),
+            )
 
-        val sendSmsIntent: Intent?
+        val sendSmsDestination: Destination?
             get() = phoneNumber?.let {
-                Intent(Intent.ACTION_SENDTO)
-                    .setData("smsto:$it".toUri())
+                Destination(
+                    Intent(Intent.ACTION_SENDTO)
+                        .setData("smsto:$it".toUri()),
+                )
             }
 
         override fun matchesFilter(query: String): Boolean {
@@ -421,9 +437,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         override val ignoreNotifications: Boolean = false
         override val notificationRanking: Int? = null
         override val isRenamed: Boolean = false
-        val launchAppIntent: Intent = Intent(context, SettingsActivity::class.java)
-        val launchAppDetailsIntent: Intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-            .setData("package:${context.packageName}".toUri())
+        val launchAppDestination: Destination = Destination(Intent(context, SettingsActivity::class.java))
+        val launchAppDetailsDestination: Destination = Destination(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                .setData("package:${context.packageName}".toUri()),
+        )
 
         override fun matchesFilter(query: String): Boolean {
             return label.containsIgnoreAccents(query)
@@ -445,18 +463,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onRequestNotificationListenerPermissionClick() {
         settingsRepository.hasSeenRequestNotificationListenerPermissionBanner.value = true
-        intentToStart.tryEmit(
-            Pair(
+        destination.tryEmit(
+            Destination(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
-                    .putExtra(
-                        Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
-                        ComponentName(getApplication(), NotificationListenerService::class.java).flattenToString(),
-                    )
-            } else {
-                Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-            },
-            null)
+                    Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+                        .putExtra(
+                            Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
+                            ComponentName(getApplication(), NotificationListenerService::class.java).flattenToString(),
+                        )
+                } else {
+                    Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                },
+            ),
         )
     }
 
@@ -473,4 +491,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val wallpaperOpacity: StateFlow<Float> = settingsRepository.wallpaperOpacity
     val showNotificationsButton: StateFlow<Boolean> = settingsRepository.showNotificationsButton
     val keyboardHack: StateFlow<Boolean> = settingsRepository.keyboardHack
+
+    data class Destination(val intent: Intent, val user: UserHandle? = null)
 }
