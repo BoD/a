@@ -304,6 +304,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         override val label: String,
         private val componentName: ComponentName,
         private val user: UserHandle,
+        private val isPrivateSpaceLocked: Boolean,
         override val drawable: Drawable,
         override val isDeprioritized: Boolean,
         override val isRenamed: Boolean,
@@ -311,7 +312,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         override val notificationRanking: Int?,
     ) : LaunchItem() {
         override val id = getId(componentName, user)
-        val isPrivateSpaceApp: Boolean = user != Process.myUserHandle()
+        val privateSpace: PrivateSpace = when {
+            user == Process.myUserHandle() -> PrivateSpace.NotPrivateSpace
+            isPrivateSpaceLocked -> PrivateSpace.PrivateSpaceLocked
+            else -> PrivateSpace.PrivateSpaceUnlocked
+        }
 
         val launchAppDestination: Destination
             get() = Destination(
@@ -346,6 +351,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
+
+        enum class PrivateSpace {
+            NotPrivateSpace,
+            PrivateSpaceLocked,
+            PrivateSpaceUnlocked,
+        }
     }
 
     private fun AppRepository.App.toAppLaunchItem(
@@ -357,6 +368,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             label = label ?: this.label,
             componentName = componentName,
             user = user,
+            isPrivateSpaceLocked = isPrivateSpaceLocked,
             drawable = drawable,
             isDeprioritized = false,
             isRenamed = label != null,

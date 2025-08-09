@@ -57,3 +57,25 @@ fun ATheme(
         content = content,
     )
 }
+
+class ATheme {
+    class Colors {
+        companion object {
+            val Unlocked: Color
+                @Composable
+                get() = if (isSystemInDarkTheme()) {
+                    Color(0xFF7CB342)
+                } else {
+                    Color(0xFF388E3C)
+                }
+
+            val Locked: Color
+                @Composable
+                get() = if (isSystemInDarkTheme()) {
+                    Color(0xFFFB8C00)
+                } else {
+                    Color(0xFFF57F17)
+                }
+        }
+    }
+}

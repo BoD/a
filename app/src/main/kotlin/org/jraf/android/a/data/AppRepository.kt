@@ -24,14 +24,20 @@
  */
 package org.jraf.android.a.data
 
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.UserHandle
+import android.os.UserManager
 import android.util.DisplayMetrics
 import androidx.core.content.ContextCompat
+import androidx.core.content.getSystemService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -48,7 +54,9 @@ import org.jraf.android.a.util.signalStateFlow
 class AppRepository(context: Context) {
     companion object : Key<AppRepository>
 
-    private val launcherApps: LauncherApps = context.getSystemService(LauncherApps::class.java)
+    private val launcherApps: LauncherApps = context.getSystemService()!!
+    private val userManager: UserManager = context.getSystemService<UserManager>()!!
+
 
     private val onPackagesChanged = signalStateFlow()
 
@@ -84,6 +92,26 @@ class AppRepository(context: Context) {
                 }
             },
         )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            val broadcastReceiver = object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    onPackagesChanged()
+                }
+            }
+            ContextCompat.registerReceiver(
+                context,
+                broadcastReceiver,
+                IntentFilter(Intent.ACTION_PROFILE_AVAILABLE),
+                ContextCompat.RECEIVER_EXPORTED,
+            )
+            ContextCompat.registerReceiver(
+                context,
+                broadcastReceiver,
+                IntentFilter(Intent.ACTION_PROFILE_UNAVAILABLE),
+                ContextCompat.RECEIVER_EXPORTED,
+            )
+        }
     }
 
     data class App(
@@ -91,6 +119,7 @@ class AppRepository(context: Context) {
         val drawable: Drawable,
         val componentName: ComponentName,
         val user: UserHandle,
+        val isPrivateSpaceLocked: Boolean,
     )
 
     private var firstLoad = true
@@ -116,6 +145,7 @@ class AppRepository(context: Context) {
                             drawable = pendingDrawable,
                             componentName = launcherActivityInfo.getComponentName(),
                             user = launcherActivityInfo.user,
+                            isPrivateSpaceLocked = userManager.isQuietModeEnabled(launcherActivityInfo.user),
                         )
                     },
                 )
@@ -128,6 +158,7 @@ class AppRepository(context: Context) {
                         drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH),
                         componentName = launcherActivityInfo.getComponentName(),
                         user = launcherActivityInfo.user,
+                        isPrivateSpaceLocked = userManager.isQuietModeEnabled(launcherActivityInfo.user),
                     )
                 },
             )

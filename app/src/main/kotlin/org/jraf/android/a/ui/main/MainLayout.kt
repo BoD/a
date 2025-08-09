@@ -627,7 +627,7 @@ private fun LazyGridItemScope.LaunchItemItem(
                                 .background(Color.Red),
                         )
                     }
-                    if (launchItem is AppLaunchItem && launchItem.isPrivateSpaceApp) {
+                    if (launchItem is AppLaunchItem && launchItem.privateSpace != AppLaunchItem.PrivateSpace.NotPrivateSpace) {
                         Icon(
                             modifier = Modifier
                                 .align(Alignment.BottomEnd)
@@ -636,7 +636,12 @@ private fun LazyGridItemScope.LaunchItemItem(
                                 .padding(2.sp.toDp())
                                 .size(16.sp.toDp()),
                             painter = painterResource(R.drawable.outline_key_24),
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            tint = when (launchItem.privateSpace) {
+                                AppLaunchItem.PrivateSpace.PrivateSpaceLocked -> ATheme.Colors.Locked
+                                AppLaunchItem.PrivateSpace.PrivateSpaceUnlocked -> ATheme.Colors.Unlocked
+                                else -> Color.Unspecified
+
+                            },
                             contentDescription = stringResource(R.string.main_list_app_privateSpaceApp),
                         )
                     }
@@ -915,6 +920,7 @@ private fun fakeApp() = AppLaunchItem(
     ignoreNotifications = false,
     componentName = ComponentName(Random.nextInt().toString(), Random.nextInt().toString()),
     user = Process.myUserHandle(),
+    isPrivateSpaceLocked = false,
 )
 
 
