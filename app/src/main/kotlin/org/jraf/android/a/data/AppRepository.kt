@@ -24,13 +24,20 @@
  */
 package org.jraf.android.a.data
 
+import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.UserHandle
+import android.os.UserManager
 import android.util.DisplayMetrics
 import androidx.core.content.ContextCompat
+import androidx.core.content.getSystemService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -47,7 +54,9 @@ import org.jraf.android.a.util.signalStateFlow
 class AppRepository(context: Context) {
     companion object : Key<AppRepository>
 
-    private val launcherApps: LauncherApps = context.getSystemService(LauncherApps::class.java)
+    private val launcherApps: LauncherApps = context.getSystemService()!!
+    private val userManager: UserManager = context.getSystemService<UserManager>()!!
+
 
     private val onPackagesChanged = signalStateFlow()
 
@@ -69,7 +78,7 @@ class AppRepository(context: Context) {
                 override fun onPackagesAvailable(
                     packageNames: Array<out String>?,
                     user: UserHandle?,
-                    replacing: Boolean
+                    replacing: Boolean,
                 ) {
                     onPackagesChanged()
                 }
@@ -77,41 +86,41 @@ class AppRepository(context: Context) {
                 override fun onPackagesUnavailable(
                     packageNames: Array<out String>?,
                     user: UserHandle?,
-                    replacing: Boolean
+                    replacing: Boolean,
                 ) {
                     onPackagesChanged()
                 }
-            })
+            },
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            val broadcastReceiver = object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    onPackagesChanged()
+                }
+            }
+            ContextCompat.registerReceiver(
+                context,
+                broadcastReceiver,
+                IntentFilter(Intent.ACTION_PROFILE_AVAILABLE),
+                ContextCompat.RECEIVER_EXPORTED,
+            )
+            ContextCompat.registerReceiver(
+                context,
+                broadcastReceiver,
+                IntentFilter(Intent.ACTION_PROFILE_UNAVAILABLE),
+                ContextCompat.RECEIVER_EXPORTED,
+            )
+        }
     }
 
     data class App(
         val label: String,
-        val packageName: String,
-        val activityName: String,
         val drawable: Drawable,
-    ) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as App
-
-            if (label != other.label) return false
-            if (packageName != other.packageName) return false
-            if (activityName != other.activityName) return false
-            if (drawable::class.java != other.drawable::class.java) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = label.hashCode()
-            result = 31 * result + packageName.hashCode()
-            result = 31 * result + activityName.hashCode()
-            result = 31 * result + drawable::class.java.hashCode()
-            return result
-        }
-    }
+        val componentName: ComponentName,
+        val user: UserHandle,
+        val isPrivateSpaceLocked: Boolean,
+    )
 
     private var firstLoad = true
 
@@ -119,11 +128,13 @@ class AppRepository(context: Context) {
     val allApps: Flow<List<App>> = onPackagesChanged.flatMapLatest {
         flow {
             // On the first load, we first emit the apps without their icons to get something as fast as possible
-            val launcherActivityInfos: List<LauncherActivityInfo> = launcherApps.getActivityList(null, launcherApps.profiles[0])
-                .filter { launcherActivityInfo ->
-                    // Don't show ourselves, unless we're in debug mode
-                    BuildConfig.DEBUG || launcherActivityInfo.applicationInfo.packageName != context.packageName
-                }
+            val launcherActivityInfos: List<LauncherActivityInfo> = launcherApps.profiles.flatMap { profile ->
+                launcherApps.getActivityList(null, profile)
+                    .filter { launcherActivityInfo ->
+                        // Don't show ourselves, unless we're in debug mode
+                        BuildConfig.DEBUG || launcherActivityInfo.applicationInfo.packageName != context.packageName
+                    }
+            }
             if (firstLoad) {
                 firstLoad = false
                 val pendingDrawable = ContextCompat.getDrawable(context, R.drawable.pending)!!
@@ -131,11 +142,12 @@ class AppRepository(context: Context) {
                     launcherActivityInfos.map { launcherActivityInfo ->
                         App(
                             label = launcherActivityInfo.label.toString(),
-                            packageName = launcherActivityInfo.applicationInfo.packageName,
-                            activityName = launcherActivityInfo.name,
-                            drawable = pendingDrawable
+                            drawable = pendingDrawable,
+                            componentName = launcherActivityInfo.getComponentName(),
+                            user = launcherActivityInfo.user,
+                            isPrivateSpaceLocked = userManager.isQuietModeEnabled(launcherActivityInfo.user),
                         )
-                    }
+                    },
                 )
             }
 
@@ -143,11 +155,12 @@ class AppRepository(context: Context) {
                 launcherActivityInfos.map { launcherActivityInfo ->
                     App(
                         label = launcherActivityInfo.label.toString(),
-                        packageName = launcherActivityInfo.applicationInfo.packageName,
-                        activityName = launcherActivityInfo.name,
-                        drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH)
+                        drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH),
+                        componentName = launcherActivityInfo.getComponentName(),
+                        user = launcherActivityInfo.user,
+                        isPrivateSpaceLocked = userManager.isQuietModeEnabled(launcherActivityInfo.user),
                     )
-                }
+                },
             )
         }
     }

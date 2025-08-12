@@ -27,8 +27,10 @@
 
 package org.jraf.android.a.ui.main
 
+import android.content.ComponentName
 import android.content.res.Configuration
 import android.graphics.drawable.Drawable
+import android.os.Process
 import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -109,6 +111,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
@@ -127,6 +130,11 @@ import androidx.core.content.ContextCompat
 import org.jraf.android.a.R
 import org.jraf.android.a.ui.components.DenseButton
 import org.jraf.android.a.ui.components.UltraDenseOutlinedTextField
+import org.jraf.android.a.ui.main.MainViewModel.ASettingsLaunchItem
+import org.jraf.android.a.ui.main.MainViewModel.AppLaunchItem
+import org.jraf.android.a.ui.main.MainViewModel.ContactLaunchItem
+import org.jraf.android.a.ui.main.MainViewModel.LaunchItem
+import org.jraf.android.a.ui.main.MainViewModel.ShortcutLaunchItem
 import org.jraf.android.a.ui.theme.ATheme
 import org.jraf.android.a.util.fadingEdges
 import org.jraf.android.a.util.keyboardAsState
@@ -140,17 +148,17 @@ import kotlin.random.Random
 fun MainLayout(
     searchQuery: String,
     hasNotifications: Boolean,
-    launchItems: List<MainViewModel.LaunchItem>,
+    launchItems: List<LaunchItem>,
     onSearchQueryChange: (String) -> Unit,
     onResetSearchQueryClick: () -> Unit,
     onWebSearchClick: () -> Unit,
     onKeyboardActionButtonClick: () -> Unit,
     isKeyboardWebSearchActive: Boolean,
-    onLaunchItemAction1: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemAction2: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemAction3: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemAction4: (MainViewModel.LaunchItem) -> Unit,
-    onRenameLaunchItem: (MainViewModel.LaunchItem, label: String?) -> Unit,
+    onLaunchItemAction1: (LaunchItem) -> Unit,
+    onLaunchItemAction2: (LaunchItem) -> Unit,
+    onLaunchItemAction3: (LaunchItem) -> Unit,
+    onLaunchItemAction4: (LaunchItem) -> Unit,
+    onRenameLaunchItem: (LaunchItem, label: String?) -> Unit,
     showRequestContactsPermissionBanner: Boolean,
     onRequestContactsPermissionClick: () -> Unit,
     showNotificationListenerPermissionBanner: Boolean,
@@ -428,12 +436,12 @@ private fun SearchTextField(
 
 @Composable
 private fun ColumnScope.LaunchItemList(
-    launchItems: List<MainViewModel.LaunchItem>,
-    onLaunchItemAction1: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemAction2: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemAction3: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemAction4: (MainViewModel.LaunchItem) -> Unit,
-    onRenameLaunchItem: (MainViewModel.LaunchItem, label: String?) -> Unit,
+    launchItems: List<LaunchItem>,
+    onLaunchItemAction1: (LaunchItem) -> Unit,
+    onLaunchItemAction2: (LaunchItem) -> Unit,
+    onLaunchItemAction3: (LaunchItem) -> Unit,
+    onLaunchItemAction4: (LaunchItem) -> Unit,
+    onRenameLaunchItem: (LaunchItem, label: String?) -> Unit,
     onDropdownMenuVisible: (Boolean) -> Unit,
     alignmentBottom: Boolean,
     alignmentRight: Boolean,
@@ -485,13 +493,13 @@ private fun ColumnScope.LaunchItemList(
 }
 
 private fun LazyGridScope.mostUsedItemsRow(
-    launchItems: List<MainViewModel.LaunchItem>,
+    launchItems: List<LaunchItem>,
     originalLayoutDirection: LayoutDirection,
-    onLaunchItemAction1: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemAction2: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemAction3: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemAction4: (MainViewModel.LaunchItem) -> Unit,
-    onRenameLaunchItem: (MainViewModel.LaunchItem, String?) -> Unit,
+    onLaunchItemAction1: (LaunchItem) -> Unit,
+    onLaunchItemAction2: (LaunchItem) -> Unit,
+    onLaunchItemAction3: (LaunchItem) -> Unit,
+    onLaunchItemAction4: (LaunchItem) -> Unit,
+    onRenameLaunchItem: (LaunchItem, String?) -> Unit,
     onDropdownMenuVisible: (Boolean) -> Unit,
 ) {
     item(span = { GridItemSpan(maxLineSpan) }, key = "mostUsed") {
@@ -529,13 +537,13 @@ private val deprioritizedColorFilter = ColorFilter.colorMatrix(
 
 @Composable
 private fun LazyGridItemScope.LaunchItemItem(
-    launchItem: MainViewModel.LaunchItem,
+    launchItem: LaunchItem,
     originalLayoutDirection: LayoutDirection,
-    onLaunchItemAction1: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemAction2: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemAction3: (MainViewModel.LaunchItem) -> Unit,
-    onLaunchItemAction4: (MainViewModel.LaunchItem) -> Unit,
-    onRenameLaunchItem: (MainViewModel.LaunchItem, label: String?) -> Unit,
+    onLaunchItemAction1: (LaunchItem) -> Unit,
+    onLaunchItemAction2: (LaunchItem) -> Unit,
+    onLaunchItemAction3: (LaunchItem) -> Unit,
+    onLaunchItemAction4: (LaunchItem) -> Unit,
+    onRenameLaunchItem: (LaunchItem, label: String?) -> Unit,
     onDropdownMenuVisible: (Boolean) -> Unit,
 ) {
     var dropdownMenuVisible by remember { mutableStateOf(false) }
@@ -563,14 +571,14 @@ private fun LazyGridItemScope.LaunchItemItem(
                         onClick = { onLaunchItemAction1(launchItem) },
                         onLongClick = {
                             when (launchItem) {
-                                is MainViewModel.AppLaunchItem,
-                                is MainViewModel.ShortcutLaunchItem,
-                                is MainViewModel.ASettingsLaunchItem,
+                                is AppLaunchItem,
+                                is ShortcutLaunchItem,
+                                is ASettingsLaunchItem,
                                     -> {
                                     dropdownMenuVisible = true
                                 }
 
-                                is MainViewModel.ContactLaunchItem -> {
+                                is ContactLaunchItem -> {
                                     onLaunchItemAction2(launchItem)
                                 }
                             }
@@ -593,7 +601,7 @@ private fun LazyGridItemScope.LaunchItemItem(
                         modifier = Modifier
                             .size(48.sp.toDp())
                             .let {
-                                if (launchItem is MainViewModel.ContactLaunchItem) {
+                                if (launchItem is ContactLaunchItem) {
                                     // Contact photos are square, but we want circles
                                     it.clip(CircleShape)
                                 } else {
@@ -619,6 +627,24 @@ private fun LazyGridItemScope.LaunchItemItem(
                                 .background(Color.Red),
                         )
                     }
+                    if (launchItem is AppLaunchItem && launchItem.privateSpace != AppLaunchItem.PrivateSpace.NotPrivateSpace) {
+                        Icon(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .shadow(4.dp, CircleShape)
+                                .background(MaterialTheme.colorScheme.secondaryContainer)
+                                .padding(2.sp.toDp())
+                                .size(16.sp.toDp()),
+                            painter = painterResource(R.drawable.outline_key_24),
+                            tint = when (launchItem.privateSpace) {
+                                AppLaunchItem.PrivateSpace.PrivateSpaceLocked -> ATheme.Colors.Locked
+                                AppLaunchItem.PrivateSpace.PrivateSpaceUnlocked -> ATheme.Colors.Unlocked
+                                else -> Color.Unspecified
+
+                            },
+                            contentDescription = stringResource(R.string.main_list_app_privateSpaceApp),
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.height(4.sp.toDp()))
                 Text(
@@ -634,7 +660,7 @@ private fun LazyGridItemScope.LaunchItemItem(
             onDropdownMenuVisible(dropdownMenuVisible)
 
             when (launchItem) {
-                is MainViewModel.AppLaunchItem -> {
+                is AppLaunchItem -> {
                     DropdownMenu(
                         expanded = dropdownMenuVisible,
                         onDismissRequest = { dropdownMenuVisible = false },
@@ -705,7 +731,7 @@ private fun LazyGridItemScope.LaunchItemItem(
                     }
                 }
 
-                is MainViewModel.ASettingsLaunchItem -> {
+                is ASettingsLaunchItem -> {
                     DropdownMenu(
                         expanded = dropdownMenuVisible,
                         onDismissRequest = { dropdownMenuVisible = false },
@@ -738,7 +764,7 @@ private fun LazyGridItemScope.LaunchItemItem(
                     }
                 }
 
-                is MainViewModel.ShortcutLaunchItem -> {
+                is ShortcutLaunchItem -> {
                     DropdownMenu(
                         expanded = dropdownMenuVisible,
                         onDismissRequest = { dropdownMenuVisible = false },
@@ -775,7 +801,7 @@ private fun LazyGridItemScope.LaunchItemItem(
                     }
                 }
 
-                is MainViewModel.ContactLaunchItem -> {}
+                is ContactLaunchItem -> {}
             }
         }
         if (renameDialogVisible) {
@@ -794,7 +820,7 @@ private fun LazyGridItemScope.LaunchItemItem(
 @Composable
 private fun RenameDialog(
     onDismissRequest: () -> Unit,
-    launchItem: MainViewModel.LaunchItem,
+    launchItem: LaunchItem,
     onConfirm: (String) -> Unit,
 ) {
     var value by remember { mutableStateOf(TextFieldValue(launchItem.label, TextRange(launchItem.label.length))) }
@@ -882,10 +908,8 @@ private fun MainScreenPreview() {
 }
 
 @Composable
-private fun fakeApp() = MainViewModel.AppLaunchItem(
+private fun fakeApp() = AppLaunchItem(
     label = "My App" + " " + Random.nextInt(1, 4),
-    packageName = Random.nextInt().toString(),
-    activityName = Random.nextInt().toString(),
     drawable = ContextCompat.getDrawable(
         LocalContext.current,
         R.mipmap.ic_launcher,
@@ -894,6 +918,9 @@ private fun fakeApp() = MainViewModel.AppLaunchItem(
     notificationRanking = 42,
     isRenamed = false,
     ignoreNotifications = false,
+    componentName = ComponentName(Random.nextInt().toString(), Random.nextInt().toString()),
+    user = Process.myUserHandle(),
+    isPrivateSpaceLocked = false,
 )
 
 

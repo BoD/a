@@ -28,8 +28,11 @@ package org.jraf.android.a.ui.main
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.os.UserManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -40,6 +43,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.getSystemService
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.postDelayed
@@ -60,6 +64,9 @@ class MainActivity : ComponentActivity() {
             ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CONTACTS)
     }
 
+    private val userManager: UserManager by lazy { getSystemService<UserManager>()!! }
+    private val launcherApps: LauncherApps by lazy { getSystemService<LauncherApps>()!! }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -74,9 +81,7 @@ class MainActivity : ComponentActivity() {
         }
 
         lifecycleScope.launch {
-            viewModel.intentToStart.collect { intent ->
-                startActivity(intent)
-            }
+            viewModel.destination.collect(::handleDestination)
         }
 
         setContent {
@@ -136,6 +141,25 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private var savedDestination: MainViewModel.Destination? = null
+
+    private fun handleDestination(destination: MainViewModel.Destination) {
+        val (intent, user) = destination
+        if (user == null) {
+            startActivity(intent)
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val isPrivateSpaceUnlocked = !userManager.isQuietModeEnabled(user)
+                if (!isPrivateSpaceUnlocked) {
+                    savedDestination = destination
+                    userManager.requestQuietModeEnabled(false, user)
+                    return
+                }
+            }
+            launcherApps.startMainActivity(intent.component, user, intent.sourceBounds, null);
+        }
+    }
+
 
     // Back from another app: onStart is called only
     // Home from another app: onStart then onNewIntent are called
@@ -153,6 +177,22 @@ class MainActivity : ComponentActivity() {
         window.decorView.postDelayed(300) {
             if (!WindowInsetsCompat.toWindowInsetsCompat(window.decorView.rootWindowInsets).isVisible(WindowInsetsCompat.Type.ime())) {
                 showKeyboardSupposedly()
+            }
+        }
+
+        if (savedDestination != null) {
+            // We were asking to unlock the private space, now we can handle the destination
+            val savedDestination = savedDestination!!
+            this.savedDestination = null
+
+            // Do this after a delay to ensure the private space has the time to get unlocked. Looks like this can take ~1s.
+            window.decorView.postDelayed(1000) {
+                val isPrivateSpaceUnlocked = !userManager.isQuietModeEnabled(savedDestination.user)
+                if (!isPrivateSpaceUnlocked) {
+                    // The user did not unlock the private space: don't do anything
+                    return@postDelayed
+                }
+                handleDestination(savedDestination)
             }
         }
     }
