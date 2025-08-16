@@ -55,7 +55,6 @@ android {
     kotlin {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
-            freeCompilerArgs = listOf("-Xcontext-receivers")
         }
     }
 }
