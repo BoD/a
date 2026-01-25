@@ -1,10 +1,8 @@
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 
 plugins {
+    alias(libs.plugins.androidApplication).apply(false)
     alias(libs.plugins.benManes.versions)
-
-    alias(libs.plugins.androidApplication) apply false
-    alias(libs.plugins.kotlinAndroid) apply false
 }
 
 tasks.withType<DependencyUpdatesTask> {
