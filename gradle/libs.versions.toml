@@ -10,12 +10,10 @@ androidx-lifecycle = "2.10.0"
 androidx-compose-bom = "2026.03.01"
 
 google-material = "1.13.0"
-benManes-versions = "0.53.0"
 sqldelight = "2.3.2"
 kprefs = "1.7.2"
 
 [plugins]
-benManes-versions = { id = "com.github.ben-manes.versions", version.ref = "benManes-versions" }
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 kotlinCompose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
