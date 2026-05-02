@@ -35,9 +35,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import org.jraf.android.a.util.Key
-import org.jraf.android.a.util.invoke
+import org.jraf.android.a.util.Signal
 import org.jraf.android.a.util.logw
-import org.jraf.android.a.util.signalStateFlow
 
 class ShortcutRepository(context: Context) {
     companion object : Key<ShortcutRepository> {
@@ -104,7 +103,7 @@ class ShortcutRepository(context: Context) {
         }
     }
 
-    private val onShortcutChanged = signalStateFlow()
+    private val onShortcutChanged = Signal()
 
     fun notifyShortcutsChanged() {
         onShortcutChanged()

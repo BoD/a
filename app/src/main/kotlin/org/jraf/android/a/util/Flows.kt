@@ -24,14 +24,19 @@
  */
 package org.jraf.android.a.util
 
+import kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
-private val DIFFERENT = object : Any() {
-    override fun equals(other: Any?) = false
-}
+@OptIn(ExperimentalForInheritanceCoroutinesApi::class)
+class Signal private constructor(private val flow: MutableStateFlow<Event>) : StateFlow<Signal.Event> by flow {
+    sealed interface Event
+    object Initial : Event
+    class Trigger : Event
 
-fun signalStateFlow(): MutableStateFlow<Any> = MutableStateFlow(DIFFERENT)
+    constructor() : this(flow = MutableStateFlow(Initial))
 
-operator fun MutableStateFlow<Any>.invoke() {
-    value = DIFFERENT
+    operator fun invoke() {
+        flow.value = Trigger()
+    }
 }

@@ -51,7 +51,6 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jraf.android.a.ui.main.MainViewModel.LaunchItem
-import org.jraf.android.a.util.invoke
 import org.jraf.android.a.util.logd
 
 class MainActivity : ComponentActivity() {

@@ -48,8 +48,7 @@ import kotlinx.coroutines.flow.flowOn
 import org.jraf.android.a.BuildConfig
 import org.jraf.android.a.R
 import org.jraf.android.a.util.Key
-import org.jraf.android.a.util.invoke
-import org.jraf.android.a.util.signalStateFlow
+import org.jraf.android.a.util.Signal
 
 class AppRepository(context: Context) {
     companion object : Key<AppRepository>
@@ -58,7 +57,7 @@ class AppRepository(context: Context) {
     private val userManager: UserManager = context.getSystemService<UserManager>()!!
 
 
-    private val onPackagesChanged = signalStateFlow()
+    private val onPackagesChanged = Signal()
 
     init {
         launcherApps.registerCallback(

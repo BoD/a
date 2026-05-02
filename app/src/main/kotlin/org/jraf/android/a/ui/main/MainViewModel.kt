@@ -63,9 +63,8 @@ import org.jraf.android.a.data.ShortcutRepository
 import org.jraf.android.a.get
 import org.jraf.android.a.notification.NotificationListenerService
 import org.jraf.android.a.ui.settings.SettingsActivity
+import org.jraf.android.a.util.Signal
 import org.jraf.android.a.util.containsIgnoreAccents
-import org.jraf.android.a.util.invoke
-import org.jraf.android.a.util.signalStateFlow
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     companion object {
@@ -189,7 +188,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     val destination = MutableSharedFlow<Destination>(extraBufferCapacity = 1)
-    val onScrollUp = signalStateFlow()
+    val onScrollUp = Signal()
 
     val shouldShowRequestPermissionRationale = MutableStateFlow(false)
 
@@ -497,7 +496,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    val hasNotificationListenerPermissionSignal = signalStateFlow()
+    val hasNotificationListenerPermissionSignal = Signal()
     val hasNotificationListenerPermission: Flow<Boolean> = hasNotificationListenerPermissionSignal.map {
         notificationRepository.hasNotificationListenerPermission()
     }.distinctUntilChanged()
