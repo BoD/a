@@ -7,7 +7,8 @@ plugins {
 android {
     namespace = "org.jraf.android.a"
 
-    compileSdk = 36
+    compileSdk = 37
+    compileSdkMinor = 1
 
     defaultConfig {
         applicationId = "a.a.a.a"

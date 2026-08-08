@@ -29,8 +29,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 class SettingsActivity : ComponentActivity() {
     private val viewModel: SettingsViewModel by viewModels()
@@ -38,11 +38,11 @@ class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsState()
-            val rightHanded: Boolean by viewModel.alignmentRight.collectAsState()
-            val wallpaperOpacity: Float by viewModel.wallpaperOpacity.collectAsState()
-            val showNotificationsButton: Boolean by viewModel.showNotificationsButton.collectAsState()
-            val keyboardHack: Boolean by viewModel.keyboardHack.collectAsState()
+            val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsStateWithLifecycle()
+            val rightHanded: Boolean by viewModel.alignmentRight.collectAsStateWithLifecycle()
+            val wallpaperOpacity: Float by viewModel.wallpaperOpacity.collectAsStateWithLifecycle()
+            val showNotificationsButton: Boolean by viewModel.showNotificationsButton.collectAsStateWithLifecycle()
+            val keyboardHack: Boolean by viewModel.keyboardHack.collectAsStateWithLifecycle()
             SettingsLayout(
                 onNavigateBack = onBackPressedDispatcher::onBackPressed,
                 alignmentBottom = alignmentBottom,

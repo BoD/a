@@ -39,7 +39,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -47,11 +46,13 @@ import androidx.core.content.getSystemService
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.postDelayed
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jraf.android.a.ui.main.MainViewModel.LaunchItem
 import org.jraf.android.a.util.logd
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -84,28 +85,28 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            val searchQuery: String by viewModel.searchQuery.collectAsState()
-            val hasNotifications: Boolean by viewModel.hasNotifications.collectAsState()
-            val launchItems: List<LaunchItem> by viewModel.filteredLaunchItems.collectAsState()
-            val isKeyboardWebSearchActive: Boolean by viewModel.isKeyboardWebSearchActive.collectAsState(
-                initial = false,
+            val searchQuery: String by viewModel.searchQuery.collectAsStateWithLifecycle()
+            val hasNotifications: Boolean by viewModel.hasNotifications.collectAsStateWithLifecycle()
+            val launchItems: List<LaunchItem> by viewModel.filteredLaunchItems.collectAsStateWithLifecycle()
+            val isKeyboardWebSearchActive: Boolean by viewModel.isKeyboardWebSearchActive.collectAsStateWithLifecycle(
+                initialValue = false,
             )
-            val scrollUp: Any by viewModel.onScrollUp.collectAsState()
-            val shouldShowRequestPermissionRationale: Boolean by viewModel.shouldShowRequestPermissionRationale.collectAsState()
-            val hasNotificationListenerPermission: Boolean by viewModel.hasNotificationListenerPermission.collectAsState(
-                initial = true,
+            val scrollUp: Any by viewModel.onScrollUp.collectAsStateWithLifecycle()
+            val shouldShowRequestPermissionRationale: Boolean by viewModel.shouldShowRequestPermissionRationale.collectAsStateWithLifecycle()
+            val hasNotificationListenerPermission: Boolean by viewModel.hasNotificationListenerPermission.collectAsStateWithLifecycle(
+                initialValue = true,
             )
-            val hasSeenRequestNotificationListenerPermissionBanner: Boolean by viewModel.hasSeenRequestNotificationListenerPermissionBanner.collectAsState()
-            val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsState()
-            val alignmentRight: Boolean by viewModel.alignmentRight.collectAsState()
-            val wallpaperOpacity: Float by viewModel.wallpaperOpacity.collectAsState()
-            val showNotificationsButton: Boolean by viewModel.showNotificationsButton.collectAsState()
-            val keyboardHack: Boolean by viewModel.keyboardHack.collectAsState()
+            val hasSeenRequestNotificationListenerPermissionBanner: Boolean by viewModel.hasSeenRequestNotificationListenerPermissionBanner.collectAsStateWithLifecycle()
+            val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsStateWithLifecycle()
+            val alignmentRight: Boolean by viewModel.alignmentRight.collectAsStateWithLifecycle()
+            val wallpaperOpacity: Float by viewModel.wallpaperOpacity.collectAsStateWithLifecycle()
+            val showNotificationsButton: Boolean by viewModel.showNotificationsButton.collectAsStateWithLifecycle()
+            val keyboardHack: Boolean by viewModel.keyboardHack.collectAsStateWithLifecycle()
 
             val gridState = rememberLazyGridState()
 
             LaunchedEffect(scrollUp) {
-                delay(225)
+                delay(225.milliseconds)
                 gridState.animateScrollToItem(0)
             }
 

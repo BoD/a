@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.WhileSubscribed
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -65,6 +66,8 @@ import org.jraf.android.a.notification.NotificationListenerService
 import org.jraf.android.a.ui.settings.SettingsActivity
 import org.jraf.android.a.util.Signal
 import org.jraf.android.a.util.containsIgnoreAccents
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     companion object {
@@ -181,7 +184,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
         }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), emptyList())
 
     val isKeyboardWebSearchActive: Flow<Boolean> = combine(filteredLaunchItems, searchQuery) { launchItems, query ->
         launchItems.isEmpty() && query.isNotBlank()
@@ -194,7 +197,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val hasNotifications: StateFlow<Boolean> = notificationRepository.notificationRankings
         .map { it.isNotEmpty() }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), false)
 
     fun onSearchQueryChange(query: String) {
         searchQuery.value = query
@@ -212,7 +215,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (!launchedItem.hasNotification) {
             viewModelScope.launch {
                 // Add a delay so the reordering animation isn't distracting
-                delay(1000)
+                delay(1000.milliseconds)
                 launchItemRepository.recordLaunchedItem(launchedItem.id)
             }
         }
