@@ -24,7 +24,6 @@
  */
 package org.jraf.android.a.ui.main
 
-import android.app.Application
 import android.app.SearchManager
 import android.content.ComponentName
 import android.content.Context
@@ -37,8 +36,10 @@ import android.provider.ContactsContract
 import android.provider.Settings
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.net.toUri
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -61,25 +62,28 @@ import org.jraf.android.a.data.LaunchItemRepository.Counter
 import org.jraf.android.a.data.NotificationRepository
 import org.jraf.android.a.data.SettingsRepository
 import org.jraf.android.a.data.ShortcutRepository
-import org.jraf.android.a.get
 import org.jraf.android.a.notification.NotificationListenerService
 import org.jraf.android.a.ui.settings.SettingsActivity
 import org.jraf.android.a.util.Signal
 import org.jraf.android.a.util.containsIgnoreAccents
+import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-class MainViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    private val launchItemRepository: LaunchItemRepository,
+    appRepository: AppRepository,
+    private val contactRepository: ContactRepository,
+    private val shortcutRepository: ShortcutRepository,
+    private val notificationRepository: NotificationRepository,
+    private val settingsRepository: SettingsRepository,
+    @param:ApplicationContext private val context: Context,
+) : ViewModel() {
     companion object {
         const val MOST_USED_ITEMS_COUNT = 5
     }
 
-    private val launchItemRepository = application[LaunchItemRepository]
-    private val appRepository = application[AppRepository]
-    private val contactRepository = application[ContactRepository]
-    private val shortcutRepository = application[ShortcutRepository]
-    private val notificationRepository = application[NotificationRepository]
-    private val settingsRepository = application[SettingsRepository]
 
     private val ignoredNotificationsItems = launchItemRepository.getIgnoredNotificationsItems()
     private val renamedItems = launchItemRepository.getRenamedItems()
@@ -124,7 +128,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         it.toShortcutLaunchItem(label = label)
                     } +
                     starredContacts.map { it.toContactLaunchItem() } +
-                    ASettingsLaunchItem(context = getApplication(), isDeprioritized = false)
+                    ASettingsLaunchItem(context = context, isDeprioritized = false)
         }
     }
 
@@ -142,12 +146,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val query = searchQuery.trim()
             val filteredItems = allLaunchedItems
                 .map {
-                    if (it is AppLaunchItem && counters[it.id] is Counter.Deprioritized) {
-                        it.copy(isDeprioritized = true)
-                    } else if (it is ASettingsLaunchItem && counters[it.id] is Counter.Deprioritized) {
-                        it.copy(isDeprioritized = true)
-                    } else {
-                        it
+                    when (it) {
+                        is AppLaunchItem if counters[it.id] is Counter.Deprioritized -> {
+                            it.copy(isDeprioritized = true)
+                        }
+
+                        is ASettingsLaunchItem if counters[it.id] is Counter.Deprioritized -> {
+                            it.copy(isDeprioritized = true)
+                        }
+
+                        else -> {
+                            it
+                        }
                     }
                 }
                 .filterNot { it.id in deletedLaunchItems }
@@ -166,7 +176,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             // Add the most used items at the top
             (mostUsedItems +
                     // Sort the rest by counter with short term boost (descending)
-                    (filteredItems - mostUsedItems)
+                    (filteredItems - mostUsedItems.toSet())
                         .sortedByDescending {
                             when (val counter = counters[it.id]) {
                                 is Counter.ShortAndLongTerm -> counter.combined
@@ -230,7 +240,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 // Long clicking on a contact counts as a primary action
                 viewModelScope.launch {
-                    delay(1000)
+                    delay(1000.milliseconds)
                     launchItemRepository.recordLaunchedItem(launchedItem.id)
                 }
             }
@@ -379,7 +389,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    data class ContactLaunchItem(
+    class ContactLaunchItem(
         override val label: String,
         private val contactId: Long,
         private val lookupKey: String,
@@ -425,7 +435,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    data class ShortcutLaunchItem(
+    class ShortcutLaunchItem(
         override val label: String,
         override val drawable: Drawable,
         override val isRenamed: Boolean,
@@ -449,7 +459,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     data class ASettingsLaunchItem(
-        val context: Context,
+        private val context: Context,
         override val isDeprioritized: Boolean,
     ) : LaunchItem() {
         override val drawable: Drawable = AppCompatResources.getDrawable(context, R.mipmap.ic_launcher)!!
@@ -490,7 +500,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
                         .putExtra(
                             Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
-                            ComponentName(getApplication(), NotificationListenerService::class.java).flattenToString(),
+                            ComponentName(context, NotificationListenerService::class.java).flattenToString(),
                         )
                 } else {
                     Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)

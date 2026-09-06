@@ -29,17 +29,20 @@ import android.content.pm.LauncherApps
 import android.content.pm.ShortcutInfo
 import android.graphics.drawable.Drawable
 import android.os.Process
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import org.jraf.android.a.util.Key
 import org.jraf.android.a.util.Signal
 import org.jraf.android.a.util.logw
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ShortcutRepository(context: Context) {
-    companion object : Key<ShortcutRepository> {
+@Singleton
+class ShortcutRepository @Inject constructor(@ApplicationContext context: Context) {
+    companion object {
         fun getId(id: String) = "shortcut/${id}"
     }
 
@@ -86,7 +89,7 @@ class ShortcutRepository(context: Context) {
                     .mapNotNull {
                         Shortcut(
                             shortcutInfo = it,
-                            drawable = launcherApps.getShortcutIconDrawable(it, 0) ?: return@mapNotNull null
+                            drawable = launcherApps.getShortcutIconDrawable(it, 0) ?: return@mapNotNull null,
                         )
                     }
             }

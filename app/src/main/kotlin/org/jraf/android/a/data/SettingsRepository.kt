@@ -25,13 +25,14 @@
 package org.jraf.android.a.data
 
 import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.jraf.android.a.util.Key
 import org.jraf.android.kprefs.Prefs
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class SettingsRepository(context: Context) {
-    companion object : Key<SettingsRepository>
-
+@Singleton
+class SettingsRepository @Inject constructor(@ApplicationContext context: Context) {
     private val prefs = Prefs(context)
 
     val hasSeenRequestNotificationListenerPermissionBanner: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)

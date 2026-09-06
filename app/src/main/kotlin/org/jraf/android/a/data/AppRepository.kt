@@ -38,6 +38,7 @@ import android.os.UserManager
 import android.util.DisplayMetrics
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -47,12 +48,12 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import org.jraf.android.a.BuildConfig
 import org.jraf.android.a.R
-import org.jraf.android.a.util.Key
 import org.jraf.android.a.util.Signal
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AppRepository(context: Context) {
-    companion object : Key<AppRepository>
-
+@Singleton
+class AppRepository @Inject constructor(@ApplicationContext context: Context) {
     private val launcherApps: LauncherApps = context.getSystemService()!!
     private val userManager: UserManager = context.getSystemService<UserManager>()!!
 
