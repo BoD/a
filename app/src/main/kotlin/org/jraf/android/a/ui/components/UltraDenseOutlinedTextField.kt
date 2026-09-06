@@ -55,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
@@ -65,6 +66,7 @@ import org.jraf.android.a.R
 import org.jraf.android.a.ui.theme.ATheme
 import org.jraf.android.a.util.toDp
 
+val TAG_TEXT_FIELD = "UltraDenseOutlinedTextField"
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UltraDenseOutlinedTextField(
@@ -103,7 +105,7 @@ fun UltraDenseOutlinedTextField(
                 }
             }
             BasicTextField(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag(TAG_TEXT_FIELD),
                 value = value,
                 onValueChange = onValueChange,
                 enabled = enabled,
