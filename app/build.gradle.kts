@@ -53,6 +53,8 @@ android {
 }
 
 dependencies {
+    androidTestImplementation(libs.androidx.compose.ui.junit)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
 
