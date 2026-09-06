@@ -1,13 +1,13 @@
 [versions]
 kotlin = "2.4.10"
-agp = "9.3.1"
+agp = "9.4.0"
 coroutines = "1.11.0"
 timber = "5.0.1"
 androidx-activity = "1.13.0"
 androidx-lifecycle = "2.11.0"
 
 # See https://developer.android.com/jetpack/compose/bom/bom-mapping
-androidx-compose-bom = "2026.06.01"
+androidx-compose-bom = "2026.08.00"
 
 google-material = "1.14.0"
 sqldelight = "2.3.2"
