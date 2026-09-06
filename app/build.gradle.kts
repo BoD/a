@@ -54,6 +54,7 @@ android {
 
 dependencies {
     androidTestImplementation(libs.androidx.compose.ui.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
