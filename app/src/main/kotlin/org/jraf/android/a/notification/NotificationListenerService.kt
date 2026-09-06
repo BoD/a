@@ -29,16 +29,21 @@ import android.os.Build
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationManagerCompat
-import org.jraf.android.a.app
+import dagger.hilt.android.AndroidEntryPoint
 import org.jraf.android.a.data.NotificationRepository
 import org.jraf.android.a.util.logd
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class NotificationListenerService : NotificationListenerService() {
     companion object {
         private val ignoredPackages = setOf(
             "com.google.android.deskclock",
         )
     }
+
+    @Inject
+    lateinit var notificationRepository: NotificationRepository
 
     override fun onListenerConnected() {
         super.onListenerConnected()
@@ -151,7 +156,7 @@ class NotificationListenerService : NotificationListenerService() {
                     statusBarNotification,
                 )
             }
-        app[NotificationRepository].updateNotificationRankings(notificationRankings)
+        notificationRepository.updateNotificationRankings(notificationRankings)
     }
 }
 

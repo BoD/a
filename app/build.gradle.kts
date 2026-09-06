@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinCompose)
     alias(libs.plugins.sqldelight)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -13,8 +15,8 @@ android {
     defaultConfig {
         applicationId = "a.a.a.a"
         minSdk = 26
-        versionCode = 27
-        versionName = "1.17.0"
+        versionCode = 28
+        versionName = "1.17.1"
     }
 
     signingConfigs {
@@ -45,12 +47,15 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
 dependencies {
+    implementation(libs.hilt)
+    ksp(libs.hilt.compiler)
+
     implementation(libs.google.material)
 
     implementation(libs.timber)

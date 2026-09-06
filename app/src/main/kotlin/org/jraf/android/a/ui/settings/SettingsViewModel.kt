@@ -24,15 +24,16 @@
  */
 package org.jraf.android.a.ui.settings
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import org.jraf.android.a.data.SettingsRepository
-import org.jraf.android.a.get
+import javax.inject.Inject
 
-class SettingsViewModel(application: Application) : AndroidViewModel(application) {
-    private val settingsRepository = application[SettingsRepository]
-
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    private val settingsRepository: SettingsRepository,
+) : ViewModel() {
     val alignmentBottom: StateFlow<Boolean> = settingsRepository.alignmentBottom
     val alignmentRight: StateFlow<Boolean> = settingsRepository.alignmentRight
     val wallpaperOpacity: StateFlow<Float> = settingsRepository.wallpaperOpacity

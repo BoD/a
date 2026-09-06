@@ -28,13 +28,15 @@ import android.content.Context
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.jraf.android.a.Database
-import org.jraf.android.a.util.Key
+import javax.inject.Inject
+import javax.inject.Singleton
 
 private const val LONG_TERM_HISTORY_SIZE = 600L
 private const val LONG_TERM_WEIGHT = 1L
@@ -42,9 +44,8 @@ private const val LONG_TERM_WEIGHT = 1L
 private const val SHORT_TERM_HISTORY_SIZE = 20L
 private const val SHORT_TERM_WEIGHT = 3L
 
-class LaunchItemRepository(private val context: Context) {
-    companion object : Key<LaunchItemRepository>
-
+@Singleton
+class LaunchItemRepository @Inject constructor(@param:ApplicationContext private val context: Context) {
     private val database: Database by lazy { createSqldelightDatabase(context) }
 
     private fun createSqldelightDatabase(context: Context): Database {

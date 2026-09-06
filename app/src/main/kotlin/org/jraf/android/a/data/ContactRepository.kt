@@ -34,17 +34,18 @@ import android.provider.ContactsContract
 import android.provider.ContactsContract.Contacts
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import org.jraf.android.a.R
-import org.jraf.android.a.util.Key
 import org.jraf.android.a.util.Signal
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ContactRepository(private val context: Context) {
-    companion object : Key<ContactRepository>
-
+@Singleton
+class ContactRepository @Inject constructor(@param:ApplicationContext private val context: Context) {
     private val onContactsChanged = Signal()
     private var contentObserver: ContentObserver? = null
 
@@ -58,8 +59,8 @@ class ContactRepository(private val context: Context) {
     }
 
     private fun registerContentObserver() {
+        contentObserver?.let { context.contentResolver.unregisterContentObserver(it) }
         if (ContextCompat.checkSelfPermission(context, permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
-            contentObserver?.let { context.contentResolver.unregisterContentObserver(it) }
             contentObserver = object : ContentObserver(null) {
                 override fun onChange(selfChange: Boolean) {
                     onContactsChanged()
@@ -68,7 +69,7 @@ class ContactRepository(private val context: Context) {
                 context.contentResolver.registerContentObserver(
                     Contacts.CONTENT_URI,
                     true,
-                    contentObserver
+                    contentObserver,
                 )
             }
         }
@@ -107,8 +108,8 @@ class ContactRepository(private val context: Context) {
                                 lookupKey = lookupKey,
                                 displayName = cursor.getString(2),
                                 photoDrawable = getPhotoDrawable(Contacts.getLookupUri(contactId, lookupKey)),
-                                phoneNumber = getPhoneNumber(contactId)
-                            )
+                                phoneNumber = getPhoneNumber(contactId),
+                            ),
                         )
                     }
                 }
@@ -121,7 +122,7 @@ class ContactRepository(private val context: Context) {
         return Contacts.openContactPhotoInputStream(
             context.contentResolver,
             lookupUri,
-            false
+            false,
         )?.use { inputStream ->
             Drawable.createFromStream(inputStream, null)
         } ?: AppCompatResources.getDrawable(context, R.drawable.ic_contact)!!
