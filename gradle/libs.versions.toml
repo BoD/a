@@ -47,6 +47,7 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material-icons-core = { group = "androidx.compose.material", name = "material-icons-core" }
 
+androidx-test-rules = { group = "androidx.test", name = "rules", version.ref = "androidx-test" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidx-test" }
 
 google-material = { group = "com.google.android.material", name = "material", version.ref = "google-material" }
