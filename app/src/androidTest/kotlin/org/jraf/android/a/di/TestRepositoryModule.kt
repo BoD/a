@@ -24,19 +24,21 @@
  */
 package org.jraf.android.a.di
 
-import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
 import org.jraf.android.a.data.AppRepository
 import org.jraf.android.a.fakes.data.FakeAppRepository
+import javax.inject.Singleton
 
 @TestInstallIn(
     components = [SingletonComponent::class],
     replaces = [RepositoryModule::class],
 )
 @Module
-abstract class TestRepositoryModule {
-    @Binds
-    abstract fun bindAppRepository(fakeAppRepository: FakeAppRepository): AppRepository
+object TestRepositoryModule {
+    @Provides
+    @Singleton
+    fun provideAppRepository(): AppRepository = FakeAppRepository()
 }

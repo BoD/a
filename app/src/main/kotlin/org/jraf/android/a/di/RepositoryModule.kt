@@ -24,16 +24,20 @@
  */
 package org.jraf.android.a.di
 
-import dagger.Binds
+import android.content.Context
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import org.jraf.android.a.data.AppRepository
 import org.jraf.android.a.data.AppRepositoryImpl
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class RepositoryModule {
-    @Binds
-    abstract fun bindAppRepository(appRepositoryImpl: AppRepositoryImpl): AppRepository
+object RepositoryModule {
+    @Provides
+    @Singleton
+    fun provideAppRepository(@ApplicationContext context: Context): AppRepository = AppRepositoryImpl(context)
 }
