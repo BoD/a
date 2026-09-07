@@ -52,8 +52,21 @@ import org.jraf.android.a.util.Signal
 import javax.inject.Inject
 import javax.inject.Singleton
 
+abstract class AppRepository {
+    data class App(
+        val label: String,
+        val drawable: Drawable,
+        val componentName: ComponentName,
+        val user: UserHandle,
+        val isPrivateSpaceLocked: Boolean,
+    )
+
+    abstract val allApps: Flow<List<App>>
+
+}
+
 @Singleton
-class AppRepository @Inject constructor(@ApplicationContext context: Context) {
+class AppRepositoryImpl @Inject constructor(@ApplicationContext context: Context) : AppRepository() {
     private val launcherApps: LauncherApps = context.getSystemService()!!
     private val userManager: UserManager = context.getSystemService<UserManager>()!!
 
@@ -114,18 +127,10 @@ class AppRepository @Inject constructor(@ApplicationContext context: Context) {
         }
     }
 
-    data class App(
-        val label: String,
-        val drawable: Drawable,
-        val componentName: ComponentName,
-        val user: UserHandle,
-        val isPrivateSpaceLocked: Boolean,
-    )
-
     private var firstLoad = true
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val allApps: Flow<List<App>> = onPackagesChanged.flatMapLatest {
+    override val allApps: Flow<List<App>> = onPackagesChanged.flatMapLatest {
         flow {
             // On the first load, we first emit the apps without their icons to get something as fast as possible
             val launcherActivityInfos: List<LauncherActivityInfo> = launcherApps.profiles.flatMap { profile ->
