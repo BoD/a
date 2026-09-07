@@ -40,7 +40,6 @@ import org.jraf.android.a.R
 import org.jraf.android.a.data.AppRepository
 import org.jraf.android.a.fakes.data.FakeAppRepository
 import org.jraf.android.a.ui.components.TAG_TEXT_FIELD
-import org.jraf.android.a.ui.main.MainViewModel.AppLaunchItem
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -58,12 +57,13 @@ class MainActivityTest {
     val grantContactsPermissionRule = GrantPermissionRule.grant(android.Manifest.permission.READ_CONTACTS)
 
     @Inject
-    lateinit var fakeAppRepository: FakeAppRepository
+    lateinit var fakeAppRepository: AppRepository
 
     @Before
     fun setUp() {
         hiltTestRule.inject()
-        fakeAppRepository.setApps(
+        // We could also use a qualifier to provide a FakeAppRepository, instead of casting
+        (fakeAppRepository as FakeAppRepository).setApps(
             listOf(
                 fakeApp(
                     label = "Fake Contacts",
