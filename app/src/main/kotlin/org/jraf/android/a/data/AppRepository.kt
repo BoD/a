@@ -48,11 +48,12 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import org.jraf.android.a.BuildConfig
 import org.jraf.android.a.R
+import org.jraf.android.a.data.AppRepository.App
 import org.jraf.android.a.util.Signal
 import javax.inject.Inject
 import javax.inject.Singleton
 
-abstract class AppRepository {
+interface AppRepository {
     data class App(
         val label: String,
         val drawable: Drawable,
@@ -61,12 +62,11 @@ abstract class AppRepository {
         val isPrivateSpaceLocked: Boolean,
     )
 
-    abstract val allApps: Flow<List<App>>
-
+    val allApps: Flow<List<App>>
 }
 
 @Singleton
-class AppRepositoryImpl @Inject constructor(@ApplicationContext context: Context) : AppRepository() {
+class AppRepositoryImpl @Inject constructor(@ApplicationContext context: Context) : AppRepository {
     private val launcherApps: LauncherApps = context.getSystemService()!!
     private val userManager: UserManager = context.getSystemService<UserManager>()!!
 

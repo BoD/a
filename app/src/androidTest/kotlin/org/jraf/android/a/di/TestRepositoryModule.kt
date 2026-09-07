@@ -31,7 +31,6 @@ import dagger.hilt.testing.TestInstallIn
 import org.jraf.android.a.data.AppRepository
 import org.jraf.android.a.fakes.data.FakeAppRepository
 
-
 @TestInstallIn(
     components = [SingletonComponent::class],
     replaces = [RepositoryModule::class],
@@ -40,6 +39,4 @@ import org.jraf.android.a.fakes.data.FakeAppRepository
 abstract class TestRepositoryModule {
     @Binds
     abstract fun bindAppRepository(fakeAppRepository: FakeAppRepository): AppRepository
-
-
 }

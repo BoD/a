@@ -27,11 +27,12 @@ package org.jraf.android.a.fakes.data
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.jraf.android.a.data.AppRepository
+import org.jraf.android.a.data.AppRepository.App
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class FakeAppRepository @Inject constructor(): AppRepository() {
+class FakeAppRepository @Inject constructor() : AppRepository {
     private val _apps = MutableStateFlow<List<App>>(emptyList())
 
     override val allApps: Flow<List<App>> = _apps
