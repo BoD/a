@@ -17,6 +17,8 @@ android {
         minSdk = 26
         versionCode = 28
         versionName = "1.17.1"
+        // See https://developer.android.com/training/dependency-injection/hilt-testing
+        testInstrumentationRunner = "org.jraf.android.a.di.CustomTestRunner"
     }
 
     signingConfigs {
@@ -53,6 +55,13 @@ android {
 }
 
 dependencies {
+    androidTestImplementation(libs.androidx.compose.ui.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
 
