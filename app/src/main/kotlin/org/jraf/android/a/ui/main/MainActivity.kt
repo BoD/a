@@ -90,9 +90,6 @@ class MainActivity : ComponentActivity() {
             val searchQuery: String by viewModel.searchQuery.collectAsStateWithLifecycle()
             val hasNotifications: Boolean by viewModel.hasNotifications.collectAsStateWithLifecycle()
             val launchItems: List<LaunchItem> by viewModel.filteredLaunchItems.collectAsStateWithLifecycle()
-            val isKeyboardWebSearchActive: Boolean by viewModel.isKeyboardWebSearchActive.collectAsStateWithLifecycle(
-                initialValue = false,
-            )
             val scrollUp: Any by viewModel.onScrollUp.collectAsStateWithLifecycle()
             val shouldShowRequestPermissionRationale: Boolean by viewModel.shouldShowRequestPermissionRationale.collectAsStateWithLifecycle()
             val hasNotificationListenerPermission: Boolean by viewModel.hasNotificationListenerPermission.collectAsStateWithLifecycle(
@@ -120,7 +117,7 @@ class MainActivity : ComponentActivity() {
                 onResetSearchQueryClick = viewModel::resetSearchQuery,
                 onWebSearchClick = viewModel::onWebSearchClick,
                 onKeyboardActionButtonClick = viewModel::onKeyboardActionButtonClick,
-                isKeyboardWebSearchActive = isKeyboardWebSearchActive,
+                isKeyboardWebSearchActive = launchItems.isEmpty() && searchQuery.isNotBlank(),
                 onLaunchItemAction1 = viewModel::onLaunchItemAction1,
                 onLaunchItemAction2 = viewModel::onLaunchItemAction2,
                 onLaunchItemAction3 = viewModel::onLaunchItemAction3,

@@ -196,10 +196,6 @@ class MainViewModel @Inject constructor(
         }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), emptyList())
 
-    val isKeyboardWebSearchActive: Flow<Boolean> = combine(filteredLaunchItems, searchQuery) { launchItems, query ->
-        launchItems.isEmpty() && query.isNotBlank()
-    }
-
     val destination = MutableSharedFlow<Destination>(extraBufferCapacity = 1)
     val onScrollUp = Signal()
 

@@ -416,7 +416,7 @@ private fun SearchTextField(
             }
         },
         keyboardOptions = KeyboardOptions(
-            keyboardType = if (isKeyboardWebSearchActive) KeyboardType.Text else KeyboardType.Password,
+//            keyboardType = if (isKeyboardWebSearchActive) KeyboardType.Text else KeyboardType.Password,
             imeAction = if (isKeyboardWebSearchActive) ImeAction.Search else ImeAction.Go,
             autoCorrectEnabled = isKeyboardWebSearchActive,
         ),
@@ -427,9 +427,6 @@ private fun SearchTextField(
     )
 
     LaunchedEffect(Unit) {
-//     No comment...
-//        delay(1800)
-//        awaitFrame()
         focusRequester.requestFocus()
     }
 }
