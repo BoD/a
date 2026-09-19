@@ -30,11 +30,14 @@ import android.content.pm.ShortcutInfo
 import android.graphics.drawable.Drawable
 import android.os.Process
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import org.jraf.android.a.util.Signal
 import org.jraf.android.a.util.logw
 import javax.inject.Inject
@@ -45,6 +48,8 @@ class ShortcutRepository @Inject constructor(@ApplicationContext context: Contex
     companion object {
         fun getId(id: String) = "shortcut/${id}"
     }
+
+    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val launcherApps: LauncherApps = context.getSystemService(LauncherApps::class.java)
 
@@ -96,7 +101,7 @@ class ShortcutRepository @Inject constructor(@ApplicationContext context: Contex
         }
     }
         .distinctUntilChanged()
-        .flowOn(Dispatchers.IO)
+        .stateIn(coroutineScope, SharingStarted.Eagerly, emptyList())
 
     fun launchShortcut(shortcut: Shortcut) {
         try {

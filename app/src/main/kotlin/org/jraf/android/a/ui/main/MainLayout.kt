@@ -636,8 +636,6 @@ private fun LazyGridItemScope.LaunchItemItem(
                             tint = when (launchItem.privateSpace) {
                                 AppLaunchItem.PrivateSpace.PrivateSpaceLocked -> ATheme.Colors.Locked
                                 AppLaunchItem.PrivateSpace.PrivateSpaceUnlocked -> ATheme.Colors.Unlocked
-                                else -> Color.Unspecified
-
                             },
                             contentDescription = stringResource(R.string.main_list_app_privateSpaceApp),
                         )

@@ -35,11 +35,10 @@ import javax.inject.Singleton
 
 @Singleton
 class NotificationRepository @Inject constructor(@param:ApplicationContext private val context: Context) {
-    private val _notificationRankings: MutableStateFlow<Map<NotificationKey, Int>> = MutableStateFlow(emptyMap())
-    val notificationRankings: Flow<Map<NotificationKey, Int>> = _notificationRankings
+    val notificationRankings: Flow<Map<NotificationKey, Int>> field = MutableStateFlow(emptyMap())
 
     fun updateNotificationRankings(notificationRankings: Map<NotificationKey, Int>) {
-        _notificationRankings.value = notificationRankings
+        this.notificationRankings.value = notificationRankings
     }
 
     fun hasNotificationListenerPermission(): Boolean =

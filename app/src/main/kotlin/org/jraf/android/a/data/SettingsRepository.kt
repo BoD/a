@@ -27,6 +27,7 @@ package org.jraf.android.a.data
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.jraf.android.kprefs.Key
 import org.jraf.android.kprefs.Prefs
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,7 +37,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
     private val prefs = Prefs(context)
 
     val hasSeenRequestNotificationListenerPermissionBanner: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
-    val alignmentBottom: MutableStateFlow<Boolean> by prefs.BooleanFlow(false, org.jraf.android.kprefs.Key("reverseLayout"))
+    val alignmentBottom: MutableStateFlow<Boolean> by prefs.BooleanFlow(false, Key("reverseLayout"))
     val alignmentRight: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
     val wallpaperOpacity: MutableStateFlow<Float> by prefs.FloatFlow(0F)
     val showNotificationsButton: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
