@@ -39,13 +39,16 @@ import android.util.DisplayMetrics
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.stateIn
 import org.jraf.android.a.BuildConfig
 import org.jraf.android.a.R
 import org.jraf.android.a.data.AppRepository.App
@@ -67,9 +70,10 @@ interface AppRepository {
 
 @Singleton
 class AppRepositoryImpl @Inject constructor(@ApplicationContext context: Context) : AppRepository {
-    private val launcherApps: LauncherApps = context.getSystemService()!!
-    private val userManager: UserManager = context.getSystemService<UserManager>()!!
+    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    private val launcherApps: LauncherApps = context.getSystemService()!!
+    private val userManager: UserManager = context.getSystemService()!!
 
     private val onPackagesChanged = Signal()
 
@@ -170,5 +174,5 @@ class AppRepositoryImpl @Inject constructor(@ApplicationContext context: Context
         }
     }
         .distinctUntilChanged()
-        .flowOn(Dispatchers.IO)
+        .stateIn(coroutineScope, SharingStarted.Eagerly, emptyList())
 }
