@@ -32,24 +32,54 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTextInput
 import androidx.core.content.ContextCompat
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import org.jraf.android.a.R
 import org.jraf.android.a.data.AppRepository
+import org.jraf.android.a.di.appModule
 import org.jraf.android.a.fakes.data.FakeAppRepository
 import org.jraf.android.a.ui.components.TAG_TEXT_FIELD
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExternalResource
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.stopKoin
+import org.koin.dsl.binds
+import org.koin.dsl.module
+import org.koin.plugin.module.dsl.single
+import org.koin.test.KoinTest
+import org.koin.test.KoinTestRule
+import org.koin.test.inject
 
-class MainActivityTest {
+class MainActivityTest : KoinTest {
+    // xxx This should not be needed! But without it, Koin crashes with `Scope '_root_' is closed`.
+    @get:Rule(order = -1)
+    val resetKoinRule = object : ExternalResource() {
+        override fun before() {
+            stopKoin()
+        }
+    }
+
+    @get:Rule(order = 0)
+    val koinTestRule = KoinTestRule.create {
+        androidContext(ApplicationProvider.getApplicationContext())
+        modules(
+            appModule,
+            module {
+                single<FakeAppRepository>() binds arrayOf(AppRepository::class, FakeAppRepository::class)
+            },
+        )
+    }
+
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @get:Rule(order = 2)
-    val grantContactsPermissionRule = GrantPermissionRule.grant(android.Manifest.permission.READ_CONTACTS)
+    val grantContactsPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(android.Manifest.permission.READ_CONTACTS)
 
-    lateinit var fakeAppRepository: FakeAppRepository
+    private val fakeAppRepository: FakeAppRepository by inject()
 
     @Before
     fun setUp() {

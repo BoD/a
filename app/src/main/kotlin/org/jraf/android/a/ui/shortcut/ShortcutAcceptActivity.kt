@@ -34,11 +34,12 @@ import kotlinx.coroutines.launch
 import org.jraf.android.a.R
 import org.jraf.android.a.data.LaunchItemRepository
 import org.jraf.android.a.data.ShortcutRepository
+import org.koin.android.ext.android.inject
 
 class ShortcutAcceptActivity : ComponentActivity() {
-    lateinit var launchItemRepository: LaunchItemRepository
+    private val launchItemRepository: LaunchItemRepository by inject()
 
-    lateinit var shortcutRepository: ShortcutRepository
+    private val shortcutRepository: ShortcutRepository by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

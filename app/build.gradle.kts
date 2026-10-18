@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinCompose)
     alias(libs.plugins.sqldelight)
+    alias(libs.plugins.koin.compiler)
 }
 
 android {
@@ -56,6 +57,8 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.koin.test.junit4)
+
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     implementation(libs.google.material)
@@ -79,6 +82,9 @@ dependencies {
     implementation(libs.sqldelight.coroutines)
 
     implementation(libs.kprefs)
+
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
 }
 
 sqldelight {
@@ -87,6 +93,10 @@ sqldelight {
             schemaOutputDirectory.set(file("src/main/sqldelight/databases"))
         }
     }
+}
+
+koinCompiler {
+    userLogs = true
 }
 
 // To release:

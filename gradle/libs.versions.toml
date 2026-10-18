@@ -16,10 +16,14 @@ google-material = "1.14.0"
 sqldelight = "2.4.1"
 kprefs = "1.7.2"
 
+koin = "4.2.2"
+koin-plugin = "1.2.1"
+
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 kotlinCompose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
+koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koin-plugin" }
 
 [libraries]
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -54,3 +58,7 @@ sqldelight-androidDriver = { group = "app.cash.sqldelight", name = "android-driv
 sqldelight-coroutines = { group = "app.cash.sqldelight", name = "coroutines-extensions", version.ref = "sqldelight" }
 
 kprefs = { group = "org.jraf", name = "kprefs", version.ref = "kprefs" }
+
+koin-bom = { group = "io.insert-koin", name = "koin-bom", version.ref = "koin" }
+koin-android = { group = "io.insert-koin", name = "koin-android" }
+koin-test-junit4 = { group = "io.insert-koin", name = "koin-test-junit4", version.ref = "koin" }

@@ -31,6 +31,7 @@ import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationManagerCompat
 import org.jraf.android.a.data.NotificationRepository
 import org.jraf.android.a.util.logd
+import org.koin.android.ext.android.inject
 
 class NotificationListenerService : NotificationListenerService() {
     companion object {
@@ -39,7 +40,7 @@ class NotificationListenerService : NotificationListenerService() {
         )
     }
 
-    lateinit var notificationRepository: NotificationRepository
+    private val notificationRepository: NotificationRepository by inject()
 
     override fun onListenerConnected() {
         super.onListenerConnected()

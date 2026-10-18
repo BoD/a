@@ -25,7 +25,12 @@
 package org.jraf.android.a
 
 import android.app.Application
+import org.jraf.android.a.di.appModule
 import org.jraf.android.a.util.initLogging
+import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
+import org.koin.core.context.startKoin
+import org.koin.core.logger.Level
 
 class AApplication : Application() {
     override fun onCreate() {
@@ -33,6 +38,12 @@ class AApplication : Application() {
         initLogging()
 
         // Material dynamic colors
-//        DynamicColors.applyToActivitiesIfAvailable(this)
+        // DynamicColors.applyToActivitiesIfAvailable(this)
+
+        startKoin {
+            androidLogger(Level.DEBUG)
+            androidContext(this@AApplication)
+            modules(appModule)
+        }
     }
 }
