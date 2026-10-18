@@ -2,8 +2,6 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinCompose)
     alias(libs.plugins.sqldelight)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.hilt)
 }
 
 android {
@@ -17,8 +15,7 @@ android {
         minSdk = 26
         versionCode = 28
         versionName = "1.17.1"
-        // See https://developer.android.com/training/dependency-injection/hilt-testing
-        testInstrumentationRunner = "org.jraf.android.a.di.CustomTestRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -59,11 +56,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.hilt.android.testing)
-    kspAndroidTest(libs.hilt.compiler)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    implementation(libs.hilt)
-    ksp(libs.hilt.compiler)
 
     implementation(libs.google.material)
 

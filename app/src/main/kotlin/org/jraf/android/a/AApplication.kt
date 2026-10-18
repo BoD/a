@@ -25,10 +25,8 @@
 package org.jraf.android.a
 
 import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
 import org.jraf.android.a.util.initLogging
 
-@HiltAndroidApp
 class AApplication : Application() {
     override fun onCreate() {
         super.onCreate()

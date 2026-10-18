@@ -30,19 +30,14 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import org.jraf.android.a.R
 import org.jraf.android.a.data.LaunchItemRepository
 import org.jraf.android.a.data.ShortcutRepository
-import javax.inject.Inject
 
-@AndroidEntryPoint
 class ShortcutAcceptActivity : ComponentActivity() {
-    @Inject
     lateinit var launchItemRepository: LaunchItemRepository
 
-    @Inject
     lateinit var shortcutRepository: ShortcutRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -38,8 +38,6 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -66,19 +64,17 @@ import org.jraf.android.a.notification.NotificationListenerService
 import org.jraf.android.a.ui.settings.SettingsActivity
 import org.jraf.android.a.util.Signal
 import org.jraf.android.a.util.containsIgnoreAccents
-import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-@HiltViewModel
-class MainViewModel @Inject constructor(
+class MainViewModel(
     private val launchItemRepository: LaunchItemRepository,
     appRepository: AppRepository,
     private val contactRepository: ContactRepository,
     private val shortcutRepository: ShortcutRepository,
     private val notificationRepository: NotificationRepository,
     private val settingsRepository: SettingsRepository,
-    @param:ApplicationContext private val context: Context,
+    private val context: Context,
 ) : ViewModel() {
     companion object {
         const val MOST_USED_ITEMS_COUNT = 5

@@ -34,18 +34,14 @@ import android.provider.ContactsContract
 import android.provider.ContactsContract.Contacts
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import org.jraf.android.a.R
 import org.jraf.android.a.util.Signal
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class ContactRepository @Inject constructor(@param:ApplicationContext private val context: Context) {
+class ContactRepository(private val context: Context) {
     private val onContactsChanged = Signal()
     private var contentObserver: ContentObserver? = null
 

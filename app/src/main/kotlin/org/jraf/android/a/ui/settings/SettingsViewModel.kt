@@ -25,13 +25,10 @@
 package org.jraf.android.a.ui.settings
 
 import androidx.lifecycle.ViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import org.jraf.android.a.data.SettingsRepository
-import javax.inject.Inject
 
-@HiltViewModel
-class SettingsViewModel @Inject constructor(
+class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
     val alignmentBottom: StateFlow<Boolean> = settingsRepository.alignmentBottom

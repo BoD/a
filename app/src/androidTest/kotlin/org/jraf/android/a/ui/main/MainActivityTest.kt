@@ -34,35 +34,25 @@ import androidx.compose.ui.test.performTextInput
 import androidx.core.content.ContextCompat
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import dagger.hilt.android.testing.HiltAndroidRule
-import dagger.hilt.android.testing.HiltAndroidTest
 import org.jraf.android.a.R
 import org.jraf.android.a.data.AppRepository
 import org.jraf.android.a.fakes.data.FakeAppRepository
 import org.jraf.android.a.ui.components.TAG_TEXT_FIELD
-import org.jraf.android.a.ui.main.MainViewModel.AppLaunchItem
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import javax.inject.Inject
 
-@HiltAndroidTest
 class MainActivityTest {
-    @get:Rule(order = 0)
-    val hiltTestRule: HiltAndroidRule = HiltAndroidRule(this)
-
     @get:Rule(order = 1)
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @get:Rule(order = 2)
     val grantContactsPermissionRule = GrantPermissionRule.grant(android.Manifest.permission.READ_CONTACTS)
 
-    @Inject
     lateinit var fakeAppRepository: FakeAppRepository
 
     @Before
     fun setUp() {
-        hiltTestRule.inject()
         fakeAppRepository.setApps(
             listOf(
                 fakeApp(

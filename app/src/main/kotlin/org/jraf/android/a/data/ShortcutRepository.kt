@@ -29,7 +29,6 @@ import android.content.pm.LauncherApps
 import android.content.pm.ShortcutInfo
 import android.graphics.drawable.Drawable
 import android.os.Process
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -40,11 +39,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import org.jraf.android.a.util.Signal
 import org.jraf.android.a.util.logw
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class ShortcutRepository @Inject constructor(@ApplicationContext context: Context) {
+class ShortcutRepository(context: Context) {
     companion object {
         fun getId(id: String) = "shortcut/${id}"
     }

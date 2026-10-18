@@ -27,14 +27,10 @@ package org.jraf.android.a.data
 import android.content.Context
 import android.os.UserHandle
 import androidx.core.app.NotificationManagerCompat
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class NotificationRepository @Inject constructor(@param:ApplicationContext private val context: Context) {
+class NotificationRepository(private val context: Context) {
     val notificationRankings: Flow<Map<NotificationKey, Int>> field = MutableStateFlow(emptyMap())
 
     fun updateNotificationRankings(notificationRankings: Map<NotificationKey, Int>) {
