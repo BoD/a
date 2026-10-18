@@ -14,3 +14,5 @@ etc/proguard
 !.idea/copyright
 
 .kotlin
+
+versions.properties

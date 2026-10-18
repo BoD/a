@@ -1,13 +1,13 @@
 [versions]
-kotlin = "2.4.20"
-agp = "9.4.0"
+kotlin = "2.4.21"
+agp = "9.4.1"
 coroutines = "1.11.0"
 timber = "5.0.1"
 androidx-activity = "1.13.0"
 androidx-lifecycle = "2.11.0"
 androidx-test = "1.7.0"
 hilt = "2.60.1"
-ksp = "2.3.11"
+ksp = "2.3.12"
 
 # See https://developer.android.com/jetpack/compose/bom/bom-mapping
 androidx-compose-bom = "2026.09.00"
@@ -15,7 +15,7 @@ androidxEspresso = "3.7.0"
 uiTestJunit4Android = "1.12.1"
 
 google-material = "1.14.0"
-sqldelight = "2.3.2"
+sqldelight = "2.4.1"
 kprefs = "1.7.2"
 
 [plugins]
