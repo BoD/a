@@ -15,8 +15,8 @@ android {
   defaultConfig {
     applicationId = "a.a.a.a"
     minSdk = 26
-    versionCode = 28
-    versionName = "1.17.1"
+    versionCode = 30
+    versionName = "1.17.2"
     // See https://developer.android.com/training/dependency-injection/hilt-testing
     testInstrumentationRunner = "org.jraf.android.a.di.CustomTestRunner"
   }
