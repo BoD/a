@@ -30,11 +30,11 @@ import org.jraf.android.a.util.initLogging
 
 @HiltAndroidApp
 class AApplication : Application() {
-    override fun onCreate() {
-        super.onCreate()
-        initLogging()
+  override fun onCreate() {
+    super.onCreate()
+    initLogging()
 
-        // Material dynamic colors
+    // Material dynamic colors
 //        DynamicColors.applyToActivitiesIfAvailable(this)
-    }
+  }
 }

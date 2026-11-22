@@ -34,6 +34,6 @@ import org.jraf.android.a.data.AppRepositoryImpl
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
-    @Binds
-    abstract fun bindAppRepository(appRepositoryImpl: AppRepositoryImpl): AppRepository
+  @Binds
+  abstract fun bindAppRepository(appRepositoryImpl: AppRepositoryImpl): AppRepository
 }

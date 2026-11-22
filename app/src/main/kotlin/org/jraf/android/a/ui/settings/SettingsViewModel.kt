@@ -32,31 +32,31 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val settingsRepository: SettingsRepository,
+  private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
-    val alignmentBottom: StateFlow<Boolean> = settingsRepository.alignmentBottom
-    val alignmentRight: StateFlow<Boolean> = settingsRepository.alignmentRight
-    val wallpaperOpacity: StateFlow<Float> = settingsRepository.wallpaperOpacity
-    val showNotificationsButton: StateFlow<Boolean> = settingsRepository.showNotificationsButton
-    val keyboardHack: StateFlow<Boolean> = settingsRepository.keyboardHack
+  val alignmentBottom: StateFlow<Boolean> = settingsRepository.alignmentBottom
+  val alignmentRight: StateFlow<Boolean> = settingsRepository.alignmentRight
+  val wallpaperOpacity: StateFlow<Float> = settingsRepository.wallpaperOpacity
+  val showNotificationsButton: StateFlow<Boolean> = settingsRepository.showNotificationsButton
+  val keyboardHack: StateFlow<Boolean> = settingsRepository.keyboardHack
 
-    fun toggleAlignmentBottom() {
-        settingsRepository.alignmentBottom.value = !settingsRepository.alignmentBottom.value
-    }
+  fun toggleAlignmentBottom() {
+    settingsRepository.alignmentBottom.value = !settingsRepository.alignmentBottom.value
+  }
 
-    fun toggleAlignmentRight() {
-        settingsRepository.alignmentRight.value = !settingsRepository.alignmentRight.value
-    }
+  fun toggleAlignmentRight() {
+    settingsRepository.alignmentRight.value = !settingsRepository.alignmentRight.value
+  }
 
-    fun setWallpaperOpacity(opacity: Float) {
-        settingsRepository.wallpaperOpacity.value = opacity
-    }
+  fun setWallpaperOpacity(opacity: Float) {
+    settingsRepository.wallpaperOpacity.value = opacity
+  }
 
-    fun toggleShowNotificationsButton() {
-        settingsRepository.showNotificationsButton.value = !settingsRepository.showNotificationsButton.value
-    }
+  fun toggleShowNotificationsButton() {
+    settingsRepository.showNotificationsButton.value = !settingsRepository.showNotificationsButton.value
+  }
 
-    fun toggleKeyboardHack() {
-        settingsRepository.keyboardHack.value = !settingsRepository.keyboardHack.value
-    }
+  fun toggleKeyboardHack() {
+    settingsRepository.keyboardHack.value = !settingsRepository.keyboardHack.value
+  }
 }

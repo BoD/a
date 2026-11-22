@@ -57,122 +57,122 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 interface AppRepository {
-    data class App(
-        val label: String,
-        val drawable: Drawable,
-        val componentName: ComponentName,
-        val user: UserHandle,
-        val isPrivateSpaceLocked: Boolean,
-    )
+  data class App(
+    val label: String,
+    val drawable: Drawable,
+    val componentName: ComponentName,
+    val user: UserHandle,
+    val isPrivateSpaceLocked: Boolean,
+  )
 
-    val allApps: Flow<List<App>>
+  val allApps: Flow<List<App>>
 }
 
 @Singleton
 class AppRepositoryImpl @Inject constructor(@ApplicationContext context: Context) : AppRepository {
-    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+  private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    private val launcherApps: LauncherApps = context.getSystemService()!!
-    private val userManager: UserManager = context.getSystemService()!!
+  private val launcherApps: LauncherApps = context.getSystemService()!!
+  private val userManager: UserManager = context.getSystemService()!!
 
-    private val onPackagesChanged = Signal()
+  private val onPackagesChanged = Signal()
 
-    init {
-        launcherApps.registerCallback(
-            object : LauncherApps.Callback() {
-                override fun onPackageRemoved(packageName: String?, user: UserHandle?) {
-                    onPackagesChanged()
-                }
+  init {
+    launcherApps.registerCallback(
+      object : LauncherApps.Callback() {
+        override fun onPackageRemoved(packageName: String?, user: UserHandle?) {
+          onPackagesChanged()
+        }
 
-                override fun onPackageAdded(packageName: String?, user: UserHandle?) {
-                    onPackagesChanged()
-                }
+        override fun onPackageAdded(packageName: String?, user: UserHandle?) {
+          onPackagesChanged()
+        }
 
-                override fun onPackageChanged(packageName: String?, user: UserHandle?) {
-                    onPackagesChanged()
-                }
+        override fun onPackageChanged(packageName: String?, user: UserHandle?) {
+          onPackagesChanged()
+        }
 
-                override fun onPackagesAvailable(
-                    packageNames: Array<out String>?,
-                    user: UserHandle?,
-                    replacing: Boolean,
-                ) {
-                    onPackagesChanged()
-                }
+        override fun onPackagesAvailable(
+          packageNames: Array<out String>?,
+          user: UserHandle?,
+          replacing: Boolean,
+        ) {
+          onPackagesChanged()
+        }
 
-                override fun onPackagesUnavailable(
-                    packageNames: Array<out String>?,
-                    user: UserHandle?,
-                    replacing: Boolean,
-                ) {
-                    onPackagesChanged()
-                }
-            },
+        override fun onPackagesUnavailable(
+          packageNames: Array<out String>?,
+          user: UserHandle?,
+          replacing: Boolean,
+        ) {
+          onPackagesChanged()
+        }
+      },
+    )
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+      val broadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+          onPackagesChanged()
+        }
+      }
+      ContextCompat.registerReceiver(
+        context,
+        broadcastReceiver,
+        IntentFilter(Intent.ACTION_PROFILE_AVAILABLE),
+        ContextCompat.RECEIVER_EXPORTED,
+      )
+      ContextCompat.registerReceiver(
+        context,
+        broadcastReceiver,
+        IntentFilter(Intent.ACTION_PROFILE_UNAVAILABLE),
+        ContextCompat.RECEIVER_EXPORTED,
+      )
+    }
+  }
+
+  private var firstLoad = true
+
+  @OptIn(ExperimentalCoroutinesApi::class)
+  override val allApps: Flow<List<App>> = onPackagesChanged.flatMapLatest {
+    flow {
+      // On the first load, we first emit the apps without their icons to get something as fast as possible
+      val launcherActivityInfos: List<LauncherActivityInfo> = launcherApps.profiles.flatMap { profile ->
+        launcherApps.getActivityList(null, profile)
+          .filter { launcherActivityInfo ->
+            // Don't show ourselves, unless we're in debug mode
+            BuildConfig.DEBUG || launcherActivityInfo.applicationInfo.packageName != context.packageName
+          }
+      }
+      if (firstLoad) {
+        firstLoad = false
+        val pendingDrawable = ContextCompat.getDrawable(context, R.drawable.pending)!!
+        emit(
+          launcherActivityInfos.map { launcherActivityInfo ->
+            App(
+              label = launcherActivityInfo.label.toString(),
+              drawable = pendingDrawable,
+              componentName = launcherActivityInfo.getComponentName(),
+              user = launcherActivityInfo.user,
+              isPrivateSpaceLocked = userManager.isQuietModeEnabled(launcherActivityInfo.user),
+            )
+          },
         )
+      }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            val broadcastReceiver = object : BroadcastReceiver() {
-                override fun onReceive(context: Context?, intent: Intent?) {
-                    onPackagesChanged()
-                }
-            }
-            ContextCompat.registerReceiver(
-                context,
-                broadcastReceiver,
-                IntentFilter(Intent.ACTION_PROFILE_AVAILABLE),
-                ContextCompat.RECEIVER_EXPORTED,
-            )
-            ContextCompat.registerReceiver(
-                context,
-                broadcastReceiver,
-                IntentFilter(Intent.ACTION_PROFILE_UNAVAILABLE),
-                ContextCompat.RECEIVER_EXPORTED,
-            )
-        }
+      emit(
+        launcherActivityInfos.map { launcherActivityInfo ->
+          App(
+            label = launcherActivityInfo.label.toString(),
+            drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH),
+            componentName = launcherActivityInfo.getComponentName(),
+            user = launcherActivityInfo.user,
+            isPrivateSpaceLocked = userManager.isQuietModeEnabled(launcherActivityInfo.user),
+          )
+        },
+      )
     }
-
-    private var firstLoad = true
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override val allApps: Flow<List<App>> = onPackagesChanged.flatMapLatest {
-        flow {
-            // On the first load, we first emit the apps without their icons to get something as fast as possible
-            val launcherActivityInfos: List<LauncherActivityInfo> = launcherApps.profiles.flatMap { profile ->
-                launcherApps.getActivityList(null, profile)
-                    .filter { launcherActivityInfo ->
-                        // Don't show ourselves, unless we're in debug mode
-                        BuildConfig.DEBUG || launcherActivityInfo.applicationInfo.packageName != context.packageName
-                    }
-            }
-            if (firstLoad) {
-                firstLoad = false
-                val pendingDrawable = ContextCompat.getDrawable(context, R.drawable.pending)!!
-                emit(
-                    launcherActivityInfos.map { launcherActivityInfo ->
-                        App(
-                            label = launcherActivityInfo.label.toString(),
-                            drawable = pendingDrawable,
-                            componentName = launcherActivityInfo.getComponentName(),
-                            user = launcherActivityInfo.user,
-                            isPrivateSpaceLocked = userManager.isQuietModeEnabled(launcherActivityInfo.user),
-                        )
-                    },
-                )
-            }
-
-            emit(
-                launcherActivityInfos.map { launcherActivityInfo ->
-                    App(
-                        label = launcherActivityInfo.label.toString(),
-                        drawable = launcherActivityInfo.getIcon(DisplayMetrics.DENSITY_XHIGH),
-                        componentName = launcherActivityInfo.getComponentName(),
-                        user = launcherActivityInfo.user,
-                        isPrivateSpaceLocked = userManager.isQuietModeEnabled(launcherActivityInfo.user),
-                    )
-                },
-            )
-        }
-    }
-        .distinctUntilChanged()
-        .stateIn(coroutineScope, SharingStarted.Eagerly, emptyList())
+  }
+    .distinctUntilChanged()
+    .stateIn(coroutineScope, SharingStarted.Eagerly, emptyList())
 }

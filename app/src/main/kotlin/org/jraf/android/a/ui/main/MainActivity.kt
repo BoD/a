@@ -57,159 +57,159 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val viewModel: MainViewModel by viewModels()
+  private val viewModel: MainViewModel by viewModels()
 
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        logd("Permission granted: $granted")
-        viewModel.onContactsPermissionChanged()
-        viewModel.shouldShowRequestPermissionRationale.value =
-            ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CONTACTS)
+  private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+    logd("Permission granted: $granted")
+    viewModel.onContactsPermissionChanged()
+    viewModel.shouldShowRequestPermissionRationale.value =
+      ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CONTACTS)
+  }
+
+  private val userManager: UserManager by lazy { getSystemService<UserManager>()!! }
+  private val launcherApps: LauncherApps by lazy { getSystemService<LauncherApps>()!! }
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+
+    WindowCompat.setDecorFitsSystemWindows(window, false)
+
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_DENIED) {
+      if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CONTACTS)) {
+        viewModel.shouldShowRequestPermissionRationale.value = true
+      } else {
+        requestPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+      }
     }
 
-    private val userManager: UserManager by lazy { getSystemService<UserManager>()!! }
-    private val launcherApps: LauncherApps by lazy { getSystemService<LauncherApps>()!! }
+    lifecycleScope.launch {
+      viewModel.destination.collect(::handleDestination)
+    }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    setContent {
+      val searchQuery: String by viewModel.searchQuery.collectAsStateWithLifecycle()
+      val hasNotifications: Boolean by viewModel.hasNotifications.collectAsStateWithLifecycle()
+      val launchItems: List<LaunchItem> by viewModel.filteredLaunchItems.collectAsStateWithLifecycle()
+      val scrollUp: Any by viewModel.onScrollUp.collectAsStateWithLifecycle()
+      val shouldShowRequestPermissionRationale: Boolean by viewModel.shouldShowRequestPermissionRationale.collectAsStateWithLifecycle()
+      val hasNotificationListenerPermission: Boolean by viewModel.hasNotificationListenerPermission.collectAsStateWithLifecycle(
+        initialValue = true,
+      )
+      val hasSeenRequestNotificationListenerPermissionBanner: Boolean by viewModel.hasSeenRequestNotificationListenerPermissionBanner.collectAsStateWithLifecycle()
+      val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsStateWithLifecycle()
+      val alignmentRight: Boolean by viewModel.alignmentRight.collectAsStateWithLifecycle()
+      val wallpaperOpacity: Float by viewModel.wallpaperOpacity.collectAsStateWithLifecycle()
+      val showNotificationsButton: Boolean by viewModel.showNotificationsButton.collectAsStateWithLifecycle()
+      val keyboardHack: Boolean by viewModel.keyboardHack.collectAsStateWithLifecycle()
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+      val gridState = rememberLazyGridState()
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_DENIED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CONTACTS)) {
-                viewModel.shouldShowRequestPermissionRationale.value = true
-            } else {
-                requestPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
-            }
+      LaunchedEffect(scrollUp) {
+        delay(225.milliseconds)
+        gridState.animateScrollToItem(0)
+      }
+
+      MainLayout(
+        searchQuery = searchQuery,
+        hasNotifications = hasNotifications,
+        launchItems = launchItems,
+        onSearchQueryChange = viewModel::onSearchQueryChange,
+        onResetSearchQueryClick = viewModel::resetSearchQuery,
+        onWebSearchClick = viewModel::onWebSearchClick,
+        onKeyboardActionButtonClick = viewModel::onKeyboardActionButtonClick,
+        isKeyboardWebSearchActive = launchItems.isEmpty() && searchQuery.isNotBlank(),
+        onLaunchItemAction1 = viewModel::onLaunchItemAction1,
+        onLaunchItemAction2 = viewModel::onLaunchItemAction2,
+        onLaunchItemAction3 = viewModel::onLaunchItemAction3,
+        onLaunchItemAction4 = viewModel::onLaunchItemAction4,
+        onRenameLaunchItem = viewModel::onRenameLaunchItem,
+        showRequestContactsPermissionBanner = shouldShowRequestPermissionRationale,
+        onRequestContactsPermissionClick = {
+          viewModel.shouldShowRequestPermissionRationale.value = false
+          requestPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+        },
+        showNotificationListenerPermissionBanner = !hasNotificationListenerPermission && !hasSeenRequestNotificationListenerPermissionBanner,
+        onRequestNotificationListenerPermissionClick = viewModel::onRequestNotificationListenerPermissionClick,
+        alignmentBottom = alignmentBottom,
+        alignmentRight = alignmentRight,
+        wallpaperOpacity = wallpaperOpacity,
+        showNotificationsButton = showNotificationsButton,
+        keyboardHack = keyboardHack,
+        gridState = gridState,
+      )
+    }
+  }
+
+  private var savedDestination: MainViewModel.Destination? = null
+
+  private fun handleDestination(destination: MainViewModel.Destination) {
+    val (intent, user) = destination
+    if (user == null) {
+      startActivity(intent)
+    } else {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        val isPrivateSpaceUnlocked = !userManager.isQuietModeEnabled(user)
+        if (!isPrivateSpaceUnlocked) {
+          savedDestination = destination
+          userManager.requestQuietModeEnabled(false, user)
+          return
         }
-
-        lifecycleScope.launch {
-            viewModel.destination.collect(::handleDestination)
-        }
-
-        setContent {
-            val searchQuery: String by viewModel.searchQuery.collectAsStateWithLifecycle()
-            val hasNotifications: Boolean by viewModel.hasNotifications.collectAsStateWithLifecycle()
-            val launchItems: List<LaunchItem> by viewModel.filteredLaunchItems.collectAsStateWithLifecycle()
-            val scrollUp: Any by viewModel.onScrollUp.collectAsStateWithLifecycle()
-            val shouldShowRequestPermissionRationale: Boolean by viewModel.shouldShowRequestPermissionRationale.collectAsStateWithLifecycle()
-            val hasNotificationListenerPermission: Boolean by viewModel.hasNotificationListenerPermission.collectAsStateWithLifecycle(
-                initialValue = true,
-            )
-            val hasSeenRequestNotificationListenerPermissionBanner: Boolean by viewModel.hasSeenRequestNotificationListenerPermissionBanner.collectAsStateWithLifecycle()
-            val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsStateWithLifecycle()
-            val alignmentRight: Boolean by viewModel.alignmentRight.collectAsStateWithLifecycle()
-            val wallpaperOpacity: Float by viewModel.wallpaperOpacity.collectAsStateWithLifecycle()
-            val showNotificationsButton: Boolean by viewModel.showNotificationsButton.collectAsStateWithLifecycle()
-            val keyboardHack: Boolean by viewModel.keyboardHack.collectAsStateWithLifecycle()
-
-            val gridState = rememberLazyGridState()
-
-            LaunchedEffect(scrollUp) {
-                delay(225.milliseconds)
-                gridState.animateScrollToItem(0)
-            }
-
-            MainLayout(
-                searchQuery = searchQuery,
-                hasNotifications = hasNotifications,
-                launchItems = launchItems,
-                onSearchQueryChange = viewModel::onSearchQueryChange,
-                onResetSearchQueryClick = viewModel::resetSearchQuery,
-                onWebSearchClick = viewModel::onWebSearchClick,
-                onKeyboardActionButtonClick = viewModel::onKeyboardActionButtonClick,
-                isKeyboardWebSearchActive = launchItems.isEmpty() && searchQuery.isNotBlank(),
-                onLaunchItemAction1 = viewModel::onLaunchItemAction1,
-                onLaunchItemAction2 = viewModel::onLaunchItemAction2,
-                onLaunchItemAction3 = viewModel::onLaunchItemAction3,
-                onLaunchItemAction4 = viewModel::onLaunchItemAction4,
-                onRenameLaunchItem = viewModel::onRenameLaunchItem,
-                showRequestContactsPermissionBanner = shouldShowRequestPermissionRationale,
-                onRequestContactsPermissionClick = {
-                    viewModel.shouldShowRequestPermissionRationale.value = false
-                    requestPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
-                },
-                showNotificationListenerPermissionBanner = !hasNotificationListenerPermission && !hasSeenRequestNotificationListenerPermissionBanner,
-                onRequestNotificationListenerPermissionClick = viewModel::onRequestNotificationListenerPermissionClick,
-                alignmentBottom = alignmentBottom,
-                alignmentRight = alignmentRight,
-                wallpaperOpacity = wallpaperOpacity,
-                showNotificationsButton = showNotificationsButton,
-                keyboardHack = keyboardHack,
-                gridState = gridState,
-            )
-        }
+      }
+      launcherApps.startMainActivity(intent.component, user, intent.sourceBounds, null);
     }
-
-    private var savedDestination: MainViewModel.Destination? = null
-
-    private fun handleDestination(destination: MainViewModel.Destination) {
-        val (intent, user) = destination
-        if (user == null) {
-            startActivity(intent)
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                val isPrivateSpaceUnlocked = !userManager.isQuietModeEnabled(user)
-                if (!isPrivateSpaceUnlocked) {
-                    savedDestination = destination
-                    userManager.requestQuietModeEnabled(false, user)
-                    return
-                }
-            }
-            launcherApps.startMainActivity(intent.component, user, intent.sourceBounds, null);
-        }
-    }
+  }
 
 
-    // Back from another app: onStart is called only
-    // Home from another app: onStart then onNewIntent are called
-    // Home from this app: onNewIntent is called only
-    // Therefore we need to reset the search query / show the keyboard in both onStart and onNewIntent
+  // Back from another app: onStart is called only
+  // Home from another app: onStart then onNewIntent are called
+  // Home from this app: onNewIntent is called only
+  // Therefore we need to reset the search query / show the keyboard in both onStart and onNewIntent
 
-    override fun onStart() {
-        super.onStart()
-        viewModel.resetSearchQuery()
-    }
+  override fun onStart() {
+    super.onStart()
+    viewModel.resetSearchQuery()
+  }
 
-    override fun onResume() {
-        super.onResume()
-        viewModel.hasNotificationListenerPermissionSignal()
-        window.decorView.postDelayed(300) {
-            if (!WindowInsetsCompat.toWindowInsetsCompat(window.decorView.rootWindowInsets).isVisible(WindowInsetsCompat.Type.ime())) {
-                showKeyboardSupposedly()
-            }
-        }
-
-        if (savedDestination != null) {
-            // We were asking to unlock the private space, now we can handle the destination
-            val savedDestination = savedDestination!!
-            this.savedDestination = null
-
-            // Do this after a delay to ensure the private space has the time to get unlocked. Looks like this can take ~1s.
-            window.decorView.postDelayed(1000) {
-                val isPrivateSpaceUnlocked = !userManager.isQuietModeEnabled(savedDestination.user)
-                if (!isPrivateSpaceUnlocked) {
-                    // The user did not unlock the private space: don't do anything
-                    return@postDelayed
-                }
-                handleDestination(savedDestination)
-            }
-        }
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        viewModel.resetSearchQuery()
-    }
-
-    private fun showKeyboardSupposedly() {
-        // Force showing the keyboard, supposedly.  This works 93.78% of the time.  Shout out to /r/mAndroidDev!
-        WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.ime())
-    }
-
-    @SuppressLint("MissingSuperCall")
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        viewModel.resetSearchQuery()
+  override fun onResume() {
+    super.onResume()
+    viewModel.hasNotificationListenerPermissionSignal()
+    window.decorView.postDelayed(300) {
+      if (!WindowInsetsCompat.toWindowInsetsCompat(window.decorView.rootWindowInsets).isVisible(WindowInsetsCompat.Type.ime())) {
         showKeyboardSupposedly()
+      }
     }
+
+    if (savedDestination != null) {
+      // We were asking to unlock the private space, now we can handle the destination
+      val savedDestination = savedDestination!!
+      this.savedDestination = null
+
+      // Do this after a delay to ensure the private space has the time to get unlocked. Looks like this can take ~1s.
+      window.decorView.postDelayed(1000) {
+        val isPrivateSpaceUnlocked = !userManager.isQuietModeEnabled(savedDestination.user)
+        if (!isPrivateSpaceUnlocked) {
+          // The user did not unlock the private space: don't do anything
+          return@postDelayed
+        }
+        handleDestination(savedDestination)
+      }
+    }
+  }
+
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    viewModel.resetSearchQuery()
+  }
+
+  private fun showKeyboardSupposedly() {
+    // Force showing the keyboard, supposedly.  This works 93.78% of the time.  Shout out to /r/mAndroidDev!
+    WindowCompat.getInsetsController(window, window.decorView).show(WindowInsetsCompat.Type.ime())
+  }
+
+  @SuppressLint("MissingSuperCall")
+  @Deprecated("Deprecated in Java")
+  override fun onBackPressed() {
+    viewModel.resetSearchQuery()
+    showKeyboardSupposedly()
+  }
 }

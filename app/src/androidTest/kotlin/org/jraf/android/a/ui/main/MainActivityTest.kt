@@ -40,7 +40,6 @@ import org.jraf.android.a.R
 import org.jraf.android.a.data.AppRepository
 import org.jraf.android.a.fakes.data.FakeAppRepository
 import org.jraf.android.a.ui.components.TAG_TEXT_FIELD
-import org.jraf.android.a.ui.main.MainViewModel.AppLaunchItem
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -48,72 +47,72 @@ import javax.inject.Inject
 
 @HiltAndroidTest
 class MainActivityTest {
-    @get:Rule(order = 0)
-    val hiltTestRule: HiltAndroidRule = HiltAndroidRule(this)
+  @get:Rule(order = 0)
+  val hiltTestRule: HiltAndroidRule = HiltAndroidRule(this)
 
-    @get:Rule(order = 1)
-    val composeTestRule = createAndroidComposeRule<MainActivity>()
+  @get:Rule(order = 1)
+  val composeTestRule = createAndroidComposeRule<MainActivity>()
 
-    @get:Rule(order = 2)
-    val grantContactsPermissionRule = GrantPermissionRule.grant(android.Manifest.permission.READ_CONTACTS)
+  @get:Rule(order = 2)
+  val grantContactsPermissionRule = GrantPermissionRule.grant(android.Manifest.permission.READ_CONTACTS)
 
-    @Inject
-    lateinit var fakeAppRepository: FakeAppRepository
+  @Inject
+  lateinit var fakeAppRepository: FakeAppRepository
 
-    @Before
-    fun setUp() {
-        hiltTestRule.inject()
-        fakeAppRepository.setApps(
-            listOf(
-                fakeApp(
-                    label = "Fake Contacts",
-                    pkg = "com.acme.contacts",
-                    cls = "com.acme.contacts.MainActivity",
-                ),
-                fakeApp(
-                    label = "Fake Phone",
-                    pkg = "com.acme.phone",
-                    cls = "com.acme.phone.MainActivity",
-                ),
-                fakeApp(
-                    label = "Fake Minesweeper",
-                    pkg = "com.acme.minesweeper",
-                    cls = "com.acme.minesweeper.MainActivity",
-                ),
-            ),
-        )
-    }
-
-    @Test
-    fun testDisplaysApps() {
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("Fake Contacts").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Fake Phone").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Fake Minesweeper").assertIsDisplayed()
-    }
-
-    @Test
-    fun testFilterApps() {
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(TAG_TEXT_FIELD).performTextInput("Cont")
-        composeTestRule.onNodeWithText("Fake Contacts").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Fake Phone").assertDoesNotExist()
-        composeTestRule.onNodeWithText("Fake Minesweeper").assertDoesNotExist()
-
-    }
-
-    private fun fakeApp(
-        label: String,
-        pkg: String,
-        cls: String,
-    ) = AppRepository.App(
-        label = label,
-        drawable = ContextCompat.getDrawable(
-            InstrumentationRegistry.getInstrumentation().targetContext,
-            R.mipmap.ic_launcher,
-        )!!,
-        componentName = ComponentName(pkg, cls),
-        user = Process.myUserHandle(),
-        isPrivateSpaceLocked = false,
+  @Before
+  fun setUp() {
+    hiltTestRule.inject()
+    fakeAppRepository.setApps(
+      listOf(
+        fakeApp(
+          label = "Fake Contacts",
+          pkg = "com.acme.contacts",
+          cls = "com.acme.contacts.MainActivity",
+        ),
+        fakeApp(
+          label = "Fake Phone",
+          pkg = "com.acme.phone",
+          cls = "com.acme.phone.MainActivity",
+        ),
+        fakeApp(
+          label = "Fake Minesweeper",
+          pkg = "com.acme.minesweeper",
+          cls = "com.acme.minesweeper.MainActivity",
+        ),
+      ),
     )
+  }
+
+  @Test
+  fun testDisplaysApps() {
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithText("Fake Contacts").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Fake Phone").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Fake Minesweeper").assertIsDisplayed()
+  }
+
+  @Test
+  fun testFilterApps() {
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(TAG_TEXT_FIELD).performTextInput("Cont")
+    composeTestRule.onNodeWithText("Fake Contacts").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Fake Phone").assertDoesNotExist()
+    composeTestRule.onNodeWithText("Fake Minesweeper").assertDoesNotExist()
+
+  }
+
+  private fun fakeApp(
+    label: String,
+    pkg: String,
+    cls: String,
+  ) = AppRepository.App(
+    label = label,
+    drawable = ContextCompat.getDrawable(
+      InstrumentationRegistry.getInstrumentation().targetContext,
+      R.mipmap.ic_launcher,
+    )!!,
+    componentName = ComponentName(pkg, cls),
+    user = Process.myUserHandle(),
+    isPrivateSpaceLocked = false,
+  )
 }

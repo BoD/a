@@ -35,29 +35,29 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class SettingsActivity : ComponentActivity() {
-    private val viewModel: SettingsViewModel by viewModels()
+  private val viewModel: SettingsViewModel by viewModels()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContent {
-            val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsStateWithLifecycle()
-            val rightHanded: Boolean by viewModel.alignmentRight.collectAsStateWithLifecycle()
-            val wallpaperOpacity: Float by viewModel.wallpaperOpacity.collectAsStateWithLifecycle()
-            val showNotificationsButton: Boolean by viewModel.showNotificationsButton.collectAsStateWithLifecycle()
-            val keyboardHack: Boolean by viewModel.keyboardHack.collectAsStateWithLifecycle()
-            SettingsLayout(
-                onNavigateBack = onBackPressedDispatcher::onBackPressed,
-                alignmentBottom = alignmentBottom,
-                onAlignmentBottomClick = viewModel::toggleAlignmentBottom,
-                rightHanded = rightHanded,
-                onAlignmentRightClick = viewModel::toggleAlignmentRight,
-                wallpaperOpacity = wallpaperOpacity,
-                onWallpaperOpacityChange = viewModel::setWallpaperOpacity,
-                showNotificationsButton = showNotificationsButton,
-                onShowNotificationsButtonClick = viewModel::toggleShowNotificationsButton,
-                keyboardHack = keyboardHack,
-                onKeyboardHackClick = viewModel::toggleKeyboardHack,
-            )
-        }
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContent {
+      val alignmentBottom: Boolean by viewModel.alignmentBottom.collectAsStateWithLifecycle()
+      val rightHanded: Boolean by viewModel.alignmentRight.collectAsStateWithLifecycle()
+      val wallpaperOpacity: Float by viewModel.wallpaperOpacity.collectAsStateWithLifecycle()
+      val showNotificationsButton: Boolean by viewModel.showNotificationsButton.collectAsStateWithLifecycle()
+      val keyboardHack: Boolean by viewModel.keyboardHack.collectAsStateWithLifecycle()
+      SettingsLayout(
+        onNavigateBack = onBackPressedDispatcher::onBackPressed,
+        alignmentBottom = alignmentBottom,
+        onAlignmentBottomClick = viewModel::toggleAlignmentBottom,
+        rightHanded = rightHanded,
+        onAlignmentRightClick = viewModel::toggleAlignmentRight,
+        wallpaperOpacity = wallpaperOpacity,
+        onWallpaperOpacityChange = viewModel::setWallpaperOpacity,
+        showNotificationsButton = showNotificationsButton,
+        onShowNotificationsButtonClick = viewModel::toggleShowNotificationsButton,
+        keyboardHack = keyboardHack,
+        onKeyboardHackClick = viewModel::toggleKeyboardHack,
+      )
     }
+  }
 }

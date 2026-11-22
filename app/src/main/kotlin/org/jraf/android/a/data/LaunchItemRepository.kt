@@ -46,122 +46,122 @@ private const val SHORT_TERM_WEIGHT = 3L
 
 @Singleton
 class LaunchItemRepository @Inject constructor(@param:ApplicationContext private val context: Context) {
-    private val database: Database by lazy { createSqldelightDatabase(context) }
+  private val database: Database by lazy { createSqldelightDatabase(context) }
 
-    private fun createSqldelightDatabase(context: Context): Database {
-        val driver = AndroidSqliteDriver(
-            schema = Database.Schema,
-            context = context,
-            name = "a.db",
-        )
-        return Database(driver)
+  private fun createSqldelightDatabase(context: Context): Database {
+    val driver = AndroidSqliteDriver(
+      schema = Database.Schema,
+      context = context,
+      name = "a.db",
+    )
+    return Database(driver)
+  }
+
+  suspend fun recordLaunchedItem(id: String) {
+    withContext(Dispatchers.IO) {
+      database.launchedItemsQueries.insert(id)
     }
+  }
 
-    suspend fun recordLaunchedItem(id: String) {
-        withContext(Dispatchers.IO) {
-            database.launchedItemsQueries.insert(id)
-        }
+  sealed interface Counter {
+    data class ShortAndLongTerm(
+      val longTerm: Long,
+      val combined: Long,
+    ) : Counter
+
+    object Deprioritized : Counter
+  }
+
+  val counters: Flow<Map<String, Counter>> = run {
+    val longTermCounters = getCounters(LONG_TERM_HISTORY_SIZE, LONG_TERM_WEIGHT)
+    val shortTermCounters = getCounters(SHORT_TERM_HISTORY_SIZE, SHORT_TERM_WEIGHT)
+    val deprioritizedItems = getDeprioritizedItems()
+    combine(longTermCounters, shortTermCounters, deprioritizedItems) { longTerm, shortTerm, deprioritized ->
+      longTerm.mapValues { Counter.ShortAndLongTerm(longTerm = it.value, combined = it.value + shortTerm.getOrDefault(it.key, 0)) } +
+        deprioritized.map { it to Counter.Deprioritized }
     }
+  }
 
-    sealed interface Counter {
-        data class ShortAndLongTerm(
-            val longTerm: Long,
-            val combined: Long,
-        ) : Counter
+  private fun getCounters(historySize: Long, weight: Long): Flow<Map<String, Long>> =
+    database.launchedItemsQueries.select(historySize = historySize)
+      .asFlow()
+      .mapToList(Dispatchers.IO)
+      .map { counters ->
+        counters.associate { it.id to it.count * weight }
+      }
 
-        object Deprioritized : Counter
+  suspend fun deprioritizeItem(id: String) {
+    withContext(Dispatchers.IO) {
+      database.deprioritizedItemsQueries.insert(id)
+      // Also reset counter
+      database.launchedItemsQueries.delete(id)
     }
+  }
 
-    val counters: Flow<Map<String, Counter>> = run {
-        val longTermCounters = getCounters(LONG_TERM_HISTORY_SIZE, LONG_TERM_WEIGHT)
-        val shortTermCounters = getCounters(SHORT_TERM_HISTORY_SIZE, SHORT_TERM_WEIGHT)
-        val deprioritizedItems = getDeprioritizedItems()
-        combine(longTermCounters, shortTermCounters, deprioritizedItems) { longTerm, shortTerm, deprioritized ->
-            longTerm.mapValues { Counter.ShortAndLongTerm(longTerm = it.value, combined = it.value + shortTerm.getOrDefault(it.key, 0)) } +
-                    deprioritized.map { it to Counter.Deprioritized }
-        }
+  suspend fun undeprioritizeItem(id: String) {
+    withContext(Dispatchers.IO) {
+      database.deprioritizedItemsQueries.delete(id)
     }
+  }
 
-    private fun getCounters(historySize: Long, weight: Long): Flow<Map<String, Long>> =
-        database.launchedItemsQueries.select(historySize = historySize)
-            .asFlow()
-            .mapToList(Dispatchers.IO)
-            .map { counters ->
-                counters.associate { it.id to it.count * weight }
-            }
+  private fun getDeprioritizedItems(): Flow<List<String>> = database.deprioritizedItemsQueries.select()
+    .asFlow()
+    .mapToList(Dispatchers.IO)
 
-    suspend fun deprioritizeItem(id: String) {
-        withContext(Dispatchers.IO) {
-            database.deprioritizedItemsQueries.insert(id)
-            // Also reset counter
-            database.launchedItemsQueries.delete(id)
-        }
+  suspend fun ignoreNotifications(id: String) {
+    withContext(Dispatchers.IO) {
+      database.ignoredNotificationsItemsQueries.insert(id)
     }
+  }
 
-    suspend fun undeprioritizeItem(id: String) {
-        withContext(Dispatchers.IO) {
-            database.deprioritizedItemsQueries.delete(id)
-        }
+  suspend fun unignoreNotifications(id: String) {
+    withContext(Dispatchers.IO) {
+      database.ignoredNotificationsItemsQueries.delete(id)
     }
+  }
 
-    private fun getDeprioritizedItems(): Flow<List<String>> = database.deprioritizedItemsQueries.select()
-        .asFlow()
-        .mapToList(Dispatchers.IO)
+  fun getIgnoredNotificationsItems(): Flow<List<String>> = database.ignoredNotificationsItemsQueries.select()
+    .asFlow()
+    .mapToList(Dispatchers.IO)
 
-    suspend fun ignoreNotifications(id: String) {
-        withContext(Dispatchers.IO) {
-            database.ignoredNotificationsItemsQueries.insert(id)
-        }
+  suspend fun deleteItem(id: String) {
+    withContext(Dispatchers.IO) {
+      database.deletedItemsQueries.insert(id)
+      // Also reset counter
+      database.launchedItemsQueries.delete(id)
     }
+  }
 
-    suspend fun unignoreNotifications(id: String) {
-        withContext(Dispatchers.IO) {
-            database.ignoredNotificationsItemsQueries.delete(id)
-        }
+  fun getDeletedItems(): Flow<List<String>> = database.deletedItemsQueries.select()
+    .asFlow()
+    .mapToList(Dispatchers.IO)
+
+  fun getRenamedItems(): Flow<Map<String, String>> = database.renamedItemsQueries.select()
+    .asFlow()
+    .mapToList(Dispatchers.IO)
+    .map { it.associate { renamedItem -> renamedItem.id to renamedItem.label } }
+
+  suspend fun renameItem(id: String, label: String) {
+    withContext(Dispatchers.IO) {
+      database.renamedItemsQueries.insert(id, label)
     }
+  }
 
-    fun getIgnoredNotificationsItems(): Flow<List<String>> = database.ignoredNotificationsItemsQueries.select()
-        .asFlow()
-        .mapToList(Dispatchers.IO)
-
-    suspend fun deleteItem(id: String) {
-        withContext(Dispatchers.IO) {
-            database.deletedItemsQueries.insert(id)
-            // Also reset counter
-            database.launchedItemsQueries.delete(id)
-        }
+  suspend fun unrenameItem(id: String) {
+    withContext(Dispatchers.IO) {
+      database.renamedItemsQueries.delete(id)
     }
+  }
 
-    fun getDeletedItems(): Flow<List<String>> = database.deletedItemsQueries.select()
-        .asFlow()
-        .mapToList(Dispatchers.IO)
-
-    fun getRenamedItems(): Flow<Map<String, String>> = database.renamedItemsQueries.select()
-        .asFlow()
-        .mapToList(Dispatchers.IO)
-        .map { it.associate { renamedItem -> renamedItem.id to renamedItem.label } }
-
-    suspend fun renameItem(id: String, label: String) {
-        withContext(Dispatchers.IO) {
-            database.renamedItemsQueries.insert(id, label)
-        }
+  suspend fun isShortcutDeleted(id: String): Boolean {
+    return withContext(Dispatchers.IO) {
+      database.deletedItemsQueries.select().executeAsList().contains(ShortcutRepository.getId(id))
     }
+  }
 
-    suspend fun unrenameItem(id: String) {
-        withContext(Dispatchers.IO) {
-            database.renamedItemsQueries.delete(id)
-        }
+  suspend fun undeleteShortcut(id: String) {
+    withContext(Dispatchers.IO) {
+      database.deletedItemsQueries.delete(ShortcutRepository.getId(id))
     }
-
-    suspend fun isShortcutDeleted(id: String): Boolean {
-        return withContext(Dispatchers.IO) {
-            database.deletedItemsQueries.select().executeAsList().contains(ShortcutRepository.getId(id))
-        }
-    }
-
-    suspend fun undeleteShortcut(id: String) {
-        withContext(Dispatchers.IO) {
-            database.deletedItemsQueries.delete(ShortcutRepository.getId(id))
-        }
-    }
+  }
 }

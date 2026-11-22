@@ -33,11 +33,11 @@ import javax.inject.Singleton
 
 @Singleton
 class FakeAppRepository @Inject constructor() : AppRepository {
-    private val _apps = MutableStateFlow<List<App>>(emptyList())
+  private val _apps = MutableStateFlow<List<App>>(emptyList())
 
-    override val allApps: Flow<List<App>> = _apps
+  override val allApps: Flow<List<App>> = _apps
 
-    fun setApps(apps: List<App>) {
-        _apps.value = apps
-    }
+  fun setApps(apps: List<App>) {
+    _apps.value = apps
+  }
 }

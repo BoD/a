@@ -30,13 +30,13 @@ import kotlinx.coroutines.flow.StateFlow
 
 @OptIn(ExperimentalForInheritanceCoroutinesApi::class)
 class Signal private constructor(private val flow: MutableStateFlow<Event>) : StateFlow<Signal.Event> by flow {
-    sealed interface Event
-    object Initial : Event
-    class Trigger : Event
+  sealed interface Event
+  object Initial : Event
+  class Trigger : Event
 
-    constructor() : this(flow = MutableStateFlow(Initial))
+  constructor() : this(flow = MutableStateFlow(Initial))
 
-    operator fun invoke() {
-        flow.value = Trigger()
-    }
+  operator fun invoke() {
+    flow.value = Trigger()
+  }
 }

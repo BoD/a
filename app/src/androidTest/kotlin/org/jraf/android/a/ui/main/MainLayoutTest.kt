@@ -40,87 +40,87 @@ import org.junit.Rule
 import org.junit.Test
 
 class MainLayoutTest {
-    @get:Rule
-    val composeTestRule = createComposeRule()
+  @get:Rule
+  val composeTestRule = createComposeRule()
 
-    /**
-     * Given the launcher with some apps,
-     * When the user types some text,
-     * Then the query callback is called.
-     */
-    @Test
-    fun testMainLayoutQueryChangeCallback() {
-        var query = ""
-        composeTestRule.setContent {
+  /**
+   * Given the launcher with some apps,
+   * When the user types some text,
+   * Then the query callback is called.
+   */
+  @Test
+  fun testMainLayoutQueryChangeCallback() {
+    var query = ""
+    composeTestRule.setContent {
 
-            // Given the launcher with some apps,
-            MainLayout(
-                searchQuery = "",
-                hasNotifications = true,
-                launchItems = listOf(
-                    fakeApp(
-                        label = "Fake Contacts",
-                        pkg = "com.acme.contacts",
-                        cls = "com.acme.contacts.MainActivity",
-                    ),
-                    fakeApp(
-                        label = "Fake Phone",
-                        pkg = "com.acme.phone",
-                        cls = "com.acme.phone.MainActivity",
-                    ),
-                    fakeApp(
-                        label = "Fake Minesweeper",
-                        pkg = "com.acme.minesweeper",
-                        cls = "com.acme.minesweeper.MainActivity",
-                    ),
-                ),
-                onSearchQueryChange = { query = it },
-                onResetSearchQueryClick = {},
-                onWebSearchClick = {},
-                onKeyboardActionButtonClick = {},
-                isKeyboardWebSearchActive = false,
-                onLaunchItemAction1 = {},
-                onLaunchItemAction2 = {},
-                onLaunchItemAction3 = {},
-                onLaunchItemAction4 = {},
-                onRenameLaunchItem = { _, _ -> },
-                showRequestContactsPermissionBanner = false,
-                onRequestContactsPermissionClick = {},
-                showNotificationListenerPermissionBanner = true,
-                onRequestNotificationListenerPermissionClick = {},
-                alignmentBottom = true,
-                alignmentRight = false,
-                wallpaperOpacity = .10F,
-                showNotificationsButton = true,
-                keyboardHack = true,
-                gridState = rememberLazyGridState(),
-            )
-        }
-
-        // When the user types some text,
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(TAG_TEXT_FIELD).performTextInput("Cont")
-
-        // Then the query callback is called.
-        assertEquals("Cont", query)
+      // Given the launcher with some apps,
+      MainLayout(
+        searchQuery = "",
+        hasNotifications = true,
+        launchItems = listOf(
+          fakeApp(
+            label = "Fake Contacts",
+            pkg = "com.acme.contacts",
+            cls = "com.acme.contacts.MainActivity",
+          ),
+          fakeApp(
+            label = "Fake Phone",
+            pkg = "com.acme.phone",
+            cls = "com.acme.phone.MainActivity",
+          ),
+          fakeApp(
+            label = "Fake Minesweeper",
+            pkg = "com.acme.minesweeper",
+            cls = "com.acme.minesweeper.MainActivity",
+          ),
+        ),
+        onSearchQueryChange = { query = it },
+        onResetSearchQueryClick = {},
+        onWebSearchClick = {},
+        onKeyboardActionButtonClick = {},
+        isKeyboardWebSearchActive = false,
+        onLaunchItemAction1 = {},
+        onLaunchItemAction2 = {},
+        onLaunchItemAction3 = {},
+        onLaunchItemAction4 = {},
+        onRenameLaunchItem = { _, _ -> },
+        showRequestContactsPermissionBanner = false,
+        onRequestContactsPermissionClick = {},
+        showNotificationListenerPermissionBanner = true,
+        onRequestNotificationListenerPermissionClick = {},
+        alignmentBottom = true,
+        alignmentRight = false,
+        wallpaperOpacity = .10F,
+        showNotificationsButton = true,
+        keyboardHack = true,
+        gridState = rememberLazyGridState(),
+      )
     }
 
-    private fun fakeApp(
-        label: String,
-        pkg: String,
-        cls: String,
-    ) = AppLaunchItem(
-        label = label,
-        drawable = ContextCompat.getDrawable(
-            InstrumentationRegistry.getInstrumentation().targetContext,
-            R.mipmap.ic_launcher,
-        )!!,
-        isDeprioritized = false,
-        notificationRanking = 42,
-        isRenamed = false,
-        ignoreNotifications = false,
-        componentName = ComponentName(pkg, cls),
-        user = Process.myUserHandle(),
-        isPrivateSpaceLocked = false,
-    )
+    // When the user types some text,
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(TAG_TEXT_FIELD).performTextInput("Cont")
+
+    // Then the query callback is called.
+    assertEquals("Cont", query)
+  }
+
+  private fun fakeApp(
+    label: String,
+    pkg: String,
+    cls: String,
+  ) = AppLaunchItem(
+    label = label,
+    drawable = ContextCompat.getDrawable(
+      InstrumentationRegistry.getInstrumentation().targetContext,
+      R.mipmap.ic_launcher,
+    )!!,
+    isDeprioritized = false,
+    notificationRanking = 42,
+    isRenamed = false,
+    ignoreNotifications = false,
+    componentName = ComponentName(pkg, cls),
+    user = Process.myUserHandle(),
+    isPrivateSpaceLocked = false,
+  )
 }

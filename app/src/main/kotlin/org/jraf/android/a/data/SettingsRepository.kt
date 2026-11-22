@@ -34,12 +34,12 @@ import javax.inject.Singleton
 
 @Singleton
 class SettingsRepository @Inject constructor(@ApplicationContext context: Context) {
-    private val prefs = Prefs(context)
+  private val prefs = Prefs(context)
 
-    val hasSeenRequestNotificationListenerPermissionBanner: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
-    val alignmentBottom: MutableStateFlow<Boolean> by prefs.BooleanFlow(false, Key("reverseLayout"))
-    val alignmentRight: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
-    val wallpaperOpacity: MutableStateFlow<Float> by prefs.FloatFlow(0F)
-    val showNotificationsButton: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
-    val keyboardHack: MutableStateFlow<Boolean> by prefs.BooleanFlow(true)
+  val hasSeenRequestNotificationListenerPermissionBanner: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
+  val alignmentBottom: MutableStateFlow<Boolean> by prefs.BooleanFlow(false, Key("reverseLayout"))
+  val alignmentRight: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
+  val wallpaperOpacity: MutableStateFlow<Float> by prefs.FloatFlow(0F)
+  val showNotificationsButton: MutableStateFlow<Boolean> by prefs.BooleanFlow(false)
+  val keyboardHack: MutableStateFlow<Boolean> by prefs.BooleanFlow(true)
 }

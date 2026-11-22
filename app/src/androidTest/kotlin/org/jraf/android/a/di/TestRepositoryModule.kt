@@ -32,11 +32,11 @@ import org.jraf.android.a.data.AppRepository
 import org.jraf.android.a.fakes.data.FakeAppRepository
 
 @TestInstallIn(
-    components = [SingletonComponent::class],
-    replaces = [RepositoryModule::class],
+  components = [SingletonComponent::class],
+  replaces = [RepositoryModule::class],
 )
 @Module
 abstract class TestRepositoryModule {
-    @Binds
-    abstract fun bindAppRepository(fakeAppRepository: FakeAppRepository): AppRepository
+  @Binds
+  abstract fun bindAppRepository(fakeAppRepository: FakeAppRepository): AppRepository
 }

@@ -72,452 +72,452 @@ import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val launchItemRepository: LaunchItemRepository,
-    appRepository: AppRepository,
-    private val contactRepository: ContactRepository,
-    private val shortcutRepository: ShortcutRepository,
-    private val notificationRepository: NotificationRepository,
-    private val settingsRepository: SettingsRepository,
-    @param:ApplicationContext private val context: Context,
+  private val launchItemRepository: LaunchItemRepository,
+  appRepository: AppRepository,
+  private val contactRepository: ContactRepository,
+  private val shortcutRepository: ShortcutRepository,
+  private val notificationRepository: NotificationRepository,
+  private val settingsRepository: SettingsRepository,
+  @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
-    companion object {
-        const val MOST_USED_ITEMS_COUNT = 5
-    }
+  companion object {
+    const val MOST_USED_ITEMS_COUNT = 5
+  }
 
 
-    private val ignoredNotificationsItems = launchItemRepository.getIgnoredNotificationsItems()
-    private val renamedItems = launchItemRepository.getRenamedItems()
+  private val ignoredNotificationsItems = launchItemRepository.getIgnoredNotificationsItems()
+  private val renamedItems = launchItemRepository.getRenamedItems()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val allLaunchItems: Flow<List<LaunchItem>> = appRepository.allApps.flatMapLatest { allApps ->
-        val allShortcutsFlow = shortcutRepository.getAllShortcuts(allApps.map { it.componentName.packageName })
-        combine(
-            allShortcutsFlow,
-            contactRepository.starredContacts,
-            notificationRepository.notificationRankings,
-            // combine() accepts at most 5 flows, so we "overcombine"
-            combine(
-                ignoredNotificationsItems,
-                renamedItems,
-            ) { ignoredNotificationsItems, renamedItems -> ignoredNotificationsItems to renamedItems },
-            hasNotificationListenerPermission,
-        ) { allShortcuts, starredContacts, notificationRankings, (ignoredNotificationsItems, renamedItems), hasNotificationListenerPermission ->
-            allApps.map { app ->
-                val id = AppLaunchItem.getId(componentName = app.componentName, user = app.user)
-                val ignoreNotifications = id in ignoredNotificationsItems
-                val label = renamedItems[id]
-                val notificationRanking = if (!hasNotificationListenerPermission || ignoreNotifications) {
-                    null
-                } else {
-                    notificationRankings[
-                        NotificationRepository.NotificationKey(
-                            packageName = app.componentName.packageName,
-                            user = app.user,
-                        ),
-                    ]
-                }
-                app.toAppLaunchItem(
-                    ignoreNotifications = ignoreNotifications,
-                    notificationRanking = notificationRanking,
-                    label = label,
-                )
-            } +
-                    allShortcuts.map {
-                        val id = ShortcutLaunchItem.getId(it.id)
-                        val label = renamedItems[id]
-                        it.toShortcutLaunchItem(label = label)
-                    } +
-                    starredContacts.map { it.toContactLaunchItem() } +
-                    ASettingsLaunchItem(context = context, isDeprioritized = false)
-        }
-    }
-
-
-    private val deletedLaunchItems = launchItemRepository.getDeletedItems()
-
-    val searchQuery = MutableStateFlow("")
-    val filteredLaunchItems: StateFlow<List<LaunchItem>> =
-        combine(
-            allLaunchItems,
-            searchQuery,
-            launchItemRepository.counters,
-            deletedLaunchItems,
-        ) { allLaunchedItems, searchQuery, counters, deletedLaunchItems ->
-            val query = searchQuery.trim()
-            val filteredItems = allLaunchedItems
-                .map {
-                    when (it) {
-                        is AppLaunchItem if counters[it.id] is Counter.Deprioritized -> {
-                            it.copy(isDeprioritized = true)
-                        }
-
-                        is ASettingsLaunchItem if counters[it.id] is Counter.Deprioritized -> {
-                            it.copy(isDeprioritized = true)
-                        }
-
-                        else -> {
-                            it
-                        }
-                    }
-                }
-                .filterNot { it.id in deletedLaunchItems }
-                .filter { it.matchesFilter(query) }
-
-            val mostUsedItems = filteredItems
-                // Get the most used items, sorted by counter long term, without short term boost (descending)
-                .sortedByDescending {
-                    when (val counter = counters[it.id]) {
-                        is Counter.ShortAndLongTerm -> counter.longTerm
-                        is Counter.Deprioritized -> -1
-                        null -> 0
-                    }
-                }.take(MOST_USED_ITEMS_COUNT)
-
-            // Add the most used items at the top
-            (mostUsedItems +
-                    // Sort the rest by counter with short term boost (descending)
-                    (filteredItems - mostUsedItems.toSet())
-                        .sortedByDescending {
-                            when (val counter = counters[it.id]) {
-                                is Counter.ShortAndLongTerm -> counter.combined
-                                is Counter.Deprioritized -> -1
-                                null -> 0
-                            }
-                        }
-                    )
-                // Then sort by notification rank (ascending)
-                .sortedBy {
-                    if (it.notificationRanking != null && !it.ignoreNotifications) {
-                        it.notificationRanking!!
-                    } else {
-                        Integer.MAX_VALUE
-                    }
-                }
-        }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), emptyList())
-
-    val destination = MutableSharedFlow<Destination>(extraBufferCapacity = 1)
-    val onScrollUp = Signal()
-
-    val shouldShowRequestPermissionRationale = MutableStateFlow(false)
-
-    val hasNotifications: StateFlow<Boolean> = notificationRepository.notificationRankings
-        .map { it.isNotEmpty() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), false)
-
-    fun onSearchQueryChange(query: String) {
-        searchQuery.value = query
-        onScrollUp()
-    }
-
-    fun onLaunchItemAction1(launchedItem: LaunchItem) {
-        when (launchedItem) {
-            is AppLaunchItem -> destination.tryEmit(launchedItem.launchAppDestination)
-            is ASettingsLaunchItem -> destination.tryEmit(launchedItem.launchAppDestination)
-            is ContactLaunchItem -> destination.tryEmit(launchedItem.viewContactDestination)
-            is ShortcutLaunchItem -> shortcutRepository.launchShortcut(launchedItem.shortcut)
-        }
-        // Don't record the launch if there's a notification, as it's likely the user just wants to read it, that shouldn't count as a "real" launch
-        if (!launchedItem.hasNotification) {
-            viewModelScope.launch {
-                // Add a delay so the reordering animation isn't distracting
-                delay(1000.milliseconds)
-                launchItemRepository.recordLaunchedItem(launchedItem.id)
-            }
-        }
-    }
-
-    fun onLaunchItemAction2(launchedItem: LaunchItem) {
-        when (launchedItem) {
-            is AppLaunchItem -> destination.tryEmit(launchedItem.launchAppDetailsDestination)
-            is ASettingsLaunchItem -> destination.tryEmit(launchedItem.launchAppDetailsDestination)
-            is ContactLaunchItem -> {
-                launchedItem.sendSmsDestination?.let { destination.tryEmit(it) }
-
-                // Long clicking on a contact counts as a primary action
-                viewModelScope.launch {
-                    delay(1000.milliseconds)
-                    launchItemRepository.recordLaunchedItem(launchedItem.id)
-                }
-            }
-
-            is ShortcutLaunchItem -> viewModelScope.launch { launchItemRepository.deleteItem(launchedItem.id) }
-        }
-    }
-
-    fun onLaunchItemAction3(launchedItem: LaunchItem) {
-        viewModelScope.launch {
-            if (launchedItem.isDeprioritized) {
-                launchItemRepository.undeprioritizeItem(launchedItem.id)
-            } else {
-                launchItemRepository.deprioritizeItem(launchedItem.id)
-            }
-        }
-    }
-
-    fun onLaunchItemAction4(launchedItem: LaunchItem) {
-        viewModelScope.launch {
-            if (launchedItem.ignoreNotifications) {
-                launchItemRepository.unignoreNotifications(launchedItem.id)
-            } else {
-                launchItemRepository.ignoreNotifications(launchedItem.id)
-            }
-        }
-    }
-
-    fun onRenameLaunchItem(launchedItem: LaunchItem, label: String?) {
-        viewModelScope.launch {
-            if (label == null) {
-                launchItemRepository.unrenameItem(launchedItem.id)
-            } else {
-                launchItemRepository.renameItem(launchedItem.id, label)
-            }
-        }
-    }
-
-    fun resetSearchQuery() {
-        onSearchQueryChange("")
-    }
-
-    fun onWebSearchClick() {
-        val intent = Intent(Intent.ACTION_WEB_SEARCH)
-            .putExtra(SearchManager.QUERY, searchQuery.value)
-        destination.tryEmit(Destination(intent))
-    }
-
-    fun onKeyboardActionButtonClick() {
-        val launchItems = filteredLaunchItems.value
-        if (launchItems.isEmpty()) {
-            onWebSearchClick()
+  @OptIn(ExperimentalCoroutinesApi::class)
+  private val allLaunchItems: Flow<List<LaunchItem>> = appRepository.allApps.flatMapLatest { allApps ->
+    val allShortcutsFlow = shortcutRepository.getAllShortcuts(allApps.map { it.componentName.packageName })
+    combine(
+      allShortcutsFlow,
+      contactRepository.starredContacts,
+      notificationRepository.notificationRankings,
+      // combine() accepts at most 5 flows, so we "overcombine"
+      combine(
+        ignoredNotificationsItems,
+        renamedItems,
+      ) { ignoredNotificationsItems, renamedItems -> ignoredNotificationsItems to renamedItems },
+      hasNotificationListenerPermission,
+    ) { allShortcuts, starredContacts, notificationRankings, (ignoredNotificationsItems, renamedItems), hasNotificationListenerPermission ->
+      allApps.map { app ->
+        val id = AppLaunchItem.getId(componentName = app.componentName, user = app.user)
+        val ignoreNotifications = id in ignoredNotificationsItems
+        val label = renamedItems[id]
+        val notificationRanking = if (!hasNotificationListenerPermission || ignoreNotifications) {
+          null
         } else {
-            onLaunchItemAction1(launchItems.first())
-        }
-    }
-
-    sealed class LaunchItem {
-        abstract val label: String
-        abstract val drawable: Drawable
-        abstract val id: String
-        abstract val isDeprioritized: Boolean
-        abstract val isRenamed: Boolean
-        abstract val ignoreNotifications: Boolean
-        abstract val notificationRanking: Int?
-
-        val hasNotification: Boolean get() = notificationRanking != null
-
-        abstract fun matchesFilter(query: String): Boolean
-    }
-
-    data class AppLaunchItem(
-        override val label: String,
-        private val componentName: ComponentName,
-        private val user: UserHandle,
-        private val isPrivateSpaceLocked: Boolean,
-        override val drawable: Drawable,
-        override val isDeprioritized: Boolean,
-        override val isRenamed: Boolean,
-        override val ignoreNotifications: Boolean,
-        override val notificationRanking: Int?,
-    ) : LaunchItem() {
-        override val id = getId(componentName, user)
-        val privateSpace: PrivateSpace = when {
-            user == Process.myUserHandle() -> PrivateSpace.NotPrivateSpace
-            isPrivateSpaceLocked -> PrivateSpace.PrivateSpaceLocked
-            else -> PrivateSpace.PrivateSpaceUnlocked
-        }
-
-        val launchAppDestination: Destination
-            get() = Destination(
-                intent = Intent()
-                    .setComponent(componentName)
-                    .setAction(Intent.ACTION_MAIN)
-                    .addCategory(Intent.CATEGORY_LAUNCHER)
-                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED),
-                user = user,
-            )
-
-        val launchAppDetailsDestination: Destination
-            get() = Destination(
-                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                    .setData("package:${componentName.packageName}".toUri()),
-                // TODO When user is not the current process' user, is there an intent to go to the Private Space settings?
-            )
-
-        override fun matchesFilter(query: String): Boolean {
-            return label.containsIgnoreAccents(query) ||
-                    componentName.packageName.contains(query, true)
-        }
-
-        companion object {
-            fun getId(componentName: ComponentName, user: UserHandle): String {
-                val isPrivateSpaceApp = user != Process.myUserHandle()
-                return if (isPrivateSpaceApp) {
-                    "${componentName.packageName}/${componentName.className}/$user"
-                } else {
-                    // Keep the old format without the user when it's the current process' user (i.e. NOT a private space app)
-                    "${componentName.packageName}/${componentName.className}"
-                }
-            }
-        }
-
-        enum class PrivateSpace {
-            NotPrivateSpace,
-            PrivateSpaceLocked,
-            PrivateSpaceUnlocked,
-        }
-    }
-
-    private fun AppRepository.App.toAppLaunchItem(
-        ignoreNotifications: Boolean,
-        notificationRanking: Int?,
-        label: String?,
-    ): AppLaunchItem {
-        return AppLaunchItem(
-            label = label ?: this.label,
-            componentName = componentName,
-            user = user,
-            isPrivateSpaceLocked = isPrivateSpaceLocked,
-            drawable = drawable,
-            isDeprioritized = false,
-            isRenamed = label != null,
-            ignoreNotifications = ignoreNotifications,
-            notificationRanking = notificationRanking,
-        )
-    }
-
-    class ContactLaunchItem(
-        override val label: String,
-        private val contactId: Long,
-        private val lookupKey: String,
-        override val drawable: Drawable,
-        private val phoneNumber: String?,
-    ) : LaunchItem() {
-        override val id = lookupKey
-
-        val viewContactDestination: Destination
-            get() = Destination(
-                Intent(Intent.ACTION_VIEW)
-                    .setData(ContactsContract.Contacts.getLookupUri(contactId, lookupKey)),
-            )
-
-        val sendSmsDestination: Destination?
-            get() = phoneNumber?.let {
-                Destination(
-                    Intent(Intent.ACTION_SENDTO)
-                        .setData("smsto:$it".toUri()),
-                )
-            }
-
-        override fun matchesFilter(query: String): Boolean {
-            return label.containsIgnoreAccents(query)
-        }
-
-        override val isDeprioritized: Boolean = false
-
-        override val isRenamed: Boolean = false
-
-        override val ignoreNotifications: Boolean = false
-
-        override val notificationRanking: Int? = null
-    }
-
-    private fun ContactRepository.Contact.toContactLaunchItem(): ContactLaunchItem {
-        return ContactLaunchItem(
-            label = displayName,
-            contactId = contactId,
-            lookupKey = lookupKey,
-            drawable = photoDrawable,
-            phoneNumber = phoneNumber,
-        )
-    }
-
-    class ShortcutLaunchItem(
-        override val label: String,
-        override val drawable: Drawable,
-        override val isRenamed: Boolean,
-        val shortcut: ShortcutRepository.Shortcut,
-    ) : LaunchItem() {
-        override val id = getId(shortcut.id)
-
-        override fun matchesFilter(query: String): Boolean {
-            return label.containsIgnoreAccents(query)
-        }
-
-        override val isDeprioritized: Boolean = false
-
-        override val ignoreNotifications: Boolean = false
-
-        override val notificationRanking: Int? = null
-
-        companion object {
-            fun getId(id: String) = ShortcutRepository.getId(id)
-        }
-    }
-
-    data class ASettingsLaunchItem(
-        private val context: Context,
-        override val isDeprioritized: Boolean,
-    ) : LaunchItem() {
-        override val drawable: Drawable = AppCompatResources.getDrawable(context, R.mipmap.ic_launcher)!!
-        override val id = "aSettings"
-        override val label: String = context.getString(R.string.settings_title)
-        override val ignoreNotifications: Boolean = false
-        override val notificationRanking: Int? = null
-        override val isRenamed: Boolean = false
-        val launchAppDestination: Destination = Destination(Intent(context, SettingsActivity::class.java))
-        val launchAppDetailsDestination: Destination = Destination(
-            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                .setData("package:${context.packageName}".toUri()),
-        )
-
-        override fun matchesFilter(query: String): Boolean {
-            return label.containsIgnoreAccents(query)
-        }
-    }
-
-    private fun ShortcutRepository.Shortcut.toShortcutLaunchItem(label: String?): ShortcutLaunchItem {
-        return ShortcutLaunchItem(
-            label = label ?: this.label,
-            drawable = drawable,
-            isRenamed = label != null,
-            shortcut = this,
-        )
-    }
-
-    fun onContactsPermissionChanged() {
-        contactRepository.onContactsPermissionChanged()
-    }
-
-    fun onRequestNotificationListenerPermissionClick() {
-        settingsRepository.hasSeenRequestNotificationListenerPermissionBanner.value = true
-        destination.tryEmit(
-            Destination(
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
-                        .putExtra(
-                            Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
-                            ComponentName(context, NotificationListenerService::class.java).flattenToString(),
-                        )
-                } else {
-                    Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                },
+          notificationRankings[
+            NotificationRepository.NotificationKey(
+              packageName = app.componentName.packageName,
+              user = app.user,
             ),
+          ]
+        }
+        app.toAppLaunchItem(
+          ignoreNotifications = ignoreNotifications,
+          notificationRanking = notificationRanking,
+          label = label,
         )
+      } +
+        allShortcuts.map {
+          val id = ShortcutLaunchItem.getId(it.id)
+          val label = renamedItems[id]
+          it.toShortcutLaunchItem(label = label)
+        } +
+        starredContacts.map { it.toContactLaunchItem() } +
+        ASettingsLaunchItem(context = context, isDeprioritized = false)
+    }
+  }
+
+
+  private val deletedLaunchItems = launchItemRepository.getDeletedItems()
+
+  val searchQuery = MutableStateFlow("")
+  val filteredLaunchItems: StateFlow<List<LaunchItem>> =
+    combine(
+      allLaunchItems,
+      searchQuery,
+      launchItemRepository.counters,
+      deletedLaunchItems,
+    ) { allLaunchedItems, searchQuery, counters, deletedLaunchItems ->
+      val query = searchQuery.trim()
+      val filteredItems = allLaunchedItems
+        .map {
+          when (it) {
+            is AppLaunchItem if counters[it.id] is Counter.Deprioritized -> {
+              it.copy(isDeprioritized = true)
+            }
+
+            is ASettingsLaunchItem if counters[it.id] is Counter.Deprioritized -> {
+              it.copy(isDeprioritized = true)
+            }
+
+            else -> {
+              it
+            }
+          }
+        }
+        .filterNot { it.id in deletedLaunchItems }
+        .filter { it.matchesFilter(query) }
+
+      val mostUsedItems = filteredItems
+        // Get the most used items, sorted by counter long term, without short term boost (descending)
+        .sortedByDescending {
+          when (val counter = counters[it.id]) {
+            is Counter.ShortAndLongTerm -> counter.longTerm
+            is Counter.Deprioritized -> -1
+            null -> 0
+          }
+        }.take(MOST_USED_ITEMS_COUNT)
+
+      // Add the most used items at the top
+      (mostUsedItems +
+        // Sort the rest by counter with short term boost (descending)
+        (filteredItems - mostUsedItems.toSet())
+          .sortedByDescending {
+            when (val counter = counters[it.id]) {
+              is Counter.ShortAndLongTerm -> counter.combined
+              is Counter.Deprioritized -> -1
+              null -> 0
+            }
+          }
+        )
+        // Then sort by notification rank (ascending)
+        .sortedBy {
+          if (it.notificationRanking != null && !it.ignoreNotifications) {
+            it.notificationRanking!!
+          } else {
+            Integer.MAX_VALUE
+          }
+        }
+    }
+      .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), emptyList())
+
+  val destination = MutableSharedFlow<Destination>(extraBufferCapacity = 1)
+  val onScrollUp = Signal()
+
+  val shouldShowRequestPermissionRationale = MutableStateFlow(false)
+
+  val hasNotifications: StateFlow<Boolean> = notificationRepository.notificationRankings
+    .map { it.isNotEmpty() }
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), false)
+
+  fun onSearchQueryChange(query: String) {
+    searchQuery.value = query
+    onScrollUp()
+  }
+
+  fun onLaunchItemAction1(launchedItem: LaunchItem) {
+    when (launchedItem) {
+      is AppLaunchItem -> destination.tryEmit(launchedItem.launchAppDestination)
+      is ASettingsLaunchItem -> destination.tryEmit(launchedItem.launchAppDestination)
+      is ContactLaunchItem -> destination.tryEmit(launchedItem.viewContactDestination)
+      is ShortcutLaunchItem -> shortcutRepository.launchShortcut(launchedItem.shortcut)
+    }
+    // Don't record the launch if there's a notification, as it's likely the user just wants to read it, that shouldn't count as a "real" launch
+    if (!launchedItem.hasNotification) {
+      viewModelScope.launch {
+        // Add a delay so the reordering animation isn't distracting
+        delay(1000.milliseconds)
+        launchItemRepository.recordLaunchedItem(launchedItem.id)
+      }
+    }
+  }
+
+  fun onLaunchItemAction2(launchedItem: LaunchItem) {
+    when (launchedItem) {
+      is AppLaunchItem -> destination.tryEmit(launchedItem.launchAppDetailsDestination)
+      is ASettingsLaunchItem -> destination.tryEmit(launchedItem.launchAppDetailsDestination)
+      is ContactLaunchItem -> {
+        launchedItem.sendSmsDestination?.let { destination.tryEmit(it) }
+
+        // Long clicking on a contact counts as a primary action
+        viewModelScope.launch {
+          delay(1000.milliseconds)
+          launchItemRepository.recordLaunchedItem(launchedItem.id)
+        }
+      }
+
+      is ShortcutLaunchItem -> viewModelScope.launch { launchItemRepository.deleteItem(launchedItem.id) }
+    }
+  }
+
+  fun onLaunchItemAction3(launchedItem: LaunchItem) {
+    viewModelScope.launch {
+      if (launchedItem.isDeprioritized) {
+        launchItemRepository.undeprioritizeItem(launchedItem.id)
+      } else {
+        launchItemRepository.deprioritizeItem(launchedItem.id)
+      }
+    }
+  }
+
+  fun onLaunchItemAction4(launchedItem: LaunchItem) {
+    viewModelScope.launch {
+      if (launchedItem.ignoreNotifications) {
+        launchItemRepository.unignoreNotifications(launchedItem.id)
+      } else {
+        launchItemRepository.ignoreNotifications(launchedItem.id)
+      }
+    }
+  }
+
+  fun onRenameLaunchItem(launchedItem: LaunchItem, label: String?) {
+    viewModelScope.launch {
+      if (label == null) {
+        launchItemRepository.unrenameItem(launchedItem.id)
+      } else {
+        launchItemRepository.renameItem(launchedItem.id, label)
+      }
+    }
+  }
+
+  fun resetSearchQuery() {
+    onSearchQueryChange("")
+  }
+
+  fun onWebSearchClick() {
+    val intent = Intent(Intent.ACTION_WEB_SEARCH)
+      .putExtra(SearchManager.QUERY, searchQuery.value)
+    destination.tryEmit(Destination(intent))
+  }
+
+  fun onKeyboardActionButtonClick() {
+    val launchItems = filteredLaunchItems.value
+    if (launchItems.isEmpty()) {
+      onWebSearchClick()
+    } else {
+      onLaunchItemAction1(launchItems.first())
+    }
+  }
+
+  sealed class LaunchItem {
+    abstract val label: String
+    abstract val drawable: Drawable
+    abstract val id: String
+    abstract val isDeprioritized: Boolean
+    abstract val isRenamed: Boolean
+    abstract val ignoreNotifications: Boolean
+    abstract val notificationRanking: Int?
+
+    val hasNotification: Boolean get() = notificationRanking != null
+
+    abstract fun matchesFilter(query: String): Boolean
+  }
+
+  data class AppLaunchItem(
+    override val label: String,
+    private val componentName: ComponentName,
+    private val user: UserHandle,
+    private val isPrivateSpaceLocked: Boolean,
+    override val drawable: Drawable,
+    override val isDeprioritized: Boolean,
+    override val isRenamed: Boolean,
+    override val ignoreNotifications: Boolean,
+    override val notificationRanking: Int?,
+  ) : LaunchItem() {
+    override val id = getId(componentName, user)
+    val privateSpace: PrivateSpace = when {
+      user == Process.myUserHandle() -> PrivateSpace.NotPrivateSpace
+      isPrivateSpaceLocked -> PrivateSpace.PrivateSpaceLocked
+      else -> PrivateSpace.PrivateSpaceUnlocked
     }
 
-    val hasNotificationListenerPermissionSignal = Signal()
-    val hasNotificationListenerPermission: Flow<Boolean> = hasNotificationListenerPermissionSignal.map {
-        notificationRepository.hasNotificationListenerPermission()
-    }.distinctUntilChanged()
+    val launchAppDestination: Destination
+      get() = Destination(
+        intent = Intent()
+          .setComponent(componentName)
+          .setAction(Intent.ACTION_MAIN)
+          .addCategory(Intent.CATEGORY_LAUNCHER)
+          .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED),
+        user = user,
+      )
 
-    val hasSeenRequestNotificationListenerPermissionBanner: StateFlow<Boolean> =
-        settingsRepository.hasSeenRequestNotificationListenerPermissionBanner
+    val launchAppDetailsDestination: Destination
+      get() = Destination(
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+          .setData("package:${componentName.packageName}".toUri()),
+        // TODO When user is not the current process' user, is there an intent to go to the Private Space settings?
+      )
 
-    val alignmentBottom: StateFlow<Boolean> = settingsRepository.alignmentBottom
-    val alignmentRight: StateFlow<Boolean> = settingsRepository.alignmentRight
-    val wallpaperOpacity: StateFlow<Float> = settingsRepository.wallpaperOpacity
-    val showNotificationsButton: StateFlow<Boolean> = settingsRepository.showNotificationsButton
-    val keyboardHack: StateFlow<Boolean> = settingsRepository.keyboardHack
+    override fun matchesFilter(query: String): Boolean {
+      return label.containsIgnoreAccents(query) ||
+        componentName.packageName.contains(query, true)
+    }
 
-    data class Destination(val intent: Intent, val user: UserHandle? = null)
+    companion object {
+      fun getId(componentName: ComponentName, user: UserHandle): String {
+        val isPrivateSpaceApp = user != Process.myUserHandle()
+        return if (isPrivateSpaceApp) {
+          "${componentName.packageName}/${componentName.className}/$user"
+        } else {
+          // Keep the old format without the user when it's the current process' user (i.e. NOT a private space app)
+          "${componentName.packageName}/${componentName.className}"
+        }
+      }
+    }
+
+    enum class PrivateSpace {
+      NotPrivateSpace,
+      PrivateSpaceLocked,
+      PrivateSpaceUnlocked,
+    }
+  }
+
+  private fun AppRepository.App.toAppLaunchItem(
+    ignoreNotifications: Boolean,
+    notificationRanking: Int?,
+    label: String?,
+  ): AppLaunchItem {
+    return AppLaunchItem(
+      label = label ?: this.label,
+      componentName = componentName,
+      user = user,
+      isPrivateSpaceLocked = isPrivateSpaceLocked,
+      drawable = drawable,
+      isDeprioritized = false,
+      isRenamed = label != null,
+      ignoreNotifications = ignoreNotifications,
+      notificationRanking = notificationRanking,
+    )
+  }
+
+  class ContactLaunchItem(
+    override val label: String,
+    private val contactId: Long,
+    private val lookupKey: String,
+    override val drawable: Drawable,
+    private val phoneNumber: String?,
+  ) : LaunchItem() {
+    override val id = lookupKey
+
+    val viewContactDestination: Destination
+      get() = Destination(
+        Intent(Intent.ACTION_VIEW)
+          .setData(ContactsContract.Contacts.getLookupUri(contactId, lookupKey)),
+      )
+
+    val sendSmsDestination: Destination?
+      get() = phoneNumber?.let {
+        Destination(
+          Intent(Intent.ACTION_SENDTO)
+            .setData("smsto:$it".toUri()),
+        )
+      }
+
+    override fun matchesFilter(query: String): Boolean {
+      return label.containsIgnoreAccents(query)
+    }
+
+    override val isDeprioritized: Boolean = false
+
+    override val isRenamed: Boolean = false
+
+    override val ignoreNotifications: Boolean = false
+
+    override val notificationRanking: Int? = null
+  }
+
+  private fun ContactRepository.Contact.toContactLaunchItem(): ContactLaunchItem {
+    return ContactLaunchItem(
+      label = displayName,
+      contactId = contactId,
+      lookupKey = lookupKey,
+      drawable = photoDrawable,
+      phoneNumber = phoneNumber,
+    )
+  }
+
+  class ShortcutLaunchItem(
+    override val label: String,
+    override val drawable: Drawable,
+    override val isRenamed: Boolean,
+    val shortcut: ShortcutRepository.Shortcut,
+  ) : LaunchItem() {
+    override val id = getId(shortcut.id)
+
+    override fun matchesFilter(query: String): Boolean {
+      return label.containsIgnoreAccents(query)
+    }
+
+    override val isDeprioritized: Boolean = false
+
+    override val ignoreNotifications: Boolean = false
+
+    override val notificationRanking: Int? = null
+
+    companion object {
+      fun getId(id: String) = ShortcutRepository.getId(id)
+    }
+  }
+
+  data class ASettingsLaunchItem(
+    private val context: Context,
+    override val isDeprioritized: Boolean,
+  ) : LaunchItem() {
+    override val drawable: Drawable = AppCompatResources.getDrawable(context, R.mipmap.ic_launcher)!!
+    override val id = "aSettings"
+    override val label: String = context.getString(R.string.settings_title)
+    override val ignoreNotifications: Boolean = false
+    override val notificationRanking: Int? = null
+    override val isRenamed: Boolean = false
+    val launchAppDestination: Destination = Destination(Intent(context, SettingsActivity::class.java))
+    val launchAppDetailsDestination: Destination = Destination(
+      Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        .setData("package:${context.packageName}".toUri()),
+    )
+
+    override fun matchesFilter(query: String): Boolean {
+      return label.containsIgnoreAccents(query)
+    }
+  }
+
+  private fun ShortcutRepository.Shortcut.toShortcutLaunchItem(label: String?): ShortcutLaunchItem {
+    return ShortcutLaunchItem(
+      label = label ?: this.label,
+      drawable = drawable,
+      isRenamed = label != null,
+      shortcut = this,
+    )
+  }
+
+  fun onContactsPermissionChanged() {
+    contactRepository.onContactsPermissionChanged()
+  }
+
+  fun onRequestNotificationListenerPermissionClick() {
+    settingsRepository.hasSeenRequestNotificationListenerPermissionBanner.value = true
+    destination.tryEmit(
+      Destination(
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+          Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+            .putExtra(
+              Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME,
+              ComponentName(context, NotificationListenerService::class.java).flattenToString(),
+            )
+        } else {
+          Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        },
+      ),
+    )
+  }
+
+  val hasNotificationListenerPermissionSignal = Signal()
+  val hasNotificationListenerPermission: Flow<Boolean> = hasNotificationListenerPermissionSignal.map {
+    notificationRepository.hasNotificationListenerPermission()
+  }.distinctUntilChanged()
+
+  val hasSeenRequestNotificationListenerPermissionBanner: StateFlow<Boolean> =
+    settingsRepository.hasSeenRequestNotificationListenerPermissionBanner
+
+  val alignmentBottom: StateFlow<Boolean> = settingsRepository.alignmentBottom
+  val alignmentRight: StateFlow<Boolean> = settingsRepository.alignmentRight
+  val wallpaperOpacity: StateFlow<Float> = settingsRepository.wallpaperOpacity
+  val showNotificationsButton: StateFlow<Boolean> = settingsRepository.showNotificationsButton
+  val keyboardHack: StateFlow<Boolean> = settingsRepository.keyboardHack
+
+  data class Destination(val intent: Intent, val user: UserHandle? = null)
 }

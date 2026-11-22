@@ -25,7 +25,7 @@
 package org.jraf.android.a.util
 
 fun <K, V> Map<K, V>.mergeReduce(other: Map<K, V>, reduce: (V, V) -> V): Map<K, V> =
-    other.entries.fold(this.toMutableMap()) { acc, entry ->
-        acc[entry.key] = acc[entry.key]?.let { reduce(entry.value, it) } ?: entry.value
-        acc
-    }
+  other.entries.fold(this.toMutableMap()) { acc, entry ->
+    acc[entry.key] = acc[entry.key]?.let { reduce(entry.value, it) } ?: entry.value
+    acc
+  }

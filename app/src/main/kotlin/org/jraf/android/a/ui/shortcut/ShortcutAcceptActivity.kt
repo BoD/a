@@ -39,25 +39,25 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class ShortcutAcceptActivity : ComponentActivity() {
-    @Inject
-    lateinit var launchItemRepository: LaunchItemRepository
+  @Inject
+  lateinit var launchItemRepository: LaunchItemRepository
 
-    @Inject
-    lateinit var shortcutRepository: ShortcutRepository
+  @Inject
+  lateinit var shortcutRepository: ShortcutRepository
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val launcherApps = getSystemService(LauncherApps::class.java)
-        val pinItemRequest = launcherApps.getPinItemRequest(intent)
-        lifecycleScope.launch {
-            if (launchItemRepository.isShortcutDeleted(pinItemRequest.shortcutInfo!!.id)) {
-                launchItemRepository.undeleteShortcut(pinItemRequest.shortcutInfo!!.id)
-            } else {
-                pinItemRequest.accept()
-            }
-        }
-        shortcutRepository.notifyShortcutsChanged()
-        Toast.makeText(this, getString(R.string.shortcutAccept_toast_accepted), Toast.LENGTH_SHORT).show()
-        finish()
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val launcherApps = getSystemService(LauncherApps::class.java)
+    val pinItemRequest = launcherApps.getPinItemRequest(intent)
+    lifecycleScope.launch {
+      if (launchItemRepository.isShortcutDeleted(pinItemRequest.shortcutInfo!!.id)) {
+        launchItemRepository.undeleteShortcut(pinItemRequest.shortcutInfo!!.id)
+      } else {
+        pinItemRequest.accept()
+      }
     }
+    shortcutRepository.notifyShortcutsChanged()
+    Toast.makeText(this, getString(R.string.shortcutAccept_toast_accepted), Toast.LENGTH_SHORT).show()
+    finish()
+  }
 }

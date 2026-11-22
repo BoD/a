@@ -36,141 +36,141 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class NotificationListenerService : NotificationListenerService() {
-    companion object {
-        private val ignoredPackages = setOf(
-            "com.google.android.deskclock",
-        )
+  companion object {
+    private val ignoredPackages = setOf(
+      "com.google.android.deskclock",
+    )
+  }
+
+  @Inject
+  lateinit var notificationRepository: NotificationRepository
+
+  override fun onListenerConnected() {
+    super.onListenerConnected()
+    updateActiveNotifications(null)
+  }
+
+  override fun onNotificationPosted(sbn: StatusBarNotification, rankingMap: RankingMap) {
+    super.onNotificationPosted(sbn, rankingMap)
+    logd("onNotificationPosted")
+    updateActiveNotifications(rankingMap)
+  }
+
+  override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {
+    super.onNotificationRemoved(sbn, rankingMap, reason)
+    logd("onNotificationRemoved")
+    updateActiveNotifications(rankingMap)
+  }
+
+  override fun onNotificationRankingUpdate(rankingMap: RankingMap) {
+    super.onNotificationRankingUpdate(rankingMap)
+    logd("onNotificationRankingUpdate")
+    updateActiveNotifications(rankingMap)
+  }
+
+  private fun updateActiveNotifications(rankingMap: RankingMap?) {
+    val activeNotifications = activeNotifications
+
+    // Note: activeNotifications and currentRanking are not always in sync: by the time we call activeNotifications, it may contain
+    // more or fewer notifications than what's in currentRanking... Therefore we must expect rankingByKey[key] to be potentially null.
+    val currentRankingMap = rankingMap ?: currentRanking
+    val rankingByKey: Map<String, Ranking> = currentRankingMap.let {
+      it.orderedKeys.associateWith { key ->
+        val ranking = Ranking()
+        it.getRanking(key, ranking)
+        ranking
+      }
     }
 
-    @Inject
-    lateinit var notificationRepository: NotificationRepository
+    // Don't consider ignored packages, media, and ongoing notifications
+    val filteredNotifications: List<StatusBarNotification> = activeNotifications
+      .filter { statusBarNotification ->
+        val hasMediaSession = statusBarNotification.notification.extras.containsKey(Notification.EXTRA_MEDIA_SESSION)
+        val isIgnoredPackage = statusBarNotification.packageName in ignoredPackages
+        !isIgnoredPackage &&
+          !statusBarNotification.isOngoing &&
+          statusBarNotification.isClearable &&
+          !hasMediaSession
+      }
 
-    override fun onListenerConnected() {
-        super.onListenerConnected()
-        updateActiveNotifications(null)
-    }
+    // Group notifications by group key
+    val groupedNotifications: Map<String, List<StatusBarNotification>> = filteredNotifications
+      .groupBy { statusBarNotification -> statusBarNotification.groupKey }
 
-    override fun onNotificationPosted(sbn: StatusBarNotification, rankingMap: RankingMap) {
-        super.onNotificationPosted(sbn, rankingMap)
-        logd("onNotificationPosted")
-        updateActiveNotifications(rankingMap)
-    }
-
-    override fun onNotificationRemoved(sbn: StatusBarNotification, rankingMap: RankingMap, reason: Int) {
-        super.onNotificationRemoved(sbn, rankingMap, reason)
-        logd("onNotificationRemoved")
-        updateActiveNotifications(rankingMap)
-    }
-
-    override fun onNotificationRankingUpdate(rankingMap: RankingMap) {
-        super.onNotificationRankingUpdate(rankingMap)
-        logd("onNotificationRankingUpdate")
-        updateActiveNotifications(rankingMap)
-    }
-
-    private fun updateActiveNotifications(rankingMap: RankingMap?) {
-        val activeNotifications = activeNotifications
-
-        // Note: activeNotifications and currentRanking are not always in sync: by the time we call activeNotifications, it may contain
-        // more or fewer notifications than what's in currentRanking... Therefore we must expect rankingByKey[key] to be potentially null.
-        val currentRankingMap = rankingMap ?: currentRanking
-        val rankingByKey: Map<String, Ranking> = currentRankingMap.let {
-            it.orderedKeys.associateWith { key ->
-                val ranking = Ranking()
-                it.getRanking(key, ranking)
-                ranking
-            }
+    // Keep only the summary notification for each group, and mark it as a conversation if any of the notifications in the group is a conversation
+    val summaryNotificationsWithConversation: List<Pair<StatusBarNotification, Boolean>> = groupedNotifications
+      .map { (_, notifications) ->
+        val isConversation = notifications.any { statusBarNotification ->
+          rankingByKey[statusBarNotification.key]?.conversation == true
         }
+        (notifications.firstOrNull { statusBarNotification ->
+          statusBarNotification.notification.flags and Notification.FLAG_GROUP_SUMMARY == Notification.FLAG_GROUP_SUMMARY
+        } ?: notifications.first()) to isConversation
+      }
 
-        // Don't consider ignored packages, media, and ongoing notifications
-        val filteredNotifications: List<StatusBarNotification> = activeNotifications
-            .filter { statusBarNotification ->
-                val hasMediaSession = statusBarNotification.notification.extras.containsKey(Notification.EXTRA_MEDIA_SESSION)
-                val isIgnoredPackage = statusBarNotification.packageName in ignoredPackages
-                !isIgnoredPackage &&
-                        !statusBarNotification.isOngoing &&
-                        statusBarNotification.isClearable &&
-                        !hasMediaSession
-            }
+    val summaryNotificationsSortedByRanking: List<StatusBarNotification> = summaryNotificationsWithConversation
+      .sortedWith { (aNotification, aIsConversation), (bNotification, bIsConversation) ->
+        val aRanking = rankingByKey[aNotification.key] ?: return@sortedWith 0
+        val bRanking = rankingByKey[bNotification.key] ?: return@sortedWith 0
+        if (aIsConversation) {
+          if (bIsConversation) {
+            // Both are conversations, sort by ranking
+            aRanking.rank.compareTo(bRanking.rank)
+          } else {
+            // Only A is a conversation, A comes first
+            -1
+          }
+        } else {
+          if (bIsConversation) {
+            // Only B is a conversation, B comes first
+            1
+          } else {
+            // None is a conversation, sort by ranking
+            aRanking.rank.compareTo(bRanking.rank)
+          }
+        }
+      }
+      .map { (notification, _) -> notification }
 
-        // Group notifications by group key
-        val groupedNotifications: Map<String, List<StatusBarNotification>> = filteredNotifications
-            .groupBy { statusBarNotification -> statusBarNotification.groupKey }
-
-        // Keep only the summary notification for each group, and mark it as a conversation if any of the notifications in the group is a conversation
-        val summaryNotificationsWithConversation: List<Pair<StatusBarNotification, Boolean>> = groupedNotifications
-            .map { (_, notifications) ->
-                val isConversation = notifications.any { statusBarNotification ->
-                    rankingByKey[statusBarNotification.key]?.conversation == true
-                }
-                (notifications.firstOrNull { statusBarNotification ->
-                    statusBarNotification.notification.flags and Notification.FLAG_GROUP_SUMMARY == Notification.FLAG_GROUP_SUMMARY
-                } ?: notifications.first()) to isConversation
-            }
-
-        val summaryNotificationsSortedByRanking: List<StatusBarNotification> = summaryNotificationsWithConversation
-            .sortedWith { (aNotification, aIsConversation), (bNotification, bIsConversation) ->
-                val aRanking = rankingByKey[aNotification.key] ?: return@sortedWith 0
-                val bRanking = rankingByKey[bNotification.key] ?: return@sortedWith 0
-                if (aIsConversation) {
-                    if (bIsConversation) {
-                        // Both are conversations, sort by ranking
-                        aRanking.rank.compareTo(bRanking.rank)
-                    } else {
-                        // Only A is a conversation, A comes first
-                        -1
-                    }
-                } else {
-                    if (bIsConversation) {
-                        // Only B is a conversation, B comes first
-                        1
-                    } else {
-                        // None is a conversation, sort by ranking
-                        aRanking.rank.compareTo(bRanking.rank)
-                    }
-                }
-            }
-            .map { (notification, _) -> notification }
-
-        // Discard low importance notifications and associate by package name
-        val notificationRankings = summaryNotificationsSortedByRanking
-            .filter { statusBarNotification ->
-                val ranking = rankingByKey[statusBarNotification.key] ?: return@filter true
-                val isChannelLowImportance = ranking.channel.importance == NotificationManagerCompat.IMPORTANCE_LOW ||
-                        ranking.channel.importance == NotificationManagerCompat.IMPORTANCE_MIN
-                val isNotificationLowImportance = ranking.importance == NotificationManagerCompat.IMPORTANCE_LOW ||
-                        ranking.importance == NotificationManagerCompat.IMPORTANCE_MIN
-                !ranking.isAmbient &&
-                        !ranking.suspended &&
-                        ranking.canShowBadge() &&
-                        !isNotificationLowImportance &&
-                        !isChannelLowImportance
-            }
-            // associate() will keep the last value in case of a collision, so put the highest (well, lowest, since rank 0 is the highest rank) ranking at the end of the list
-            .sortedByDescending { statusBarNotification -> summaryNotificationsSortedByRanking.indexOf(statusBarNotification) }
-            .associate { statusBarNotification ->
-                NotificationRepository.NotificationKey(
-                    packageName = statusBarNotification.packageName,
-                    user = statusBarNotification.user,
-                ) to summaryNotificationsSortedByRanking.indexOf(
-                    statusBarNotification,
-                )
-            }
-        notificationRepository.updateNotificationRankings(notificationRankings)
-    }
+    // Discard low importance notifications and associate by package name
+    val notificationRankings = summaryNotificationsSortedByRanking
+      .filter { statusBarNotification ->
+        val ranking = rankingByKey[statusBarNotification.key] ?: return@filter true
+        val isChannelLowImportance = ranking.channel.importance == NotificationManagerCompat.IMPORTANCE_LOW ||
+          ranking.channel.importance == NotificationManagerCompat.IMPORTANCE_MIN
+        val isNotificationLowImportance = ranking.importance == NotificationManagerCompat.IMPORTANCE_LOW ||
+          ranking.importance == NotificationManagerCompat.IMPORTANCE_MIN
+        !ranking.isAmbient &&
+          !ranking.suspended &&
+          ranking.canShowBadge() &&
+          !isNotificationLowImportance &&
+          !isChannelLowImportance
+      }
+      // associate() will keep the last value in case of a collision, so put the highest (well, lowest, since rank 0 is the highest rank) ranking at the end of the list
+      .sortedByDescending { statusBarNotification -> summaryNotificationsSortedByRanking.indexOf(statusBarNotification) }
+      .associate { statusBarNotification ->
+        NotificationRepository.NotificationKey(
+          packageName = statusBarNotification.packageName,
+          user = statusBarNotification.user,
+        ) to summaryNotificationsSortedByRanking.indexOf(
+          statusBarNotification,
+        )
+      }
+    notificationRepository.updateNotificationRankings(notificationRankings)
+  }
 }
 
 private val NotificationListenerService.Ranking.suspended
-    get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        isSuspended
-    } else {
-        false
-    }
+  get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+    isSuspended
+  } else {
+    false
+  }
 
 
 private val NotificationListenerService.Ranking.conversation
-    get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        isConversation
-    } else {
-        false
-    }
+  get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    isConversation
+  } else {
+    false
+  }

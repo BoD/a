@@ -43,7 +43,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -143,801 +142,799 @@ import org.jraf.android.a.util.toDp
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MainLayout(
-    searchQuery: String,
-    hasNotifications: Boolean,
-    launchItems: List<LaunchItem>,
-    onSearchQueryChange: (String) -> Unit,
-    onResetSearchQueryClick: () -> Unit,
-    onWebSearchClick: () -> Unit,
-    onKeyboardActionButtonClick: () -> Unit,
-    isKeyboardWebSearchActive: Boolean,
-    onLaunchItemAction1: (LaunchItem) -> Unit,
-    onLaunchItemAction2: (LaunchItem) -> Unit,
-    onLaunchItemAction3: (LaunchItem) -> Unit,
-    onLaunchItemAction4: (LaunchItem) -> Unit,
-    onRenameLaunchItem: (LaunchItem, label: String?) -> Unit,
-    showRequestContactsPermissionBanner: Boolean,
-    onRequestContactsPermissionClick: () -> Unit,
-    showNotificationListenerPermissionBanner: Boolean,
-    onRequestNotificationListenerPermissionClick: () -> Unit,
-    alignmentBottom: Boolean,
-    alignmentRight: Boolean,
-    wallpaperOpacity: Float,
-    showNotificationsButton: Boolean,
-    keyboardHack: Boolean,
-    gridState: LazyGridState,
+  searchQuery: String,
+  hasNotifications: Boolean,
+  launchItems: List<LaunchItem>,
+  onSearchQueryChange: (String) -> Unit,
+  onResetSearchQueryClick: () -> Unit,
+  onWebSearchClick: () -> Unit,
+  onKeyboardActionButtonClick: () -> Unit,
+  isKeyboardWebSearchActive: Boolean,
+  onLaunchItemAction1: (LaunchItem) -> Unit,
+  onLaunchItemAction2: (LaunchItem) -> Unit,
+  onLaunchItemAction3: (LaunchItem) -> Unit,
+  onLaunchItemAction4: (LaunchItem) -> Unit,
+  onRenameLaunchItem: (LaunchItem, label: String?) -> Unit,
+  showRequestContactsPermissionBanner: Boolean,
+  onRequestContactsPermissionClick: () -> Unit,
+  showNotificationListenerPermissionBanner: Boolean,
+  onRequestNotificationListenerPermissionClick: () -> Unit,
+  alignmentBottom: Boolean,
+  alignmentRight: Boolean,
+  wallpaperOpacity: Float,
+  showNotificationsButton: Boolean,
+  keyboardHack: Boolean,
+  gridState: LazyGridState,
 ) {
-    ATheme {
-        Surface(
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 1F - wallpaperOpacity),
-            contentColor = contentColorFor(MaterialTheme.colorScheme.surface),
-        ) {
-            val windowInsetsPadding = if (keyboardHack && alignmentBottom) {
-                var maxImeBottomPadding by remember { mutableIntStateOf(0) }
-                val imeBottomPadding = WindowInsets.imeAnimationTarget.getBottom(LocalDensity.current)
-                if (imeBottomPadding > 0) {
-                    maxImeBottomPadding = imeBottomPadding
-                }
-                WindowInsets.imeAnimationTarget.union(WindowInsets(0, 0, 0, maxImeBottomPadding))
-            } else {
-                WindowInsets.imeAnimationTarget
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
-//                    .imePadding()
-                    // We actually don't want an animation (via imePadding()) because trying to click on an icon that is slowly
-                    // moving to its end position is a horrible experience.
-                    // If only there was a way to start an Activity with the keyboard already open without an animation, that
-                    // would be great, but alas, it doesn't seem to be possible.
-                    // Using the inset padding directly at least places the icons at their end position immediately.
-                    .windowInsetsPadding(windowInsetsPadding),
-            ) {
-                var dropdownMenuVisible by remember { mutableStateOf(false) }
-                val onDropdownMenuVisible: (Boolean) -> Unit = { visible ->
-                    dropdownMenuVisible = visible
-                }
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize(),
-                ) {
-                    if (alignmentBottom) {
-                        LaunchItemList(
-                            launchItems = launchItems,
-                            onLaunchItemAction1 = onLaunchItemAction1,
-                            onLaunchItemAction2 = onLaunchItemAction2,
-                            onLaunchItemAction3 = onLaunchItemAction3,
-                            onLaunchItemAction4 = onLaunchItemAction4,
-                            onRenameLaunchItem = onRenameLaunchItem,
-                            onDropdownMenuVisible = onDropdownMenuVisible,
-                            alignmentBottom = alignmentBottom,
-                            alignmentRight = alignmentRight,
-                            gridState = gridState,
-                        )
-
-
-                        SearchTextField(
-                            searchQuery = searchQuery,
-                            onSearchQueryChange = onSearchQueryChange,
-                            onResetSearchQueryClick = onResetSearchQueryClick,
-                            onWebSearchClick = onWebSearchClick,
-                            onKeyboardActionButtonClick = onKeyboardActionButtonClick,
-                            isKeyboardWebSearchActive = isKeyboardWebSearchActive,
-                        )
-
-                        if (showNotificationsButton && hasNotifications) {
-                            ShowNotificationsButton()
-                        }
-
-                        if (showRequestContactsPermissionBanner) {
-                            RequestPermissionBanner(
-                                messageResId = R.string.main_requestContactsPermissionRationale_text,
-                                onRequestPermissionClick = onRequestContactsPermissionClick,
-                            )
-                        }
-                        if (showNotificationListenerPermissionBanner) {
-                            RequestPermissionBanner(
-                                messageResId = R.string.main_requestNotificationListenerPermission_text,
-                                onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
-                            )
-                        }
-                    } else {
-                        if (showRequestContactsPermissionBanner) {
-                            RequestPermissionBanner(
-                                messageResId = R.string.main_requestContactsPermissionRationale_text,
-                                onRequestPermissionClick = onRequestContactsPermissionClick,
-                            )
-                        }
-                        if (showNotificationListenerPermissionBanner) {
-                            RequestPermissionBanner(
-                                messageResId = R.string.main_requestNotificationListenerPermission_text,
-                                onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
-                            )
-                        }
-
-                        if (showNotificationsButton && hasNotifications) {
-                            ShowNotificationsButton()
-                        }
-
-                        SearchTextField(
-                            searchQuery = searchQuery,
-                            onSearchQueryChange = onSearchQueryChange,
-                            onResetSearchQueryClick = onResetSearchQueryClick,
-                            onWebSearchClick = onWebSearchClick,
-                            onKeyboardActionButtonClick = onKeyboardActionButtonClick,
-                            isKeyboardWebSearchActive = isKeyboardWebSearchActive,
-                        )
-
-                        LaunchItemList(
-                            launchItems = launchItems,
-                            onLaunchItemAction1 = onLaunchItemAction1,
-                            onLaunchItemAction2 = onLaunchItemAction2,
-                            onLaunchItemAction3 = onLaunchItemAction3,
-                            onLaunchItemAction4 = onLaunchItemAction4,
-                            onRenameLaunchItem = onRenameLaunchItem,
-                            onDropdownMenuVisible = onDropdownMenuVisible,
-                            alignmentBottom = alignmentBottom,
-                            alignmentRight = alignmentRight,
-                            gridState = gridState,
-                        )
-                    }
-                }
-
-                // XXX Hack
-                // We need to pass focusable = false to DropdownMenu because otherwise it will steal the focus,
-                // which will close the keyboard, which will shift the whole grid down, and the DropdownMenu will
-                // appear a lot lower than expected.
-                // But when focusable = false, the DropdownMenu will not close when clicking outside of it, or
-                // when clicking the back button.
-                // So we need to manually close it when clicking "outside of it", which is done by adding
-                // this spacer under the whole grid, and intercepting the click on it, and closing the DropdownMenu.
-                // We also need to detect when the keyboard closes (see isKeyboardOpen below).
-                // Thanks, Compose!
-                if (dropdownMenuVisible) {
-                    Spacer(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable(
-                                indication = null,
-                                interactionSource = remember { MutableInteractionSource() },
-                            ) {
-                                dropdownMenuVisible = false
-                            },
-                    )
-                }
-            }
+  ATheme {
+    Surface(
+      color = MaterialTheme.colorScheme.surface.copy(alpha = 1F - wallpaperOpacity),
+      contentColor = contentColorFor(MaterialTheme.colorScheme.surface),
+    ) {
+      val windowInsetsPadding = if (keyboardHack && alignmentBottom) {
+        var maxImeBottomPadding by remember { mutableIntStateOf(0) }
+        val imeBottomPadding = WindowInsets.imeAnimationTarget.getBottom(LocalDensity.current)
+        if (imeBottomPadding > 0) {
+          maxImeBottomPadding = imeBottomPadding
         }
+        WindowInsets.imeAnimationTarget.union(WindowInsets(0, 0, 0, maxImeBottomPadding))
+      } else {
+        WindowInsets.imeAnimationTarget
+      }
+      Box(
+        modifier = Modifier
+          .fillMaxSize()
+          .statusBarsPadding()
+          .navigationBarsPadding()
+//                    .imePadding()
+          // We actually don't want an animation (via imePadding()) because trying to click on an icon that is slowly
+          // moving to its end position is a horrible experience.
+          // If only there was a way to start an Activity with the keyboard already open without an animation, that
+          // would be great, but alas, it doesn't seem to be possible.
+          // Using the inset padding directly at least places the icons at their end position immediately.
+          .windowInsetsPadding(windowInsetsPadding),
+      ) {
+        var dropdownMenuVisible by remember { mutableStateOf(false) }
+        val onDropdownMenuVisible: (Boolean) -> Unit = { visible ->
+          dropdownMenuVisible = visible
+        }
+        Column(
+          modifier = Modifier
+            .fillMaxSize(),
+        ) {
+          if (alignmentBottom) {
+            LaunchItemList(
+              launchItems = launchItems,
+              onLaunchItemAction1 = onLaunchItemAction1,
+              onLaunchItemAction2 = onLaunchItemAction2,
+              onLaunchItemAction3 = onLaunchItemAction3,
+              onLaunchItemAction4 = onLaunchItemAction4,
+              onRenameLaunchItem = onRenameLaunchItem,
+              onDropdownMenuVisible = onDropdownMenuVisible,
+              alignmentBottom = alignmentBottom,
+              alignmentRight = alignmentRight,
+              gridState = gridState,
+            )
+
+
+            SearchTextField(
+              searchQuery = searchQuery,
+              onSearchQueryChange = onSearchQueryChange,
+              onResetSearchQueryClick = onResetSearchQueryClick,
+              onWebSearchClick = onWebSearchClick,
+              onKeyboardActionButtonClick = onKeyboardActionButtonClick,
+              isKeyboardWebSearchActive = isKeyboardWebSearchActive,
+            )
+
+            if (showNotificationsButton && hasNotifications) {
+              ShowNotificationsButton()
+            }
+
+            if (showRequestContactsPermissionBanner) {
+              RequestPermissionBanner(
+                messageResId = R.string.main_requestContactsPermissionRationale_text,
+                onRequestPermissionClick = onRequestContactsPermissionClick,
+              )
+            }
+            if (showNotificationListenerPermissionBanner) {
+              RequestPermissionBanner(
+                messageResId = R.string.main_requestNotificationListenerPermission_text,
+                onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
+              )
+            }
+          } else {
+            if (showRequestContactsPermissionBanner) {
+              RequestPermissionBanner(
+                messageResId = R.string.main_requestContactsPermissionRationale_text,
+                onRequestPermissionClick = onRequestContactsPermissionClick,
+              )
+            }
+            if (showNotificationListenerPermissionBanner) {
+              RequestPermissionBanner(
+                messageResId = R.string.main_requestNotificationListenerPermission_text,
+                onRequestPermissionClick = onRequestNotificationListenerPermissionClick,
+              )
+            }
+
+            if (showNotificationsButton && hasNotifications) {
+              ShowNotificationsButton()
+            }
+
+            SearchTextField(
+              searchQuery = searchQuery,
+              onSearchQueryChange = onSearchQueryChange,
+              onResetSearchQueryClick = onResetSearchQueryClick,
+              onWebSearchClick = onWebSearchClick,
+              onKeyboardActionButtonClick = onKeyboardActionButtonClick,
+              isKeyboardWebSearchActive = isKeyboardWebSearchActive,
+            )
+
+            LaunchItemList(
+              launchItems = launchItems,
+              onLaunchItemAction1 = onLaunchItemAction1,
+              onLaunchItemAction2 = onLaunchItemAction2,
+              onLaunchItemAction3 = onLaunchItemAction3,
+              onLaunchItemAction4 = onLaunchItemAction4,
+              onRenameLaunchItem = onRenameLaunchItem,
+              onDropdownMenuVisible = onDropdownMenuVisible,
+              alignmentBottom = alignmentBottom,
+              alignmentRight = alignmentRight,
+              gridState = gridState,
+            )
+          }
+        }
+
+        // XXX Hack
+        // We need to pass focusable = false to DropdownMenu because otherwise it will steal the focus,
+        // which will close the keyboard, which will shift the whole grid down, and the DropdownMenu will
+        // appear a lot lower than expected.
+        // But when focusable = false, the DropdownMenu will not close when clicking outside of it, or
+        // when clicking the back button.
+        // So we need to manually close it when clicking "outside of it", which is done by adding
+        // this spacer under the whole grid, and intercepting the click on it, and closing the DropdownMenu.
+        // We also need to detect when the keyboard closes (see isKeyboardOpen below).
+        // Thanks, Compose!
+        if (dropdownMenuVisible) {
+          Spacer(
+            modifier = Modifier
+              .fillMaxSize()
+              .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+              ) {
+                dropdownMenuVisible = false
+              },
+          )
+        }
+      }
     }
+  }
 }
 
 @Composable
 private fun ShowNotificationsButton() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.sp.toDp()),
-    ) {
-        val context = LocalContext.current
-        DenseButton(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = {
-                // Well OF COURSE there's no public API for this :(
-                try {
-                    val statusBarManager = Class.forName("android.app.StatusBarManager")
-                    val expandNotificationsPanelMethod = statusBarManager.getMethod("expandNotificationsPanel")
-                    expandNotificationsPanelMethod.invoke(context.getSystemService("statusbar"))
-                } catch (e: Exception) {
-                    logw(e, "Can't call expandNotificationsPanel")
-                }
-            },
-        ) {
-            Text(text = stringResource(R.string.main_showNotifications))
+  Box(
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(horizontal = 8.sp.toDp()),
+  ) {
+    val context = LocalContext.current
+    DenseButton(
+      modifier = Modifier.fillMaxWidth(),
+      onClick = {
+        // Well OF COURSE there's no public API for this :(
+        try {
+          val statusBarManager = Class.forName("android.app.StatusBarManager")
+          val expandNotificationsPanelMethod = statusBarManager.getMethod("expandNotificationsPanel")
+          expandNotificationsPanelMethod.invoke(context.getSystemService("statusbar"))
+        } catch (e: Exception) {
+          logw(e, "Can't call expandNotificationsPanel")
         }
+      },
+    ) {
+      Text(text = stringResource(R.string.main_showNotifications))
     }
+  }
 }
 
 @Composable
 private fun RequestPermissionBanner(
-    @StringRes messageResId: Int,
-    onRequestPermissionClick: () -> Unit,
+  @StringRes messageResId: Int,
+  onRequestPermissionClick: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            modifier = Modifier
-                .padding(8.sp.toDp())
-                .weight(1F),
-            text = stringResource(messageResId),
-        )
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Text(
+      modifier = Modifier
+        .padding(8.sp.toDp())
+        .weight(1F),
+      text = stringResource(messageResId),
+    )
 
-        Spacer(modifier = Modifier.size(8.sp.toDp()))
+    Spacer(modifier = Modifier.size(8.sp.toDp()))
 
-        Button(onClick = onRequestPermissionClick) {
-            Text(text = stringResource(R.string.main_requestPermissionRationale_button_ok))
-        }
-        Spacer(modifier = Modifier.size(8.sp.toDp()))
+    Button(onClick = onRequestPermissionClick) {
+      Text(text = stringResource(R.string.main_requestPermissionRationale_button_ok))
     }
+    Spacer(modifier = Modifier.size(8.sp.toDp()))
+  }
 }
 
 @Composable
 private fun SearchTextField(
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    onResetSearchQueryClick: () -> Unit,
-    onWebSearchClick: () -> Unit,
-    onKeyboardActionButtonClick: () -> Unit,
-    isKeyboardWebSearchActive: Boolean,
+  searchQuery: String,
+  onSearchQueryChange: (String) -> Unit,
+  onResetSearchQueryClick: () -> Unit,
+  onWebSearchClick: () -> Unit,
+  onKeyboardActionButtonClick: () -> Unit,
+  isKeyboardWebSearchActive: Boolean,
 ) {
-    val focusRequester = remember { FocusRequester() }
-    UltraDenseOutlinedTextField(
-        modifier = Modifier
-            .focusRequester(focusRequester)
-            .fillMaxWidth()
-            .height(32.sp.toDp())
-            .padding(start = 8.sp.toDp(), end = 8.sp.toDp()),
-        value = searchQuery,
-        singleLine = true,
-        onValueChange = onSearchQueryChange,
-        placeholder = {
-            Text(text = stringResource(R.string.main_search_placeholder))
-        },
-        trailingIcon = {
-            Crossfade(searchQuery.isNotBlank(), label = "trailingIconCrossFade") { visible ->
-                if (visible) {
-                    Row {
-                        IconButton(
-                            modifier = Modifier.height(32.sp.toDp()),
-                            onClick = { onResetSearchQueryClick() },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Clear,
-                                contentDescription = stringResource(R.string.main_search_reset),
-                            )
-                        }
-
-                        IconButton(
-                            modifier = Modifier.height(32.sp.toDp()),
-                            onClick = { onWebSearchClick() },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Search,
-                                contentDescription = stringResource(R.string.main_search_webSearch),
-                            )
-                        }
-                    }
-                }
+  val focusRequester = remember { FocusRequester() }
+  UltraDenseOutlinedTextField(
+    modifier = Modifier
+      .focusRequester(focusRequester)
+      .fillMaxWidth()
+      .height(32.sp.toDp())
+      .padding(start = 8.sp.toDp(), end = 8.sp.toDp()),
+    value = searchQuery,
+    onValueChange = onSearchQueryChange,
+    placeholder = {
+      Text(text = stringResource(R.string.main_search_placeholder))
+    },
+    trailingIcon = {
+      Crossfade(searchQuery.isNotBlank(), label = "trailingIconCrossFade") { visible ->
+        if (visible) {
+          Row {
+            IconButton(
+              modifier = Modifier.height(32.sp.toDp()),
+              onClick = { onResetSearchQueryClick() },
+            ) {
+              Icon(
+                imageVector = Icons.Filled.Clear,
+                contentDescription = stringResource(R.string.main_search_reset),
+              )
             }
-        },
-        keyboardOptions = KeyboardOptions(
-//            keyboardType = if (isKeyboardWebSearchActive) KeyboardType.Text else KeyboardType.Password,
-            imeAction = if (isKeyboardWebSearchActive) ImeAction.Search else ImeAction.Go,
-            autoCorrectEnabled = isKeyboardWebSearchActive,
-        ),
-        keyboardActions = KeyboardActions(
-            onSearch = { onKeyboardActionButtonClick() },
-            onGo = { onKeyboardActionButtonClick() },
-        ),
-    )
 
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-    }
+            IconButton(
+              modifier = Modifier.height(32.sp.toDp()),
+              onClick = { onWebSearchClick() },
+            ) {
+              Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = stringResource(R.string.main_search_webSearch),
+              )
+            }
+          }
+        }
+      }
+    },
+    keyboardOptions = KeyboardOptions(
+//            keyboardType = if (isKeyboardWebSearchActive) KeyboardType.Text else KeyboardType.Password,
+      imeAction = if (isKeyboardWebSearchActive) ImeAction.Search else ImeAction.Go,
+      autoCorrectEnabled = isKeyboardWebSearchActive,
+    ),
+    keyboardActions = KeyboardActions(
+      onSearch = { onKeyboardActionButtonClick() },
+      onGo = { onKeyboardActionButtonClick() },
+    ),
+  )
+
+  LaunchedEffect(Unit) {
+    focusRequester.requestFocus()
+  }
 }
 
 @Composable
 private fun ColumnScope.LaunchItemList(
-    launchItems: List<LaunchItem>,
-    onLaunchItemAction1: (LaunchItem) -> Unit,
-    onLaunchItemAction2: (LaunchItem) -> Unit,
-    onLaunchItemAction3: (LaunchItem) -> Unit,
-    onLaunchItemAction4: (LaunchItem) -> Unit,
-    onRenameLaunchItem: (LaunchItem, label: String?) -> Unit,
-    onDropdownMenuVisible: (Boolean) -> Unit,
-    alignmentBottom: Boolean,
-    alignmentRight: Boolean,
-    gridState: LazyGridState,
+  launchItems: List<LaunchItem>,
+  onLaunchItemAction1: (LaunchItem) -> Unit,
+  onLaunchItemAction2: (LaunchItem) -> Unit,
+  onLaunchItemAction3: (LaunchItem) -> Unit,
+  onLaunchItemAction4: (LaunchItem) -> Unit,
+  onRenameLaunchItem: (LaunchItem, label: String?) -> Unit,
+  onDropdownMenuVisible: (Boolean) -> Unit,
+  alignmentBottom: Boolean,
+  alignmentRight: Boolean,
+  gridState: LazyGridState,
 ) {
-    Box(
-        modifier = Modifier
-            .fadingEdges()
-            .fillMaxWidth()
-            .weight(1F),
-    ) {
-        val originalLayoutDirection = LocalLayoutDirection.current
-        CompositionLocalProvider(LocalLayoutDirection provides if (alignmentRight) LayoutDirection.Rtl else LayoutDirection.Ltr) {
-            LazyVerticalGrid(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = if (alignmentBottom) PaddingValues(bottom = 2.sp.toDp()) else PaddingValues(top = 2.sp.toDp()),
-                columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
-                state = gridState,
-                reverseLayout = alignmentBottom,
-            ) {
-                mostUsedItemsRow(
-                    launchItems,
-                    originalLayoutDirection,
-                    onLaunchItemAction1,
-                    onLaunchItemAction2,
-                    onLaunchItemAction3,
-                    onLaunchItemAction4,
-                    onRenameLaunchItem,
-                    onDropdownMenuVisible,
-                )
-                items(
-                    launchItems.takeLast((launchItems.size - MainViewModel.MOST_USED_ITEMS_COUNT).coerceAtLeast(0)),
-                    key = { it.id },
-                ) { launchItem ->
-                    LaunchItemItem(
-                        launchItem = launchItem,
-                        originalLayoutDirection = originalLayoutDirection,
-                        onLaunchItemAction1 = onLaunchItemAction1,
-                        onLaunchItemAction2 = onLaunchItemAction2,
-                        onLaunchItemAction3 = onLaunchItemAction3,
-                        onLaunchItemAction4 = onLaunchItemAction4,
-                        onRenameLaunchItem = onRenameLaunchItem,
-                        onDropdownMenuVisible = onDropdownMenuVisible,
-                    )
-                }
-            }
+  Box(
+    modifier = Modifier
+      .fadingEdges()
+      .fillMaxWidth()
+      .weight(1F),
+  ) {
+    val originalLayoutDirection = LocalLayoutDirection.current
+    CompositionLocalProvider(LocalLayoutDirection provides if (alignmentRight) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+      LazyVerticalGrid(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = if (alignmentBottom) PaddingValues(bottom = 2.sp.toDp()) else PaddingValues(top = 2.sp.toDp()),
+        columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
+        state = gridState,
+        reverseLayout = alignmentBottom,
+      ) {
+        mostUsedItemsRow(
+          launchItems,
+          originalLayoutDirection,
+          onLaunchItemAction1,
+          onLaunchItemAction2,
+          onLaunchItemAction3,
+          onLaunchItemAction4,
+          onRenameLaunchItem,
+          onDropdownMenuVisible,
+        )
+        items(
+          launchItems.takeLast((launchItems.size - MainViewModel.MOST_USED_ITEMS_COUNT).coerceAtLeast(0)),
+          key = { it.id },
+        ) { launchItem ->
+          LaunchItemItem(
+            launchItem = launchItem,
+            originalLayoutDirection = originalLayoutDirection,
+            onLaunchItemAction1 = onLaunchItemAction1,
+            onLaunchItemAction2 = onLaunchItemAction2,
+            onLaunchItemAction3 = onLaunchItemAction3,
+            onLaunchItemAction4 = onLaunchItemAction4,
+            onRenameLaunchItem = onRenameLaunchItem,
+            onDropdownMenuVisible = onDropdownMenuVisible,
+          )
         }
+      }
     }
+  }
 }
 
 private fun LazyGridScope.mostUsedItemsRow(
-    launchItems: List<LaunchItem>,
-    originalLayoutDirection: LayoutDirection,
-    onLaunchItemAction1: (LaunchItem) -> Unit,
-    onLaunchItemAction2: (LaunchItem) -> Unit,
-    onLaunchItemAction3: (LaunchItem) -> Unit,
-    onLaunchItemAction4: (LaunchItem) -> Unit,
-    onRenameLaunchItem: (LaunchItem, String?) -> Unit,
-    onDropdownMenuVisible: (Boolean) -> Unit,
+  launchItems: List<LaunchItem>,
+  originalLayoutDirection: LayoutDirection,
+  onLaunchItemAction1: (LaunchItem) -> Unit,
+  onLaunchItemAction2: (LaunchItem) -> Unit,
+  onLaunchItemAction3: (LaunchItem) -> Unit,
+  onLaunchItemAction4: (LaunchItem) -> Unit,
+  onRenameLaunchItem: (LaunchItem, String?) -> Unit,
+  onDropdownMenuVisible: (Boolean) -> Unit,
 ) {
-    item(span = { GridItemSpan(maxLineSpan) }, key = "mostUsed") {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            CompositionLocalProvider(
-                LocalDensity provides Density(LocalDensity.current.density * 1.25f, LocalDensity.current.fontScale),
-            ) {
-                for (launchItem in launchItems.take(MainViewModel.MOST_USED_ITEMS_COUNT)) {
-                    Box(
-                        modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        LaunchItemItem(
-                            launchItem = launchItem,
-                            originalLayoutDirection = originalLayoutDirection,
-                            onLaunchItemAction1 = onLaunchItemAction1,
-                            onLaunchItemAction2 = onLaunchItemAction2,
-                            onLaunchItemAction3 = onLaunchItemAction3,
-                            onLaunchItemAction4 = onLaunchItemAction4,
-                            onRenameLaunchItem = onRenameLaunchItem,
-                            onDropdownMenuVisible = onDropdownMenuVisible,
-                        )
-                    }
-                }
-            }
+  item(span = { GridItemSpan(maxLineSpan) }, key = "mostUsed") {
+    Row(modifier = Modifier.fillMaxWidth()) {
+      CompositionLocalProvider(
+        LocalDensity provides Density(LocalDensity.current.density * 1.25f, LocalDensity.current.fontScale),
+      ) {
+        for (launchItem in launchItems.take(MainViewModel.MOST_USED_ITEMS_COUNT)) {
+          Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center,
+          ) {
+            LaunchItemItem(
+              launchItem = launchItem,
+              originalLayoutDirection = originalLayoutDirection,
+              onLaunchItemAction1 = onLaunchItemAction1,
+              onLaunchItemAction2 = onLaunchItemAction2,
+              onLaunchItemAction3 = onLaunchItemAction3,
+              onLaunchItemAction4 = onLaunchItemAction4,
+              onRenameLaunchItem = onRenameLaunchItem,
+              onDropdownMenuVisible = onDropdownMenuVisible,
+            )
+          }
         }
+      }
     }
+  }
 }
 
 private val deprioritizedColorFilter = ColorFilter.colorMatrix(
-    ColorMatrix().apply {
-        setToSaturation(0F)
-    },
+  ColorMatrix().apply {
+    setToSaturation(0F)
+  },
 )
 
 @Composable
 private fun LazyGridItemScope.LaunchItemItem(
-    launchItem: LaunchItem,
-    originalLayoutDirection: LayoutDirection,
-    onLaunchItemAction1: (LaunchItem) -> Unit,
-    onLaunchItemAction2: (LaunchItem) -> Unit,
-    onLaunchItemAction3: (LaunchItem) -> Unit,
-    onLaunchItemAction4: (LaunchItem) -> Unit,
-    onRenameLaunchItem: (LaunchItem, label: String?) -> Unit,
-    onDropdownMenuVisible: (Boolean) -> Unit,
+  launchItem: LaunchItem,
+  originalLayoutDirection: LayoutDirection,
+  onLaunchItemAction1: (LaunchItem) -> Unit,
+  onLaunchItemAction2: (LaunchItem) -> Unit,
+  onLaunchItemAction3: (LaunchItem) -> Unit,
+  onLaunchItemAction4: (LaunchItem) -> Unit,
+  onRenameLaunchItem: (LaunchItem, label: String?) -> Unit,
+  onDropdownMenuVisible: (Boolean) -> Unit,
 ) {
-    var dropdownMenuVisible by remember { mutableStateOf(false) }
-    var renameDialogVisible by remember { mutableStateOf(false) }
-    val isKeyboardOpen by keyboardAsState()
-    LaunchedEffect(isKeyboardOpen) {
-        if (!isKeyboardOpen) dropdownMenuVisible = false
-    }
+  var dropdownMenuVisible by remember { mutableStateOf(false) }
+  var renameDialogVisible by remember { mutableStateOf(false) }
+  val isKeyboardOpen by keyboardAsState()
+  LaunchedEffect(isKeyboardOpen) {
+    if (!isKeyboardOpen) dropdownMenuVisible = false
+  }
 
-    CompositionLocalProvider(LocalLayoutDirection provides originalLayoutDirection) {
+  CompositionLocalProvider(LocalLayoutDirection provides originalLayoutDirection) {
+    Box(
+      modifier = Modifier
+        .animateItem()
+        .padding(vertical = 6.sp.toDp()),
+      contentAlignment = Alignment.Center,
+    ) {
+      Column(
+        modifier = Modifier
+          .combinedClickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = ripple(
+              bounded = false,
+              radius = 56.sp.toDp(),
+            ),
+            onClick = { onLaunchItemAction1(launchItem) },
+            onLongClick = {
+              when (launchItem) {
+                is AppLaunchItem,
+                is ShortcutLaunchItem,
+                is ASettingsLaunchItem,
+                  -> {
+                  dropdownMenuVisible = true
+                }
+
+                is ContactLaunchItem -> {
+                  onLaunchItemAction2(launchItem)
+                }
+              }
+            },
+          )
+          .let {
+            if (launchItem.isDeprioritized) {
+              it.alpha(.5f)
+            } else {
+              it
+            }
+          },
+        horizontalAlignment = Alignment.CenterHorizontally,
+      ) {
         Box(
-            modifier = Modifier
-                .animateItem()
-                .padding(vertical = 6.sp.toDp()),
-            contentAlignment = Alignment.Center,
+          modifier = Modifier
+            .size(48.sp.toDp()),
         ) {
-            Column(
-                modifier = Modifier
-                    .combinedClickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = ripple(
-                            bounded = false,
-                            radius = 56.sp.toDp(),
-                        ),
-                        onClick = { onLaunchItemAction1(launchItem) },
-                        onLongClick = {
-                            when (launchItem) {
-                                is AppLaunchItem,
-                                is ShortcutLaunchItem,
-                                is ASettingsLaunchItem,
-                                    -> {
-                                    dropdownMenuVisible = true
-                                }
-
-                                is ContactLaunchItem -> {
-                                    onLaunchItemAction2(launchItem)
-                                }
-                            }
-                        },
-                    )
-                    .let {
-                        if (launchItem.isDeprioritized) {
-                            it.alpha(.5f)
-                        } else {
-                            it
-                        }
-                    },
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.sp.toDp()),
-                ) {
-                    Image(
-                        modifier = Modifier
-                            .size(48.sp.toDp())
-                            .let {
-                                if (launchItem is ContactLaunchItem) {
-                                    // Contact photos are square, but we want circles
-                                    it.clip(CircleShape)
-                                } else {
-                                    it
-                                }
-                            },
-                        painter = DrawablePainter(launchItem.drawable),
-                        contentDescription = launchItem.label,
-                        colorFilter = if (launchItem.isDeprioritized) {
-                            deprioritizedColorFilter
-                        } else {
-                            null
-                        },
-                    )
-                    if (launchItem.hasNotification) {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .size(16.sp.toDp())
-                                .border(1.dp, Color.White, CircleShape)
-                                .padding(1.dp)
-                                .shadow(4.dp, CircleShape)
-                                .background(Color.Red),
-                        )
-                    }
-                    if (launchItem is AppLaunchItem && launchItem.privateSpace != AppLaunchItem.PrivateSpace.NotPrivateSpace) {
-                        Icon(
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .shadow(4.dp, CircleShape)
-                                .background(MaterialTheme.colorScheme.secondaryContainer)
-                                .padding(2.sp.toDp())
-                                .size(16.sp.toDp()),
-                            painter = painterResource(R.drawable.outline_key_24),
-                            tint = when (launchItem.privateSpace) {
-                                AppLaunchItem.PrivateSpace.PrivateSpaceLocked -> ATheme.Colors.Locked
-                                AppLaunchItem.PrivateSpace.PrivateSpaceUnlocked -> ATheme.Colors.Unlocked
-                            },
-                            contentDescription = stringResource(R.string.main_list_app_privateSpaceApp),
-                        )
-                    }
+          Image(
+            modifier = Modifier
+              .size(48.sp.toDp())
+              .let {
+                if (launchItem is ContactLaunchItem) {
+                  // Contact photos are square, but we want circles
+                  it.clip(CircleShape)
+                } else {
+                  it
                 }
-                Spacer(modifier = Modifier.height(4.sp.toDp()))
-                Text(
-                    modifier = Modifier.padding(horizontal = 2.sp.toDp()),
-                    text = launchItem.label,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    fontSize = 12.sp,
-                )
-            }
-
-            onDropdownMenuVisible(dropdownMenuVisible)
-
-            when (launchItem) {
-                is AppLaunchItem -> {
-                    DropdownMenu(
-                        expanded = dropdownMenuVisible,
-                        onDismissRequest = { dropdownMenuVisible = false },
-                        properties = PopupProperties(focusable = false),
-                    ) {
-                        DropdownMenuItem(
-                            onClick = {
-                                onLaunchItemAction2(launchItem)
-                                dropdownMenuVisible = false
-                            },
-                            text = { Text(stringResource(R.string.main_list_app_appDetails)) },
-                        )
-                        DropdownMenuItem(
-                            onClick = {
-                                if (launchItem.isRenamed) {
-                                    onRenameLaunchItem(launchItem, null)
-                                } else {
-                                    renameDialogVisible = true
-                                }
-                                dropdownMenuVisible = false
-                            },
-                            text = {
-                                Text(
-                                    stringResource(
-                                        if (launchItem.isRenamed) {
-                                            R.string.main_list_app_unrename
-                                        } else {
-                                            R.string.main_list_app_rename
-                                        },
-                                    ),
-                                )
-                            },
-                        )
-                        DropdownMenuItem(
-                            onClick = {
-                                onLaunchItemAction4(launchItem)
-                                dropdownMenuVisible = false
-                            },
-                            text = {
-                                Text(
-                                    stringResource(
-                                        if (launchItem.ignoreNotifications) {
-                                            R.string.main_list_app_unignoreNotifications
-                                        } else {
-                                            R.string.main_list_app_ignoreNotifications
-                                        },
-                                    ),
-                                )
-                            },
-                        )
-                        DropdownMenuItem(
-                            onClick = {
-                                onLaunchItemAction3(launchItem)
-                                dropdownMenuVisible = false
-                            },
-                            text = {
-                                Text(
-                                    stringResource(
-                                        if (launchItem.isDeprioritized) {
-                                            R.string.main_list_app_undeprioritize
-                                        } else {
-                                            R.string.main_list_app_deprioritize
-                                        },
-                                    ),
-                                )
-                            },
-                        )
-                    }
-                }
-
-                is ASettingsLaunchItem -> {
-                    DropdownMenu(
-                        expanded = dropdownMenuVisible,
-                        onDismissRequest = { dropdownMenuVisible = false },
-                        properties = PopupProperties(focusable = false),
-                    ) {
-                        DropdownMenuItem(
-                            onClick = {
-                                onLaunchItemAction2(launchItem)
-                                dropdownMenuVisible = false
-                            },
-                            text = { Text(stringResource(R.string.main_list_app_appDetails)) },
-                        )
-                        DropdownMenuItem(
-                            onClick = {
-                                onLaunchItemAction3(launchItem)
-                                dropdownMenuVisible = false
-                            },
-                            text = {
-                                Text(
-                                    stringResource(
-                                        if (launchItem.isDeprioritized) {
-                                            R.string.main_list_app_undeprioritize
-                                        } else {
-                                            R.string.main_list_app_deprioritize
-                                        },
-                                    ),
-                                )
-                            },
-                        )
-                    }
-                }
-
-                is ShortcutLaunchItem -> {
-                    DropdownMenu(
-                        expanded = dropdownMenuVisible,
-                        onDismissRequest = { dropdownMenuVisible = false },
-                        properties = PopupProperties(focusable = false),
-                    ) {
-                        DropdownMenuItem(
-                            onClick = {
-                                if (launchItem.isRenamed) {
-                                    onRenameLaunchItem(launchItem, null)
-                                } else {
-                                    renameDialogVisible = true
-                                }
-                                dropdownMenuVisible = false
-                            },
-                            text = {
-                                Text(
-                                    stringResource(
-                                        if (launchItem.isRenamed) {
-                                            R.string.main_list_app_unrename
-                                        } else {
-                                            R.string.main_list_app_rename
-                                        },
-                                    ),
-                                )
-                            },
-                        )
-                        DropdownMenuItem(
-                            onClick = {
-                                onLaunchItemAction2(launchItem)
-                                dropdownMenuVisible = false
-                            },
-                            text = { Text(stringResource(R.string.main_list_shortcut_deleteShortcut)) },
-                        )
-                    }
-                }
-
-                is ContactLaunchItem -> {}
-            }
-        }
-        if (renameDialogVisible) {
-            RenameDialog(
-                onDismissRequest = { renameDialogVisible = false },
-                launchItem = launchItem,
-                onConfirm = { label ->
-                    renameDialogVisible = false
-                    onRenameLaunchItem(launchItem, label)
-                },
+              },
+            painter = DrawablePainter(launchItem.drawable),
+            contentDescription = launchItem.label,
+            colorFilter = if (launchItem.isDeprioritized) {
+              deprioritizedColorFilter
+            } else {
+              null
+            },
+          )
+          if (launchItem.hasNotification) {
+            Box(
+              modifier = Modifier
+                .align(Alignment.TopEnd)
+                .size(16.sp.toDp())
+                .border(1.dp, Color.White, CircleShape)
+                .padding(1.dp)
+                .shadow(4.dp, CircleShape)
+                .background(Color.Red),
             )
+          }
+          if (launchItem is AppLaunchItem && launchItem.privateSpace != AppLaunchItem.PrivateSpace.NotPrivateSpace) {
+            Icon(
+              modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .shadow(4.dp, CircleShape)
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .padding(2.sp.toDp())
+                .size(16.sp.toDp()),
+              painter = painterResource(R.drawable.outline_key_24),
+              tint = when (launchItem.privateSpace) {
+                AppLaunchItem.PrivateSpace.PrivateSpaceLocked -> ATheme.Colors.Locked
+                AppLaunchItem.PrivateSpace.PrivateSpaceUnlocked -> ATheme.Colors.Unlocked
+              },
+              contentDescription = stringResource(R.string.main_list_app_privateSpaceApp),
+            )
+          }
         }
+        Spacer(modifier = Modifier.height(4.sp.toDp()))
+        Text(
+          modifier = Modifier.padding(horizontal = 2.sp.toDp()),
+          text = launchItem.label,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          textAlign = TextAlign.Center,
+          fontSize = 12.sp,
+        )
+      }
+
+      onDropdownMenuVisible(dropdownMenuVisible)
+
+      when (launchItem) {
+        is AppLaunchItem -> {
+          DropdownMenu(
+            expanded = dropdownMenuVisible,
+            onDismissRequest = { dropdownMenuVisible = false },
+            properties = PopupProperties(focusable = false),
+          ) {
+            DropdownMenuItem(
+              onClick = {
+                onLaunchItemAction2(launchItem)
+                dropdownMenuVisible = false
+              },
+              text = { Text(stringResource(R.string.main_list_app_appDetails)) },
+            )
+            DropdownMenuItem(
+              onClick = {
+                if (launchItem.isRenamed) {
+                  onRenameLaunchItem(launchItem, null)
+                } else {
+                  renameDialogVisible = true
+                }
+                dropdownMenuVisible = false
+              },
+              text = {
+                Text(
+                  stringResource(
+                    if (launchItem.isRenamed) {
+                      R.string.main_list_app_unrename
+                    } else {
+                      R.string.main_list_app_rename
+                    },
+                  ),
+                )
+              },
+            )
+            DropdownMenuItem(
+              onClick = {
+                onLaunchItemAction4(launchItem)
+                dropdownMenuVisible = false
+              },
+              text = {
+                Text(
+                  stringResource(
+                    if (launchItem.ignoreNotifications) {
+                      R.string.main_list_app_unignoreNotifications
+                    } else {
+                      R.string.main_list_app_ignoreNotifications
+                    },
+                  ),
+                )
+              },
+            )
+            DropdownMenuItem(
+              onClick = {
+                onLaunchItemAction3(launchItem)
+                dropdownMenuVisible = false
+              },
+              text = {
+                Text(
+                  stringResource(
+                    if (launchItem.isDeprioritized) {
+                      R.string.main_list_app_undeprioritize
+                    } else {
+                      R.string.main_list_app_deprioritize
+                    },
+                  ),
+                )
+              },
+            )
+          }
+        }
+
+        is ASettingsLaunchItem -> {
+          DropdownMenu(
+            expanded = dropdownMenuVisible,
+            onDismissRequest = { dropdownMenuVisible = false },
+            properties = PopupProperties(focusable = false),
+          ) {
+            DropdownMenuItem(
+              onClick = {
+                onLaunchItemAction2(launchItem)
+                dropdownMenuVisible = false
+              },
+              text = { Text(stringResource(R.string.main_list_app_appDetails)) },
+            )
+            DropdownMenuItem(
+              onClick = {
+                onLaunchItemAction3(launchItem)
+                dropdownMenuVisible = false
+              },
+              text = {
+                Text(
+                  stringResource(
+                    if (launchItem.isDeprioritized) {
+                      R.string.main_list_app_undeprioritize
+                    } else {
+                      R.string.main_list_app_deprioritize
+                    },
+                  ),
+                )
+              },
+            )
+          }
+        }
+
+        is ShortcutLaunchItem -> {
+          DropdownMenu(
+            expanded = dropdownMenuVisible,
+            onDismissRequest = { dropdownMenuVisible = false },
+            properties = PopupProperties(focusable = false),
+          ) {
+            DropdownMenuItem(
+              onClick = {
+                if (launchItem.isRenamed) {
+                  onRenameLaunchItem(launchItem, null)
+                } else {
+                  renameDialogVisible = true
+                }
+                dropdownMenuVisible = false
+              },
+              text = {
+                Text(
+                  stringResource(
+                    if (launchItem.isRenamed) {
+                      R.string.main_list_app_unrename
+                    } else {
+                      R.string.main_list_app_rename
+                    },
+                  ),
+                )
+              },
+            )
+            DropdownMenuItem(
+              onClick = {
+                onLaunchItemAction2(launchItem)
+                dropdownMenuVisible = false
+              },
+              text = { Text(stringResource(R.string.main_list_shortcut_deleteShortcut)) },
+            )
+          }
+        }
+
+        is ContactLaunchItem -> {}
+      }
     }
+    if (renameDialogVisible) {
+      RenameDialog(
+        onDismissRequest = { renameDialogVisible = false },
+        launchItem = launchItem,
+        onConfirm = { label ->
+          renameDialogVisible = false
+          onRenameLaunchItem(launchItem, label)
+        },
+      )
+    }
+  }
 }
 
 @Composable
 private fun RenameDialog(
-    onDismissRequest: () -> Unit,
-    launchItem: LaunchItem,
-    onConfirm: (String) -> Unit,
+  onDismissRequest: () -> Unit,
+  launchItem: LaunchItem,
+  onConfirm: (String) -> Unit,
 ) {
-    var value by remember { mutableStateOf(TextFieldValue(launchItem.label, TextRange(launchItem.label.length))) }
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = { Text(stringResource(R.string.main_list_app_rename)) },
-        text = {
-            val focusRequester = remember { FocusRequester() }
-            OutlinedTextField(
-                modifier = Modifier
-                    .focusRequester(focusRequester),
-                value = value,
-                singleLine = true,
-                onValueChange = { value = it },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done,
-                    capitalization = KeyboardCapitalization.Words,
-                    autoCorrectEnabled = false,
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = { onConfirm(value.text.trim()) },
-                ),
-            )
-            LaunchedEffect(Unit) {
-                focusRequester.requestFocus()
-            }
+  var value by remember { mutableStateOf(TextFieldValue(launchItem.label, TextRange(launchItem.label.length))) }
+  AlertDialog(
+    onDismissRequest = onDismissRequest,
+    title = { Text(stringResource(R.string.main_list_app_rename)) },
+    text = {
+      val focusRequester = remember { FocusRequester() }
+      OutlinedTextField(
+        modifier = Modifier
+          .focusRequester(focusRequester),
+        value = value,
+        singleLine = true,
+        onValueChange = { value = it },
+        keyboardOptions = KeyboardOptions(
+          keyboardType = KeyboardType.Text,
+          imeAction = ImeAction.Done,
+          capitalization = KeyboardCapitalization.Words,
+          autoCorrectEnabled = false,
+        ),
+        keyboardActions = KeyboardActions(
+          onDone = { onConfirm(value.text.trim()) },
+        ),
+      )
+      LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+      }
+    },
+    confirmButton = {
+      TextButton(
+        onClick = {
+          onConfirm(value.text.trim())
         },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirm(value.text.trim())
-                },
-                enabled = value.text.isNotBlank(),
-            ) {
-                Text(stringResource(R.string.main_renameDialog_confirm))
-            }
+        enabled = value.text.isNotBlank(),
+      ) {
+        Text(stringResource(R.string.main_renameDialog_confirm))
+      }
+    },
+    dismissButton = {
+      TextButton(
+        onClick = {
+          onDismissRequest()
         },
-        dismissButton = {
-            TextButton(
-                onClick = {
-                    onDismissRequest()
-                },
-            ) {
-                Text(stringResource(R.string.main_renameDialog_cancel))
-            }
-        },
-    )
+      ) {
+        Text(stringResource(R.string.main_renameDialog_cancel))
+      }
+    },
+  )
 }
 
 @Preview(
-    showSystemUi = true,
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
+  showSystemUi = true,
+  showBackground = true,
+  uiMode = Configuration.UI_MODE_NIGHT_YES,
 )
 @Composable
 private fun MainScreenPreview() {
-    MainLayout(
-        searchQuery = "",
-        hasNotifications = true,
-        launchItems = List(25) {
-            fakeApp()
-        },
-        onSearchQueryChange = {},
-        onResetSearchQueryClick = {},
-        onWebSearchClick = {},
-        onKeyboardActionButtonClick = {},
-        isKeyboardWebSearchActive = false,
-        onLaunchItemAction1 = {},
-        onLaunchItemAction2 = {},
-        onLaunchItemAction3 = {},
-        onLaunchItemAction4 = {},
-        onRenameLaunchItem = { _, _ -> },
-        showRequestContactsPermissionBanner = false,
-        onRequestContactsPermissionClick = {},
-        showNotificationListenerPermissionBanner = true,
-        onRequestNotificationListenerPermissionClick = {},
-        alignmentBottom = true,
-        alignmentRight = false,
-        wallpaperOpacity = .10F,
-        showNotificationsButton = true,
-        keyboardHack = true,
-        gridState = rememberLazyGridState(),
-    )
+  MainLayout(
+    searchQuery = "",
+    hasNotifications = true,
+    launchItems = List(25) {
+      fakeApp()
+    },
+    onSearchQueryChange = {},
+    onResetSearchQueryClick = {},
+    onWebSearchClick = {},
+    onKeyboardActionButtonClick = {},
+    isKeyboardWebSearchActive = false,
+    onLaunchItemAction1 = {},
+    onLaunchItemAction2 = {},
+    onLaunchItemAction3 = {},
+    onLaunchItemAction4 = {},
+    onRenameLaunchItem = { _, _ -> },
+    showRequestContactsPermissionBanner = false,
+    onRequestContactsPermissionClick = {},
+    showNotificationListenerPermissionBanner = true,
+    onRequestNotificationListenerPermissionClick = {},
+    alignmentBottom = true,
+    alignmentRight = false,
+    wallpaperOpacity = .10F,
+    showNotificationsButton = true,
+    keyboardHack = true,
+    gridState = rememberLazyGridState(),
+  )
 }
 
 @Composable
 private fun fakeApp() = AppLaunchItem(
-    label = "My App" + " " + Random.nextInt(1, 4),
-    drawable = ContextCompat.getDrawable(
-        LocalContext.current,
-        R.mipmap.ic_launcher,
-    )!!,
-    isDeprioritized = false,
-    notificationRanking = 42,
-    isRenamed = false,
-    ignoreNotifications = false,
-    componentName = ComponentName(Random.nextInt().toString(), Random.nextInt().toString()),
-    user = Process.myUserHandle(),
-    isPrivateSpaceLocked = false,
+  label = "My App" + " " + Random.nextInt(1, 4),
+  drawable = ContextCompat.getDrawable(
+    LocalContext.current,
+    R.mipmap.ic_launcher,
+  )!!,
+  isDeprioritized = false,
+  notificationRanking = 42,
+  isRenamed = false,
+  ignoreNotifications = false,
+  componentName = ComponentName(Random.nextInt().toString(), Random.nextInt().toString()),
+  user = Process.myUserHandle(),
+  isPrivateSpaceLocked = false,
 )
 
 
 private operator fun String.times(times: Int): String {
-    return buildString {
-        for (i in 0 until times) {
-            append(this@times)
-            if (i < times - 1) append(" ")
-        }
+  return buildString {
+    for (i in 0 until times) {
+      append(this@times)
+      if (i < times - 1) append(" ")
     }
+  }
 }
 
 private class DrawablePainter(private val drawable: Drawable) : Painter() {
-    override val intrinsicSize: Size =
-        Size(width = drawable.intrinsicWidth.toFloat(), height = drawable.intrinsicHeight.toFloat())
+  override val intrinsicSize: Size =
+    Size(width = drawable.intrinsicWidth.toFloat(), height = drawable.intrinsicHeight.toFloat())
 
-    override fun DrawScope.onDraw() {
-        drawIntoCanvas { canvas ->
-            // Update the Drawable's bounds
-            drawable.setBounds(0, 0, size.width.roundToInt(), size.height.roundToInt())
-            drawable.draw(canvas.nativeCanvas)
-        }
-
+  override fun DrawScope.onDraw() {
+    drawIntoCanvas { canvas ->
+      // Update the Drawable's bounds
+      drawable.setBounds(0, 0, size.width.roundToInt(), size.height.roundToInt())
+      drawable.draw(canvas.nativeCanvas)
     }
+
+  }
 }

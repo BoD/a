@@ -45,7 +45,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +54,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.contentColorFor
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -76,251 +76,253 @@ import org.jraf.android.a.ui.theme.ATheme
 import org.jraf.android.a.util.toDp
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsLayout(
-    onNavigateBack: () -> Unit,
-    alignmentBottom: Boolean,
-    onAlignmentBottomClick: () -> Unit,
-    rightHanded: Boolean,
-    onAlignmentRightClick: () -> Unit,
-    wallpaperOpacity: Float,
-    onWallpaperOpacityChange: (Float) -> Unit,
-    showNotificationsButton: Boolean,
-    onShowNotificationsButtonClick: () -> Unit,
-    keyboardHack: Boolean,
-    onKeyboardHackClick: () -> Unit,
+  onNavigateBack: () -> Unit,
+  alignmentBottom: Boolean,
+  onAlignmentBottomClick: () -> Unit,
+  rightHanded: Boolean,
+  onAlignmentRightClick: () -> Unit,
+  wallpaperOpacity: Float,
+  onWallpaperOpacityChange: (Float) -> Unit,
+  showNotificationsButton: Boolean,
+  onShowNotificationsButtonClick: () -> Unit,
+  keyboardHack: Boolean,
+  onKeyboardHackClick: () -> Unit,
 ) {
-    ATheme {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    navigationIcon = {
-                        IconButton(
-                            onClick = {
-                                onNavigateBack()
-                            },
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = null
-                            )
-                        }
-                    },
-                    title = { Text(stringResource(id = R.string.settings_title)) },
-                    actions = { Text("v${BuildConfig.VERSION_NAME}") },
-                )
-            },
-            containerColor = MaterialTheme.colorScheme.background.copy(alpha = 1F - wallpaperOpacity),
-            contentColor = contentColorFor(MaterialTheme.colorScheme.background),
-        ) { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(paddingValues)
+  ATheme {
+    Scaffold(
+      topBar = {
+        TopAppBar(
+          navigationIcon = {
+            IconButton(
+              onClick = {
+                onNavigateBack()
+              },
             ) {
-                TextSwitchSetting(
-                    value = alignmentBottom,
-                    onClick = onAlignmentBottomClick,
-                    titleResId = R.string.settings_alignmentBottom_title,
-                    trueLabelResId = R.string.settings_alignmentBottom_bottom,
-                    falseLabelResId = R.string.settings_alignmentBottom_top,
-                )
-                TextSwitchSetting(
-                    value = rightHanded,
-                    onClick = onAlignmentRightClick,
-                    titleResId = R.string.settings_alignmentRight_title,
-                    trueLabelResId = R.string.settings_alignmentRight_right,
-                    falseLabelResId = R.string.settings_alignmentRight_left
-                )
-                SwitchSetting(
-                    value = showNotificationsButton,
-                    onClick = onShowNotificationsButtonClick,
-                    titleResId = R.string.settings_showNotificationsButton_title,
-                )
-                SwitchSetting(
-                    value = keyboardHack,
-                    onClick = onKeyboardHackClick,
-                    titleResId = R.string.settings_keyboardHack_title,
-                )
-                WallpaperOpacitySetting(
-                    wallpaperOpacity = wallpaperOpacity,
-                    onWallpaperOpacityChange = onWallpaperOpacityChange,
-                )
-                GridPreview(
-                    alignmentBottom = alignmentBottom,
-                    alignmentRight = rightHanded,
-                )
+              Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = null,
+              )
             }
-        }
+          },
+          title = { Text(stringResource(id = R.string.settings_title)) },
+          actions = { Text("v${BuildConfig.VERSION_NAME}") },
+        )
+      },
+      containerColor = MaterialTheme.colorScheme.background.copy(alpha = 1F - wallpaperOpacity),
+      contentColor = contentColorFor(MaterialTheme.colorScheme.background),
+    ) { paddingValues ->
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(paddingValues),
+      ) {
+        TextSwitchSetting(
+          value = alignmentBottom,
+          onClick = onAlignmentBottomClick,
+          titleResId = R.string.settings_alignmentBottom_title,
+          trueLabelResId = R.string.settings_alignmentBottom_bottom,
+          falseLabelResId = R.string.settings_alignmentBottom_top,
+        )
+        TextSwitchSetting(
+          value = rightHanded,
+          onClick = onAlignmentRightClick,
+          titleResId = R.string.settings_alignmentRight_title,
+          trueLabelResId = R.string.settings_alignmentRight_right,
+          falseLabelResId = R.string.settings_alignmentRight_left,
+        )
+        SwitchSetting(
+          value = showNotificationsButton,
+          onClick = onShowNotificationsButtonClick,
+          titleResId = R.string.settings_showNotificationsButton_title,
+        )
+        SwitchSetting(
+          value = keyboardHack,
+          onClick = onKeyboardHackClick,
+          titleResId = R.string.settings_keyboardHack_title,
+        )
+        WallpaperOpacitySetting(
+          wallpaperOpacity = wallpaperOpacity,
+          onWallpaperOpacityChange = onWallpaperOpacityChange,
+        )
+        GridPreview(
+          alignmentBottom = alignmentBottom,
+          alignmentRight = rightHanded,
+        )
+      }
     }
+  }
 }
 
 @Composable
 private fun TextSwitchSetting(
-    value: Boolean,
-    onClick: () -> Unit,
-    @StringRes titleResId: Int,
-    @StringRes trueLabelResId: Int,
-    @StringRes falseLabelResId: Int,
+  value: Boolean,
+  onClick: () -> Unit,
+  @StringRes titleResId: Int,
+  @StringRes trueLabelResId: Int,
+  @StringRes falseLabelResId: Int,
 ) {
-    Row(
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.extraLarge)
-            .clickable(
-                onClick = {
-                    onClick()
-                }
-            )
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            modifier = Modifier.weight(1F),
-            text = stringResource(titleResId),
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        Spacer(
-            modifier = Modifier.width(16.dp)
-        )
-        Text(
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .padding(vertical = 8.sp.toDp(), horizontal = 16.sp.toDp()),
-            color = MaterialTheme.colorScheme.onPrimaryContainer,
-            text = stringResource(if (value) trueLabelResId else falseLabelResId),
-            style = MaterialTheme.typography.labelLarge,
-        )
-    }
+  Row(
+    modifier = Modifier
+      .clip(MaterialTheme.shapes.extraLarge)
+      .clickable(
+        onClick = {
+          onClick()
+        },
+      )
+      .padding(16.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Text(
+      modifier = Modifier.weight(1F),
+      text = stringResource(titleResId),
+      style = MaterialTheme.typography.bodyLarge,
+    )
+    Spacer(
+      modifier = Modifier.width(16.dp),
+    )
+    Text(
+      modifier = Modifier
+        .clip(MaterialTheme.shapes.medium)
+        .background(MaterialTheme.colorScheme.primaryContainer)
+        .padding(vertical = 8.sp.toDp(), horizontal = 16.sp.toDp()),
+      color = MaterialTheme.colorScheme.onPrimaryContainer,
+      text = stringResource(if (value) trueLabelResId else falseLabelResId),
+      style = MaterialTheme.typography.labelLarge,
+    )
+  }
 }
 
 @Composable
 private fun SwitchSetting(
-    value: Boolean,
-    onClick: () -> Unit,
-    @StringRes titleResId: Int,
+  value: Boolean,
+  onClick: () -> Unit,
+  @StringRes titleResId: Int,
 ) {
-    Row(
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.extraLarge)
-            .clickable(
-                role = Role.Switch,
-                onClick = {
-                    onClick()
-                }
-            )
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            modifier = Modifier.weight(1F),
-            text = stringResource(titleResId),
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        Spacer(
-            modifier = Modifier.width(16.dp)
-        )
-        Switch(
-            checked = value,
-            onCheckedChange = null,
-        )
-    }
+  Row(
+    modifier = Modifier
+      .clip(MaterialTheme.shapes.extraLarge)
+      .clickable(
+        role = Role.Switch,
+        onClick = {
+          onClick()
+        },
+      )
+      .padding(16.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Text(
+      modifier = Modifier.weight(1F),
+      text = stringResource(titleResId),
+      style = MaterialTheme.typography.bodyLarge,
+    )
+    Spacer(
+      modifier = Modifier.width(16.dp),
+    )
+    Switch(
+      checked = value,
+      onCheckedChange = null,
+    )
+  }
 }
 
 @Composable
 fun WallpaperOpacitySetting(
-    wallpaperOpacity: Float,
-    onWallpaperOpacityChange: (Float) -> Unit,
+  wallpaperOpacity: Float,
+  onWallpaperOpacityChange: (Float) -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .padding(16.dp),
-    ) {
-        val value = if (wallpaperOpacity == 0F) {
-            stringResource(R.string.settings_wallpaperOpacity_none)
-        } else {
-            stringResource(R.string.settings_wallpaperOpacity_percent, (wallpaperOpacity * 100).roundToInt())
-        }
-        Text(
-            text = stringResource(R.string.settings_wallpaperOpacity_title, value),
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        Spacer(
-            modifier = Modifier.size(4.dp)
-        )
-        Slider(
-            value = wallpaperOpacity,
-            onValueChange = onWallpaperOpacityChange,
-        )
+  Column(
+    modifier = Modifier
+      .padding(16.dp),
+  ) {
+    val value = if (wallpaperOpacity == 0F) {
+      stringResource(R.string.settings_wallpaperOpacity_none)
+    } else {
+      stringResource(R.string.settings_wallpaperOpacity_percent, (wallpaperOpacity * 100).roundToInt())
     }
-
+    Text(
+      text = stringResource(R.string.settings_wallpaperOpacity_title, value),
+      style = MaterialTheme.typography.bodyLarge,
+    )
+    Spacer(
+      modifier = Modifier.size(4.dp),
+    )
+    val sliderState = rememberSliderState(wallpaperOpacity)
+    Slider(
+      state = sliderState,
+      onValueChange = {
+        sliderState.value = it
+        onWallpaperOpacityChange(it)
+      },
+    )
+  }
 }
 
 @Composable
 private fun GridPreview(alignmentBottom: Boolean, alignmentRight: Boolean) {
-    CompositionLocalProvider(LocalLayoutDirection provides if (alignmentRight) LayoutDirection.Rtl else LayoutDirection.Ltr) {
-        LazyVerticalGrid(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = if (alignmentBottom) PaddingValues(bottom = 2.sp.toDp()) else PaddingValues(top = 2.sp.toDp()),
-            columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
-            reverseLayout = alignmentBottom,
-        ) {
-            for (i in 1..17) {
-                item {
-                    PreviewItem(id = i)
-                }
-            }
+  CompositionLocalProvider(LocalLayoutDirection provides if (alignmentRight) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+    LazyVerticalGrid(
+      modifier = Modifier.fillMaxSize(),
+      contentPadding = if (alignmentBottom) PaddingValues(bottom = 2.sp.toDp()) else PaddingValues(top = 2.sp.toDp()),
+      columns = GridCells.Adaptive(minSize = 64.sp.toDp()),
+      reverseLayout = alignmentBottom,
+    ) {
+      for (i in 1..17) {
+        item {
+          PreviewItem(id = i)
         }
+      }
     }
+  }
 }
 
 @Composable
 private fun PreviewItem(id: Int) {
-    Box(
-        modifier = Modifier.padding(vertical = 6.sp.toDp()),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(modifier = Modifier.size(48.sp.toDp())) {
-                Text(
-                    modifier = Modifier
-                        .size(48.sp.toDp())
-                        .clip(CircleShape)
-                        .background(colorResource(R.color.ic_launcher_background).copy(alpha = 1F - id / 18F))
-                        .wrapContentHeight(align = Alignment.CenterVertically),
-                    text = ('A'.code + id - 1).toChar().toString(),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.headlineSmall
-                )
-            }
-            Spacer(modifier = Modifier.height(4.sp.toDp()))
-            Text(
-                modifier = Modifier.padding(horizontal = 2.sp.toDp()),
-                text = "My app",
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                fontSize = 12.sp,
-            )
-        }
+  Box(
+    modifier = Modifier.padding(vertical = 6.sp.toDp()),
+    contentAlignment = Alignment.Center,
+  ) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+      Box(modifier = Modifier.size(48.sp.toDp())) {
+        Text(
+          modifier = Modifier
+            .size(48.sp.toDp())
+            .clip(CircleShape)
+            .background(colorResource(R.color.ic_launcher_background).copy(alpha = 1F - id / 18F))
+            .wrapContentHeight(align = Alignment.CenterVertically),
+          text = ('A'.code + id - 1).toChar().toString(),
+          textAlign = TextAlign.Center,
+          style = MaterialTheme.typography.headlineSmall,
+        )
+      }
+      Spacer(modifier = Modifier.height(4.sp.toDp()))
+      Text(
+        modifier = Modifier.padding(horizontal = 2.sp.toDp()),
+        text = "My app",
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = TextAlign.Center,
+        fontSize = 12.sp,
+      )
     }
+  }
 }
 
 @Preview(showSystemUi = true, showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun SettingsLayoutPreview() {
-    SettingsLayout(
-        onNavigateBack = {},
-        alignmentBottom = true,
-        onAlignmentBottomClick = {},
-        rightHanded = true,
-        onAlignmentRightClick = {},
-        wallpaperOpacity = 0.4F,
-        onWallpaperOpacityChange = {},
-        showNotificationsButton = true,
-        onShowNotificationsButtonClick = {},
-        keyboardHack = true,
-        onKeyboardHackClick = {},
-    )
+  SettingsLayout(
+    onNavigateBack = {},
+    alignmentBottom = true,
+    onAlignmentBottomClick = {},
+    rightHanded = true,
+    onAlignmentRightClick = {},
+    wallpaperOpacity = 0.4F,
+    onWallpaperOpacityChange = {},
+    showNotificationsButton = true,
+    onShowNotificationsButtonClick = {},
+    keyboardHack = true,
+    onKeyboardHackClick = {},
+  )
 }

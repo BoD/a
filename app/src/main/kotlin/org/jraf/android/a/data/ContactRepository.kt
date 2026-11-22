@@ -46,102 +46,102 @@ import javax.inject.Singleton
 
 @Singleton
 class ContactRepository @Inject constructor(@param:ApplicationContext private val context: Context) {
-    private val onContactsChanged = Signal()
-    private var contentObserver: ContentObserver? = null
+  private val onContactsChanged = Signal()
+  private var contentObserver: ContentObserver? = null
 
-    init {
-        registerContentObserver()
-    }
+  init {
+    registerContentObserver()
+  }
 
-    fun onContactsPermissionChanged() {
-        registerContentObserver()
-        onContactsChanged()
-    }
+  fun onContactsPermissionChanged() {
+    registerContentObserver()
+    onContactsChanged()
+  }
 
-    private fun registerContentObserver() {
-        contentObserver?.let { context.contentResolver.unregisterContentObserver(it) }
-        if (ContextCompat.checkSelfPermission(context, permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
-            contentObserver = object : ContentObserver(null) {
-                override fun onChange(selfChange: Boolean) {
-                    onContactsChanged()
-                }
-            }.also { contentObserver ->
-                context.contentResolver.registerContentObserver(
-                    Contacts.CONTENT_URI,
-                    true,
-                    contentObserver,
-                )
-            }
+  private fun registerContentObserver() {
+    contentObserver?.let { context.contentResolver.unregisterContentObserver(it) }
+    if (ContextCompat.checkSelfPermission(context, permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+      contentObserver = object : ContentObserver(null) {
+        override fun onChange(selfChange: Boolean) {
+          onContactsChanged()
         }
+      }.also { contentObserver ->
+        context.contentResolver.registerContentObserver(
+          Contacts.CONTENT_URI,
+          true,
+          contentObserver,
+        )
+      }
     }
+  }
 
-    data class Contact(
-        val contactId: Long,
-        val lookupKey: String,
-        val displayName: String,
-        val photoDrawable: Drawable,
-        val phoneNumber: String?,
-    )
+  data class Contact(
+    val contactId: Long,
+    val lookupKey: String,
+    val displayName: String,
+    val photoDrawable: Drawable,
+    val phoneNumber: String?,
+  )
 
-    val starredContacts: Flow<List<Contact>> = onContactsChanged.map {
-        if (ContextCompat.checkSelfPermission(context, permission.READ_CONTACTS) == PackageManager.PERMISSION_DENIED) {
-            emptyList()
-        } else {
-            context.contentResolver.query(
-                Contacts.CONTENT_URI,
-                arrayOf(
-                    Contacts._ID,
-                    Contacts.LOOKUP_KEY,
-                    Contacts.DISPLAY_NAME,
-                ),
-                "${Contacts.STARRED} = 1",
-                null,
-                null,
-            )?.use { cursor ->
-                buildList {
-                    while (cursor.moveToNext()) {
-                        val contactId = cursor.getLong(0)
-                        val lookupKey = cursor.getString(1)
-                        add(
-                            Contact(
-                                contactId = contactId,
-                                lookupKey = lookupKey,
-                                displayName = cursor.getString(2),
-                                photoDrawable = getPhotoDrawable(Contacts.getLookupUri(contactId, lookupKey)),
-                                phoneNumber = getPhoneNumber(contactId),
-                            ),
-                        )
-                    }
-                }
-            } ?: emptyList()
+  val starredContacts: Flow<List<Contact>> = onContactsChanged.map {
+    if (ContextCompat.checkSelfPermission(context, permission.READ_CONTACTS) == PackageManager.PERMISSION_DENIED) {
+      emptyList()
+    } else {
+      context.contentResolver.query(
+        Contacts.CONTENT_URI,
+        arrayOf(
+          Contacts._ID,
+          Contacts.LOOKUP_KEY,
+          Contacts.DISPLAY_NAME,
+        ),
+        "${Contacts.STARRED} = 1",
+        null,
+        null,
+      )?.use { cursor ->
+        buildList {
+          while (cursor.moveToNext()) {
+            val contactId = cursor.getLong(0)
+            val lookupKey = cursor.getString(1)
+            add(
+              Contact(
+                contactId = contactId,
+                lookupKey = lookupKey,
+                displayName = cursor.getString(2),
+                photoDrawable = getPhotoDrawable(Contacts.getLookupUri(contactId, lookupKey)),
+                phoneNumber = getPhoneNumber(contactId),
+              ),
+            )
+          }
         }
+      } ?: emptyList()
     }
-        .flowOn(Dispatchers.IO)
+  }
+    .flowOn(Dispatchers.IO)
 
-    private fun getPhotoDrawable(lookupUri: Uri): Drawable {
-        return Contacts.openContactPhotoInputStream(
-            context.contentResolver,
-            lookupUri,
-            false,
-        )?.use { inputStream ->
-            Drawable.createFromStream(inputStream, null)
-        } ?: AppCompatResources.getDrawable(context, R.drawable.ic_contact)!!
-    }
+  private fun getPhotoDrawable(lookupUri: Uri): Drawable {
+    return Contacts.openContactPhotoInputStream(
+      context.contentResolver,
+      lookupUri,
+      false,
+    )?.use { inputStream ->
+      Drawable.createFromStream(inputStream, null)
+    } ?: AppCompatResources.getDrawable(context, R.drawable.ic_contact)!!
+  }
 
-    private fun getPhoneNumber(contactId: Long): String? {
-        return context.contentResolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-            "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
-            arrayOf(contactId.toString()),
-            ContactsContract.CommonDataKinds.Phone.IS_SUPER_PRIMARY + " DESC",
-        )?.use { cursor ->
-            if (cursor.moveToNext()) {
-                cursor.getString(0)
-            } else {
-                null
-            }
-        }
+  private fun getPhoneNumber(contactId: Long): String? {
+    return context.contentResolver.query(
+      ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+      arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+      "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+      arrayOf(contactId.toString()),
+      ContactsContract.CommonDataKinds.Phone.IS_SUPER_PRIMARY + " DESC",
+    )?.use { cursor ->
+      if (cursor.moveToNext()) {
+        cursor.getString(0)
+      } else {
+        null
+      }
     }
+  }
 
 }

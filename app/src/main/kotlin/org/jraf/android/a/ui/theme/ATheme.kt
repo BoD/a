@@ -41,41 +41,41 @@ private val ADarkColorScheme: ColorScheme = darkColorScheme(surface = Color.Blac
 
 @Composable
 fun ATheme(
-    content: @Composable () -> Unit,
+  content: @Composable () -> Unit,
 ) {
-    val darkTheme = isSystemInDarkTheme()
-    val dynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    val colorScheme = when {
-        dynamicColor && darkTheme -> dynamicDarkColorScheme(LocalContext.current).copy(surface = Color.Black, background = Color.Black)
-        dynamicColor && !darkTheme -> dynamicLightColorScheme(LocalContext.current)
-        darkTheme -> ADarkColorScheme
-        else -> ALightColorScheme
-    }
+  val darkTheme = isSystemInDarkTheme()
+  val dynamicColor = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+  val colorScheme = when {
+    dynamicColor && darkTheme -> dynamicDarkColorScheme(LocalContext.current).copy(surface = Color.Black, background = Color.Black)
+    dynamicColor && !darkTheme -> dynamicLightColorScheme(LocalContext.current)
+    darkTheme -> ADarkColorScheme
+    else -> ALightColorScheme
+  }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        content = content,
-    )
+  MaterialTheme(
+    colorScheme = colorScheme,
+    content = content,
+  )
 }
 
 class ATheme {
-    class Colors {
-        companion object {
-            val Unlocked: Color
-                @Composable
-                get() = if (isSystemInDarkTheme()) {
-                    Color(0xFF7CB342)
-                } else {
-                    Color(0xFF388E3C)
-                }
+  class Colors {
+    companion object {
+      val Unlocked: Color
+        @Composable
+        get() = if (isSystemInDarkTheme()) {
+          Color(0xFF7CB342)
+        } else {
+          Color(0xFF388E3C)
+        }
 
-            val Locked: Color
-                @Composable
-                get() = if (isSystemInDarkTheme()) {
-                    Color(0xFFFB8C00)
-                } else {
-                    Color(0xFFF57F17)
-                }
+      val Locked: Color
+        @Composable
+        get() = if (isSystemInDarkTheme()) {
+          Color(0xFFFB8C00)
+        } else {
+          Color(0xFFF57F17)
         }
     }
+  }
 }

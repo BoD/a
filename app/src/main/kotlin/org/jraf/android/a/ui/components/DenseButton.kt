@@ -57,63 +57,63 @@ import org.jraf.android.a.util.toDp
  */
 @Composable
 fun DenseButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    shape: Shape = ButtonDefaults.shape,
-    colors: ButtonColors = ButtonDefaults.buttonColors(),
-    border: BorderStroke? = null,
-    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    content: @Composable RowScope.() -> Unit,
+  onClick: () -> Unit,
+  modifier: Modifier = Modifier,
+  enabled: Boolean = true,
+  shape: Shape = ButtonDefaults.shape,
+  colors: ButtonColors = ButtonDefaults.buttonColors(),
+  border: BorderStroke? = null,
+  contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+  interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+  content: @Composable RowScope.() -> Unit,
 ) {
-    val containerColor = colors.containerColor(enabled)
-    val contentColor = colors.contentColor(enabled)
-    Surface(
-        onClick = onClick,
-        modifier = modifier.semantics { role = Role.Button },
-        enabled = enabled,
-        shape = shape,
-        color = containerColor,
-        contentColor = contentColor,
-        border = border,
-        interactionSource = interactionSource
+  val containerColor = colors.containerColor(enabled)
+  val contentColor = colors.contentColor(enabled)
+  Surface(
+    onClick = onClick,
+    modifier = modifier.semantics { role = Role.Button },
+    enabled = enabled,
+    shape = shape,
+    color = containerColor,
+    contentColor = contentColor,
+    border = border,
+    interactionSource = interactionSource,
+  ) {
+    ProvideContentColorTextStyle(
+      contentColor = contentColor,
+      textStyle = MaterialTheme.typography.labelLarge,
     ) {
-        ProvideContentColorTextStyle(
-            contentColor = contentColor,
-            textStyle = MaterialTheme.typography.labelLarge
-        ) {
-            Row(
-                Modifier
-                    .defaultMinSize(
-                        minWidth = ButtonDefaults.MinWidth,
-                        minHeight = 32.sp.toDp()
-                    )
-                    .padding(contentPadding),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                content = content
-            )
-        }
+      Row(
+        Modifier
+          .defaultMinSize(
+            minWidth = ButtonDefaults.MinWidth,
+            minHeight = 32.sp.toDp(),
+          )
+          .padding(contentPadding),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        content = content,
+      )
     }
+  }
 }
 
 private fun ButtonColors.containerColor(enabled: Boolean): Color =
-    if (enabled) containerColor else disabledContainerColor
+  if (enabled) containerColor else disabledContainerColor
 
 private fun ButtonColors.contentColor(enabled: Boolean): Color =
-    if (enabled) contentColor else disabledContentColor
+  if (enabled) contentColor else disabledContentColor
 
 @Composable
 private fun ProvideContentColorTextStyle(
-    contentColor: Color,
-    textStyle: TextStyle,
-    content: @Composable () -> Unit,
+  contentColor: Color,
+  textStyle: TextStyle,
+  content: @Composable () -> Unit,
 ) {
-    val mergedStyle = LocalTextStyle.current.merge(textStyle)
-    CompositionLocalProvider(
-        LocalContentColor provides contentColor,
-        LocalTextStyle provides mergedStyle,
-        content = content
-    )
+  val mergedStyle = LocalTextStyle.current.merge(textStyle)
+  CompositionLocalProvider(
+    LocalContentColor provides contentColor,
+    LocalTextStyle provides mergedStyle,
+    content = content,
+  )
 }

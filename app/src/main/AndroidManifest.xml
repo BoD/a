@@ -1,66 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
+  <uses-permission android:name="android.permission.READ_CONTACTS" />
 
-    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
-    <uses-permission android:name="android.permission.ACCESS_HIDDEN_PROFILES" />
+  <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
+  <uses-permission android:name="android.permission.ACCESS_HIDDEN_PROFILES" />
 
 
-    <application
-        android:name=".AApplication"
-        android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.A.NoActionBar">
+  <application
+    android:name=".AApplication"
+    android:allowBackup="true"
+    android:icon="@mipmap/ic_launcher"
+    android:label="@string/app_name"
+    android:supportsRtl="true"
+    android:theme="@style/Theme.A.NoActionBar">
 
-        <activity
-            android:name=".ui.main.MainActivity"
-            android:exported="true"
-            android:launchMode="singleTask"
-            android:windowSoftInputMode="adjustResize|stateAlwaysVisible">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+    <activity
+      android:name=".ui.main.MainActivity"
+      android:exported="true"
+      android:launchMode="singleTask"
+      android:windowSoftInputMode="adjustResize|stateAlwaysVisible">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.HOME" />
-                <category android:name="android.intent.category.LAUNCHER_APP" />
-            </intent-filter>
-        </activity>
+        <category android:name="android.intent.category.LAUNCHER" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.HOME" />
+        <category android:name="android.intent.category.LAUNCHER_APP" />
+      </intent-filter>
+    </activity>
 
-        <activity
-            android:name=".ui.shortcut.ShortcutAcceptActivity"
-            android:autoRemoveFromRecents="true"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:launchMode="singleTask"
-            android:taskAffinity="">
-            <intent-filter>
-                <action android:name="android.content.pm.action.CONFIRM_PIN_SHORTCUT" />
-            </intent-filter>
-        </activity>
+    <activity
+      android:name=".ui.shortcut.ShortcutAcceptActivity"
+      android:autoRemoveFromRecents="true"
+      android:excludeFromRecents="true"
+      android:exported="true"
+      android:launchMode="singleTask"
+      android:taskAffinity="">
+      <intent-filter>
+        <action android:name="android.content.pm.action.CONFIRM_PIN_SHORTCUT" />
+      </intent-filter>
+    </activity>
 
-        <activity
-            android:name=".ui.settings.SettingsActivity"
-            android:theme="@style/Theme.A" />
+    <activity
+      android:name=".ui.settings.SettingsActivity"
+      android:theme="@style/Theme.A" />
 
-        <service
-            android:name=".notification.NotificationListenerService"
-            android:exported="true"
-            android:label="@string/app_name"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
-    </application>
+    <service
+      android:name=".notification.NotificationListenerService"
+      android:exported="true"
+      android:label="@string/app_name"
+      android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+      <intent-filter>
+        <action android:name="android.service.notification.NotificationListenerService" />
+      </intent-filter>
+    </service>
+  </application>
 
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.MAIN" />
-        </intent>
-    </queries>
+  <queries>
+    <intent>
+      <action android:name="android.intent.action.MAIN" />
+    </intent>
+  </queries>
 
 </manifest>

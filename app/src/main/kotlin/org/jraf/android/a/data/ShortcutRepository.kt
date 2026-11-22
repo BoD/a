@@ -45,75 +45,75 @@ import javax.inject.Singleton
 
 @Singleton
 class ShortcutRepository @Inject constructor(@ApplicationContext context: Context) {
-    companion object {
-        fun getId(id: String) = "shortcut/${id}"
+  companion object {
+    fun getId(id: String) = "shortcut/${id}"
+  }
+
+  private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+  private val launcherApps: LauncherApps = context.getSystemService(LauncherApps::class.java)
+
+  class Shortcut(
+    val shortcutInfo: ShortcutInfo,
+    val drawable: Drawable,
+  ) {
+    val id: String = shortcutInfo.id
+    val label: String = shortcutInfo.shortLabel.toString()
+
+    override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (javaClass != other?.javaClass) return false
+
+      other as Shortcut
+
+      if (id != other.id) return false
+      if (label != other.label) return false
+
+      return true
     }
 
-    private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
-    private val launcherApps: LauncherApps = context.getSystemService(LauncherApps::class.java)
-
-    class Shortcut(
-        val shortcutInfo: ShortcutInfo,
-        val drawable: Drawable,
-    ) {
-        val id: String = shortcutInfo.id
-        val label: String = shortcutInfo.shortLabel.toString()
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as Shortcut
-
-            if (id != other.id) return false
-            if (label != other.label) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = id.hashCode()
-            result = 31 * result + label.hashCode()
-            return result
-        }
+    override fun hashCode(): Int {
+      var result = id.hashCode()
+      result = 31 * result + label.hashCode()
+      return result
     }
+  }
 
-    fun getAllShortcuts(packageNames: List<String>): Flow<List<Shortcut>> = onShortcutChanged.map {
-        if (!launcherApps.hasShortcutHostPermission()) {
-            emptyList()
-        } else {
-            packageNames.flatMap { packageName ->
-                val shortcutQuery = LauncherApps.ShortcutQuery()
-                shortcutQuery.setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED)
-                shortcutQuery.setPackage(packageName)
-                (launcherApps.getShortcuts(shortcutQuery, Process.myUserHandle()) ?: emptyList())
-                    .filter {
-                        it.isEnabled
-                    }
-                    .mapNotNull {
-                        Shortcut(
-                            shortcutInfo = it,
-                            drawable = launcherApps.getShortcutIconDrawable(it, 0) ?: return@mapNotNull null,
-                        )
-                    }
-            }
-        }
+  fun getAllShortcuts(packageNames: List<String>): Flow<List<Shortcut>> = onShortcutChanged.map {
+    if (!launcherApps.hasShortcutHostPermission()) {
+      emptyList()
+    } else {
+      packageNames.flatMap { packageName ->
+        val shortcutQuery = LauncherApps.ShortcutQuery()
+        shortcutQuery.setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED)
+        shortcutQuery.setPackage(packageName)
+        (launcherApps.getShortcuts(shortcutQuery, Process.myUserHandle()) ?: emptyList())
+          .filter {
+            it.isEnabled
+          }
+          .mapNotNull {
+            Shortcut(
+              shortcutInfo = it,
+              drawable = launcherApps.getShortcutIconDrawable(it, 0) ?: return@mapNotNull null,
+            )
+          }
+      }
     }
-        .distinctUntilChanged()
-        .stateIn(coroutineScope, SharingStarted.Eagerly, emptyList())
+  }
+    .distinctUntilChanged()
+    .stateIn(coroutineScope, SharingStarted.Eagerly, emptyList())
 
-    fun launchShortcut(shortcut: Shortcut) {
-        try {
-            launcherApps.startShortcut(shortcut.shortcutInfo, null, null)
-        } catch (e: Exception) {
-            logw(e, "Could not launch shortcut")
-        }
+  fun launchShortcut(shortcut: Shortcut) {
+    try {
+      launcherApps.startShortcut(shortcut.shortcutInfo, null, null)
+    } catch (e: Exception) {
+      logw(e, "Could not launch shortcut")
     }
+  }
 
-    private val onShortcutChanged = Signal()
+  private val onShortcutChanged = Signal()
 
-    fun notifyShortcutsChanged() {
-        onShortcutChanged()
-    }
+  fun notifyShortcutsChanged() {
+    onShortcutChanged()
+  }
 }

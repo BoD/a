@@ -1,43 +1,43 @@
 <resources>
-    <string name="main_search_placeholder">Rechercher</string>
-    <string name="main_search_reset">Effacer</string>
-    <string name="main_search_webSearch">Chercher sur Internet</string>
-    <string name="main_requestContactsPermissionRationale_text">La permission Lire les Contacts est nécessaire si vous souhaitez
+  <string name="main_search_placeholder">Rechercher</string>
+  <string name="main_search_reset">Effacer</string>
+  <string name="main_search_webSearch">Chercher sur Internet</string>
+  <string name="main_requestContactsPermissionRationale_text">La permission Lire les Contacts est nécessaire si vous souhaitez
         inclure vos contacts favoris dans la liste.</string>
-    <string name="main_requestNotificationListenerPermission_text">Autorisez l\'accès aux notifications si vous souhaitez afficher des badges sur les icones.</string>
-    <string name="main_requestPermissionRationale_button_ok">OK</string>
+  <string name="main_requestNotificationListenerPermission_text">Autorisez l\'accès aux notifications si vous souhaitez afficher des badges sur les icones.</string>
+  <string name="main_requestPermissionRationale_button_ok">OK</string>
 
-    <string name="main_list_app_appDetails">Détails de l\'appli</string>
-    <string name="main_list_app_deprioritize">Déprioritiser</string>
-    <string name="main_list_app_undeprioritize">Dé-déprioritiser</string>
-    <string name="main_list_app_ignoreNotifications">Ignorer les notifications</string>
-    <string name="main_list_app_unignoreNotifications">Désignorer les notifications</string>
-    <string name="main_list_app_rename">Renommer</string>
-    <string name="main_list_app_unrename">Réinitialiser le nom</string>
-    <string name="main_list_app_privateSpaceApp">App privée</string>
+  <string name="main_list_app_appDetails">Détails de l\'appli</string>
+  <string name="main_list_app_deprioritize">Déprioritiser</string>
+  <string name="main_list_app_undeprioritize">Dé-déprioritiser</string>
+  <string name="main_list_app_ignoreNotifications">Ignorer les notifications</string>
+  <string name="main_list_app_unignoreNotifications">Désignorer les notifications</string>
+  <string name="main_list_app_rename">Renommer</string>
+  <string name="main_list_app_unrename">Réinitialiser le nom</string>
+  <string name="main_list_app_privateSpaceApp">App privée</string>
 
-    <string name="main_list_shortcut_deleteShortcut">Supprimer le raccourci</string>
+  <string name="main_list_shortcut_deleteShortcut">Supprimer le raccourci</string>
 
-    <string name="main_renameDialog_confirm">Confirmer</string>
-    <string name="main_renameDialog_cancel">Annuler</string>
+  <string name="main_renameDialog_confirm">Confirmer</string>
+  <string name="main_renameDialog_cancel">Annuler</string>
 
-    <string name="main_showNotifications">Notifications !</string>
+  <string name="main_showNotifications">Notifications !</string>
 
-    <string name="shortcutAccept_toast_accepted">Raccourci ajouté</string>
+  <string name="shortcutAccept_toast_accepted">Raccourci ajouté</string>
 
-    <string name="settings_title">Paramètres</string>
+  <string name="settings_title">Paramètres</string>
 
-    <string name="settings_alignmentBottom_title">Alignement vertical</string>
-    <string name="settings_alignmentBottom_top">HAUT</string>
-    <string name="settings_alignmentBottom_bottom">BAS</string>
+  <string name="settings_alignmentBottom_title">Alignement vertical</string>
+  <string name="settings_alignmentBottom_top">HAUT</string>
+  <string name="settings_alignmentBottom_bottom">BAS</string>
 
-    <string name="settings_alignmentRight_title">Alignement horizontal</string>
-    <string name="settings_alignmentRight_right">DROITE</string>
-    <string name="settings_alignmentRight_left">GAUCHE</string>
+  <string name="settings_alignmentRight_title">Alignement horizontal</string>
+  <string name="settings_alignmentRight_right">DROITE</string>
+  <string name="settings_alignmentRight_left">GAUCHE</string>
 
-    <string name="settings_wallpaperOpacity_title">Opacité du papier peint : %1$s</string>
-    <string name="settings_wallpaperOpacity_none">aucune</string>
-    <string name="settings_showNotificationsButton_title">Bouton \'Notifications !\'</string>
-    <string name="settings_keyboardHack_title">Hack du clavier</string>
+  <string name="settings_wallpaperOpacity_title">Opacité du papier peint : %1$s</string>
+  <string name="settings_wallpaperOpacity_none">aucune</string>
+  <string name="settings_showNotificationsButton_title">Bouton \'Notifications !\'</string>
+  <string name="settings_keyboardHack_title">Hack du clavier</string>
 
 </resources>

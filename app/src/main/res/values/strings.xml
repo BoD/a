@@ -1,45 +1,45 @@
 <resources>
-    <string name="app_name" translatable="false">a</string>
-    <string name="main_search_placeholder">Search</string>
-    <string name="main_search_reset">Clear</string>
-    <string name="main_search_webSearch">Search on the web</string>
-    <string name="main_requestContactsPermissionRationale_text">The Read Contacts permission is needed if you wish
+  <string name="app_name" translatable="false">a</string>
+  <string name="main_search_placeholder">Search</string>
+  <string name="main_search_reset">Clear</string>
+  <string name="main_search_webSearch">Search on the web</string>
+  <string name="main_requestContactsPermissionRationale_text">The Read Contacts permission is needed if you wish
         to include your favorite contacts in the list.</string>
-    <string name="main_requestNotificationListenerPermission_text">Allow notification access if you wish to show badges on icons.</string>
-    <string name="main_requestPermissionRationale_button_ok">OK</string>
+  <string name="main_requestNotificationListenerPermission_text">Allow notification access if you wish to show badges on icons.</string>
+  <string name="main_requestPermissionRationale_button_ok">OK</string>
 
-    <string name="main_list_app_appDetails">App details</string>
-    <string name="main_list_app_deprioritize">De-prioritize</string>
-    <string name="main_list_app_undeprioritize">Un-de-prioritize</string>
-    <string name="main_list_app_ignoreNotifications">Ignore notifications</string>
-    <string name="main_list_app_unignoreNotifications">Unignore notifications</string>
-    <string name="main_list_app_rename">Rename</string>
-    <string name="main_list_app_unrename">Reset name</string>
-    <string name="main_list_app_privateSpaceApp">Private space app</string>
+  <string name="main_list_app_appDetails">App details</string>
+  <string name="main_list_app_deprioritize">De-prioritize</string>
+  <string name="main_list_app_undeprioritize">Un-de-prioritize</string>
+  <string name="main_list_app_ignoreNotifications">Ignore notifications</string>
+  <string name="main_list_app_unignoreNotifications">Unignore notifications</string>
+  <string name="main_list_app_rename">Rename</string>
+  <string name="main_list_app_unrename">Reset name</string>
+  <string name="main_list_app_privateSpaceApp">Private space app</string>
 
-    <string name="main_list_shortcut_deleteShortcut">Delete shortcut</string>
+  <string name="main_list_shortcut_deleteShortcut">Delete shortcut</string>
 
-    <string name="main_renameDialog_confirm">Confirm</string>
-    <string name="main_renameDialog_cancel">Cancel</string>
+  <string name="main_renameDialog_confirm">Confirm</string>
+  <string name="main_renameDialog_cancel">Cancel</string>
 
-    <string name="main_showNotifications">Notifications!</string>
+  <string name="main_showNotifications">Notifications!</string>
 
-    <string name="shortcutAccept_toast_accepted">Shortcut added</string>
+  <string name="shortcutAccept_toast_accepted">Shortcut added</string>
 
-    <string name="settings_title">Settings</string>
+  <string name="settings_title">Settings</string>
 
-    <string name="settings_alignmentBottom_title">Vertical alignment</string>
-    <string name="settings_alignmentBottom_top">TOP</string>
-    <string name="settings_alignmentBottom_bottom">BOTTOM</string>
+  <string name="settings_alignmentBottom_title">Vertical alignment</string>
+  <string name="settings_alignmentBottom_top">TOP</string>
+  <string name="settings_alignmentBottom_bottom">BOTTOM</string>
 
-    <string name="settings_alignmentRight_title">Horizontal alignment</string>
-    <string name="settings_alignmentRight_right">RIGHT</string>
-    <string name="settings_alignmentRight_left">LEFT</string>
+  <string name="settings_alignmentRight_title">Horizontal alignment</string>
+  <string name="settings_alignmentRight_right">RIGHT</string>
+  <string name="settings_alignmentRight_left">LEFT</string>
 
-    <string name="settings_wallpaperOpacity_title">Wallpaper opacity: %1$s</string>
-    <string name="settings_wallpaperOpacity_percent" translatable="false">%1$d%%</string>
-    <string name="settings_wallpaperOpacity_none">OFF</string>
-    <string name="settings_showNotificationsButton_title">\'Notifications!\' button</string>
-    <string name="settings_keyboardHack_title">Keyboard hack</string>
+  <string name="settings_wallpaperOpacity_title">Wallpaper opacity: %1$s</string>
+  <string name="settings_wallpaperOpacity_percent" translatable="false">%1$d%%</string>
+  <string name="settings_wallpaperOpacity_none">OFF</string>
+  <string name="settings_showNotificationsButton_title">\'Notifications!\' button</string>
+  <string name="settings_keyboardHack_title">Keyboard hack</string>
 
 </resources>

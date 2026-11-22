@@ -29,39 +29,39 @@ package org.jraf.android.a.util
 import timber.log.Timber
 
 fun initLogging() {
-    Timber.plant(Timber.DebugTree())
+  Timber.plant(Timber.DebugTree())
 }
 
 inline fun logd(tag: String, message: String) {
-    Timber.tag(tag)
-    Timber.d(message)
+  Timber.tag(tag)
+  Timber.d(message)
 }
 
 inline fun logd(message: String) {
-    Timber.d(message)
+  Timber.d(message)
 }
 
 inline fun logd(any: Any) {
-    Timber.d(any.toString())
+  Timber.d(any.toString())
 }
 
 inline fun logd(throwable: Throwable) {
-    Timber.d(throwable)
+  Timber.d(throwable)
 }
 
 inline fun logd(throwable: Throwable, message: String) {
-    Timber.d(throwable, message)
+  Timber.d(throwable, message)
 }
 
 inline fun logd(throwable: Throwable, any: Any) {
-    Timber.d(throwable, any.toString())
+  Timber.d(throwable, any.toString())
 }
 
 inline fun logw(throwable: Throwable, any: Any) {
-    Timber.w(throwable, any.toString())
+  Timber.w(throwable, any.toString())
 }
 
 inline fun logw(tag: String, message: String) {
-    Timber.tag(tag)
-    Timber.w(message)
+  Timber.tag(tag)
+  Timber.w(message)
 }

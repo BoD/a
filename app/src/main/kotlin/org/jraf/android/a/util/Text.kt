@@ -27,12 +27,12 @@ package org.jraf.android.a.util
 import java.text.Normalizer
 
 fun String.containsIgnoreAccents(s: String) =
-    accentsStripped().contains(s.accentsStripped(), ignoreCase = true)
+  accentsStripped().contains(s.accentsStripped(), ignoreCase = true)
 
 private val STRIP_ACCENT_REGEX = Regex("\\p{InCombiningDiacriticalMarks}+")
 
 private fun String.accentsStripped(): String {
-    var string = Normalizer.normalize(this, Normalizer.Form.NFD)
-    string = STRIP_ACCENT_REGEX.replace(string, "")
-    return string
+  var string = Normalizer.normalize(this, Normalizer.Form.NFD)
+  string = STRIP_ACCENT_REGEX.replace(string, "")
+  return string
 }

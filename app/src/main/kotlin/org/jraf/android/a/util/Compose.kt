@@ -48,36 +48,36 @@ fun TextUnit.toDp(): Dp = with(LocalDensity.current) { toDp() }
 // https://stackoverflow.com/a/69533584/15695
 @Composable
 fun keyboardAsState(): State<Boolean> {
-    val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    return rememberUpdatedState(isImeVisible)
+  val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+  return rememberUpdatedState(isImeVisible)
 }
 
 @Composable
 fun Modifier.fadingEdges(): Modifier {
-    val heightPx = with(LocalDensity.current) { 12.sp.toDp().toPx() }
-    val almostTransparent = Color.Red.copy(alpha = .2F)
-    return this
-        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-        .drawWithContent {
-            val topFadeBrush = Brush.verticalGradient(
-                colors = listOf(almostTransparent, Color.Red),
-                endY = heightPx,
+  val heightPx = with(LocalDensity.current) { 12.sp.toDp().toPx() }
+  val almostTransparent = Color.Red.copy(alpha = .2F)
+  return this
+    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+    .drawWithContent {
+      val topFadeBrush = Brush.verticalGradient(
+        colors = listOf(almostTransparent, Color.Red),
+        endY = heightPx,
 
-                )
-            val bottomFadeBrush = Brush.verticalGradient(
-                colors = listOf(Color.Red, almostTransparent),
-                startY = size.height - 1 - heightPx,
-                endY = size.height - 1,
-            )
+        )
+      val bottomFadeBrush = Brush.verticalGradient(
+        colors = listOf(Color.Red, almostTransparent),
+        startY = size.height - 1 - heightPx,
+        endY = size.height - 1,
+      )
 
-            drawContent()
-            drawRect(
-                brush = topFadeBrush,
-                blendMode = BlendMode.DstIn,
-            )
-            drawRect(
-                brush = bottomFadeBrush,
-                blendMode = BlendMode.DstIn,
-            )
-        }
+      drawContent()
+      drawRect(
+        brush = topFadeBrush,
+        blendMode = BlendMode.DstIn,
+      )
+      drawRect(
+        brush = bottomFadeBrush,
+        blendMode = BlendMode.DstIn,
+      )
+    }
 }
