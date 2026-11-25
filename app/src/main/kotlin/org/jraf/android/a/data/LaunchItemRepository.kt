@@ -59,7 +59,7 @@ class LaunchItemRepository @Inject constructor(@param:ApplicationContext private
 
   suspend fun recordLaunchedItem(id: String) {
     withContext(Dispatchers.IO) {
-      database.launchedItemsQueries.insert(id)
+      database.launchedItemsQueries.insert(id).await()
     }
   }
 
@@ -92,15 +92,15 @@ class LaunchItemRepository @Inject constructor(@param:ApplicationContext private
 
   suspend fun deprioritizeItem(id: String) {
     withContext(Dispatchers.IO) {
-      database.deprioritizedItemsQueries.insert(id)
+      database.deprioritizedItemsQueries.insert(id).await()
       // Also reset counter
-      database.launchedItemsQueries.delete(id)
+      database.launchedItemsQueries.delete(id).await()
     }
   }
 
   suspend fun undeprioritizeItem(id: String) {
     withContext(Dispatchers.IO) {
-      database.deprioritizedItemsQueries.delete(id)
+      database.deprioritizedItemsQueries.delete(id).await()
     }
   }
 
@@ -110,13 +110,13 @@ class LaunchItemRepository @Inject constructor(@param:ApplicationContext private
 
   suspend fun ignoreNotifications(id: String) {
     withContext(Dispatchers.IO) {
-      database.ignoredNotificationsItemsQueries.insert(id)
+      database.ignoredNotificationsItemsQueries.insert(id).await()
     }
   }
 
   suspend fun unignoreNotifications(id: String) {
     withContext(Dispatchers.IO) {
-      database.ignoredNotificationsItemsQueries.delete(id)
+      database.ignoredNotificationsItemsQueries.delete(id).await()
     }
   }
 
@@ -126,9 +126,9 @@ class LaunchItemRepository @Inject constructor(@param:ApplicationContext private
 
   suspend fun deleteItem(id: String) {
     withContext(Dispatchers.IO) {
-      database.deletedItemsQueries.insert(id)
+      database.deletedItemsQueries.insert(id).await()
       // Also reset counter
-      database.launchedItemsQueries.delete(id)
+      database.launchedItemsQueries.delete(id).await()
     }
   }
 
@@ -143,13 +143,13 @@ class LaunchItemRepository @Inject constructor(@param:ApplicationContext private
 
   suspend fun renameItem(id: String, label: String) {
     withContext(Dispatchers.IO) {
-      database.renamedItemsQueries.insert(id, label)
+      database.renamedItemsQueries.insert(id, label).await()
     }
   }
 
   suspend fun unrenameItem(id: String) {
     withContext(Dispatchers.IO) {
-      database.renamedItemsQueries.delete(id)
+      database.renamedItemsQueries.delete(id).await()
     }
   }
 
@@ -161,7 +161,7 @@ class LaunchItemRepository @Inject constructor(@param:ApplicationContext private
 
   suspend fun undeleteShortcut(id: String) {
     withContext(Dispatchers.IO) {
-      database.deletedItemsQueries.delete(ShortcutRepository.getId(id))
+      database.deletedItemsQueries.delete(ShortcutRepository.getId(id)).await()
     }
   }
 }
